@@ -1,6 +1,7 @@
-import numpy as np
-import random
-import sys
+from path_finding import (
+    Breadth_First_Search_graph_path_find,
+    Greedy_Best_First_Search_graph_path_find,
+)
 
 
 class QuoridorGraphicalBoard:
@@ -140,7 +141,16 @@ class QuoridorGraphicalBoard:
                             # and checking if a move from (row + 1, column) to (row + 1, column + 1) is allowed
                             # if both of them are not allowed, there is a vertical wall going through the horizontal wall
                             # NEED A STAR SEARCH ALGORITHM TO VERIFFY EXISTING PATH
-                            walls_available.append(((row, column), "h"))
+                            move = ((row, column), "h")
+                            BFS_1 = Greedy_Best_First_Search_graph_path_find(
+                                self.nodes, self.p1_pos, 8, move
+                            )
+
+                            BFS_2 = Greedy_Best_First_Search_graph_path_find(
+                                self.nodes, self.p2_pos, 0, move
+                            )
+                            if BFS_1 ==  BFS_2:
+                                walls_available.append(((row, column), "h"))
                     if (
                         self.nodes[row * 9 + column][0]
                         in self.nodes[row * 9 + column + 1][1]
@@ -163,7 +173,16 @@ class QuoridorGraphicalBoard:
                             # and checking if a move from (row, column + 1) to (row + 1, column + 1) is allowed
                             # if both of them are not allowed, there is a horizontal wall going through the vertical wall
                             # NEED A STAR SEARCH ALGORITHM TO VERIFFY EXISTING PATH
-                            walls_available.append(((row, column), "v"))
+                            move = ((row, column), "v")
+                            BFS_1 = Greedy_Best_First_Search_graph_path_find(
+                                self.nodes, self.p1_pos, 8, move
+                            )
+
+                            BFS_2 = Greedy_Best_First_Search_graph_path_find(
+                                self.nodes, self.p2_pos, 0, move
+                            )
+                            if BFS_1 == BFS_2:
+                                walls_available.append(((row, column), "v"))
         return in_turn_moves + walls_available
 
     def make_move(self, move):
@@ -431,3 +450,34 @@ class QuoridorGraphicalBoard:
             return (True, self.turn)
         else:
             return (False, self.turn)
+
+
+import random
+import time
+
+random.seed(0)
+
+# simulate random moves
+for a in range(10):
+    board = QuoridorGraphicalBoard()
+
+    moves = 1000
+    total_time = 0
+    moves_done = 0
+
+    for i in range(moves):
+
+        moves_done += 1
+        # board.display_beautiful()
+        start = time.time()
+        move = random.choice(board.get_available_moves())
+        board.make_move(move)
+        total_time += time.time() - start
+        # print(time.time() - start)
+        if board.is_over()[0] == True:
+            print(i)
+            break
+    board.display_beautiful()
+    print("final times")
+    print(total_time / moves_done)
+    print(total_time)
