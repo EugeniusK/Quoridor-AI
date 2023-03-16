@@ -10,4 +10,5 @@ Add additional comments describing graph.py
 
 # 0.0.2
 
-Initial version of Bread First Search and Greedy Best First Search implemented
+Initial version of Breadth First Search, Greedy Best First Search and A* search implemented
+Currently using Breadth First Search in graph.py
