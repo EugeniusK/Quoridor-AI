@@ -12,3 +12,7 @@ Add additional comments describing graph.py
 
 Initial version of Breadth First Search, Greedy Best First Search and A* search implemented
 Currently using Breadth First Search in graph.py
+
+# 0.0.3
+
+Initial version of bitboards implemented with similar functions to graph.py
