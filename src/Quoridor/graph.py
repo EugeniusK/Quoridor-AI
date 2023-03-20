@@ -1,7 +1,6 @@
 from path_finding import (
     Breadth_First_Search_Graph,
     Greedy_Best_First_Search_Graph,
-    A_Star_Search_Graph,
 )
 
 
@@ -143,10 +142,10 @@ class QuoridorGraphicalBoard:
                             # if both of them are not allowed, there is a vertical wall going through the horizontal wall
                             # NEED A STAR SEARCH ALGORITHM TO VERIFFY EXISTING PATH
                             move = ((row, column), "h")
-                            BFS_1 = Breadth_First_Search_Graph(
+                            BFS_1 = Greedy_Best_First_Search_Graph(
                                 self.nodes, self.p1_pos, 8, move
                             )
-                            BFS_2 = Breadth_First_Search_Graph(
+                            BFS_2 = Greedy_Best_First_Search_Graph(
                                 self.nodes, self.p2_pos, 0, move
                             )
                             if BFS_1 == BFS_2:
@@ -180,7 +179,7 @@ class QuoridorGraphicalBoard:
                             BFS_2 = Breadth_First_Search_Graph(
                                 self.nodes, self.p2_pos, 0, move
                             )
-                            if BFS_1 == BFS_2:
+                            if BFS_1 and BFS_2:
                                 walls_available.append(move)
         return in_turn_moves + walls_available
 

@@ -24,3 +24,8 @@ Initial version of Breadth First Search, Greedy Best First Search implemented fo
 Currently using Greedy Best First Search in bitboard.py
 
 Removed A* search from graph.py
+
+# 0.0.4.1
+
+A few small tweaks made to code
+Optimised sorting based on distance to destination row in Greedy Best First Search for bitboards

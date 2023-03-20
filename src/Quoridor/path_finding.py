@@ -152,9 +152,9 @@ def Greedy_Best_First_Search_BitBoard(
     move: np.ndarray,
 ) -> bool:
     walls = walls_bitboard.copy()
-    if move[2] == 2 or move[2] == 255:
+    if move[2] == 2 or move[2] == -1:
         return True
-    if move[2] == 0:  # horizontal wall
+    elif move[2] == 0:  # horizontal wall
         walls[move[0] * 2 + 1, move[1] * 2 : move[1] * 2 + 3] = True
     elif move[2] == 1:  # vertical wall
         walls[move[0] * 2 : move[0] * 2 + 3, move[1] * 2 + 1] = True
@@ -171,7 +171,7 @@ def Greedy_Best_First_Search_BitBoard(
         player_moves = np.zeros((17, 17), dtype=np.bool_)
         tmp_position = np.zeros((17, 17), dtype=np.bool_)
         tmp_position[queue[0][0]][queue[0][1]] = True
-        # print(length_queue)
+
         if True in np.roll(tmp_position, -17) & short_north_mask:
             if True not in np.roll(tmp_position, -17) & walls:
                 player_moves += np.roll(tmp_position, -34)
@@ -185,7 +185,7 @@ def Greedy_Best_First_Search_BitBoard(
             if True not in np.roll(tmp_position, -1) & walls:
                 player_moves += np.roll(tmp_position, -2)
         player_moves_index = np.array(np.where(player_moves), dtype=np.int8).T
-        ############## get neighbours
+
         for index in player_moves_index:
             if (
                 queue_bitboard[index[0]][index[1]] == False
@@ -203,10 +203,8 @@ def Greedy_Best_First_Search_BitBoard(
         queue[0] = [127, 127]
         queue = np.roll(queue, -2)
 
-        greedy_key = np.vectorize(lambda x: np.abs(x - destination_row))(queue[:, 0])
-
-        inds = np.lexsort(keys=[greedy_key])
-        queue = queue[inds]
+        queue_sort = np.abs(queue - np.full((81, 2), destination_row, dtype=np.int8))
+        queue = queue[queue_sort[:, 0].argsort()]
 
         length_queue -= 1
         if length_queue == 0:

@@ -45,14 +45,14 @@ class QuoridorBitBoard:
             in_turn_pos = self.p1_pos
             out_turn_pos = self.p2_pos
 
-            if self.p1_walls_placed == np.uint(10):
+            if self.p1_walls_placed == np.int8(10):
                 walls_left = False
         elif self.turn == True:
             # player 2's turn
             in_turn_pos = self.p2_pos
             out_turn_pos = self.p1_pos
 
-            if self.p2_walls_placed == np.uint(10):
+            if self.p2_walls_placed == np.int8(10):
                 walls_left = False
 
         player_moves = np.zeros((17, 17), dtype=np.bool_)
@@ -231,23 +231,19 @@ class QuoridorBitBoard:
                 np.full((len(player_moves_index), 1), 2, dtype=np.int8),
             )
         )
-        # print(moves)
         if walls_left == True:
             for m in range(128):
-                # print(moves[m])
-                # start = time.time()
                 if (
-                    Breadth_First_Search_BitBoard(
+                    Greedy_Best_First_Search_BitBoard(
                         self.p1_pos, self.walls, np.int8(16), moves[m]
                     )
                     == False
-                    or Breadth_First_Search_BitBoard(
+                    or Greedy_Best_First_Search_BitBoard(
                         self.p2_pos, self.walls, np.int8(0), moves[m]
                     )
                     == False
                 ):
                     moves[m] = [-1, -1, -1]
-                # print(time.time() - start)
         return moves
 
     def make_move(self, move):
