@@ -1,7 +1,22 @@
+.DS_Store
+docs/
+functions.py
+src/Logs
+# Visual Studio Code files
+.vscode
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# LATEX makerfiles
+.aux
+.bbl
+.blg
+.fdb_latexmk
+.fls
+.synctex.gz
 
 # C extensions
 *.so
