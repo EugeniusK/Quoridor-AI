@@ -24,7 +24,7 @@ def simulate(number_games, player_one_mode, player_two_mode, board_representatio
         rounds.append(g.log())
         print(g.log()["Total time"])
     with open(
-        f'{os.path.join(os.path.dirname(__file__), "Logs/")}{datetime.strftime(datetime.today(), "%Y-%m-%d_%H:%M:%S")}_{player_one_mode}_vs_{player_two_mode}_as_{board_representation}.json',
+        f'{os.path.join(os.path.dirname(__file__), "Logs/")}{datetime.strftime(datetime.today(), "%Y-%m-%d_%H%M%S")}_{player_one_mode}_vs_{player_two_mode}_as_{board_representation}.json',
         mode="w",
         encoding="ascii",
     ) as f:
@@ -96,12 +96,8 @@ def compare_moves(number_games):
             f"Total moves made: {total_moves}\nNumber of times different moves available: {valid_moves}"
         )
     with open(
-        f'{os.path.join(os.path.dirname(__file__), "Logs/")}{datetime.strftime(datetime.today(), "%Y-%m-%d_%H:%M:%S")}_compare_moves.json',
+        f'{os.path.join(os.path.dirname(__file__), "Logs/")}{datetime.strftime(datetime.today(), "%Y-%m-%d_%H%M%S")}_compare_moves.json',
         mode="w",
         encoding="ascii",
     ) as f:
         json.dump(rounds, f)
-
-
-# simulate(10, "random", "random", "graph")
-compare_moves(1)

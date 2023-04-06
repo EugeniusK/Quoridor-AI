@@ -42,3 +42,7 @@ Added method of recording moves in a format inspired by PGN (Portable Game Notat
 
 Added comments, tidied up imports
 Added simulating n number of games and comparing moves available from the same game state
+
+# 0.0.5.2
+
+Updated filenames to be supported on Windows 10 as well
