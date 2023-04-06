@@ -1,4 +1,4 @@
-from path_finding import (
+from .path_finding import (
     Breadth_First_Search_Graph,
     Greedy_Best_First_Search_Graph,
 )
@@ -7,6 +7,21 @@ from path_finding import (
 class QuoridorGraphicalBoard:
     def __init__(self):
         self.nodes = []  # all 81 positions possible
+        """
+        Array represents nodes in this following order
+        0, 1, 2, 3, ...,
+        9, 10, 11, 12, ...
+        ...
+        72, 73 ,74 ,75, 80
+        
+
+        index 0 in nodes will be position a1 and index 80 in nodes will be e9
+
+        so player 1 will start at e1 (index 4)
+        and player 2 will start at e9 (index 76)
+
+        however, when the board is displayed, a1 will be bottom left and e9 will be top left
+        """
         self.p1_pos = (0, 4)
         self.p2_pos = (8, 4)
 
@@ -181,14 +196,29 @@ class QuoridorGraphicalBoard:
                             )
                             if BFS_1 and BFS_2:
                                 walls_available.append(move)
-        return in_turn_moves + walls_available
+        algebraic_moves = []
+        for move in (
+            in_turn_moves + walls_available
+        ):  # wrong format to algebraic notation
+            if type(move[0]) == tuple:
+                if move[1] == "h":
+                    algebraic_move = f"{chr(97+move[0][1])}{move[0][0]+1}h"
+                elif move[1] == "v":
+                    algebraic_move = f"{chr(97+move[0][1])}{move[0][0]+1}v"
+            elif type(move[0]) == int:
+                algebraic_move = f"{chr(97+move[1])}{move[0]+1}"
+            algebraic_moves.append(algebraic_move)
+        return algebraic_moves
 
     def make_move(self, move):
-        if type(move[0]) == int:
+        if len(move) == 2:
             # move is in format (row, column)
             # is a move to row, column
             if self.turn == 0:  # if it's player 1 turn
-                self.p1_pos = move  # moves player 1 to new position
+                self.p1_pos = (
+                    int(move[1]) - 1,
+                    ord(move[0]) - 97,
+                )  # moves player 1 to new position
                 if self.p1_pos[0] == 8:
                     # if the new position is on the winning row, game is over
                     self.over = True
@@ -196,26 +226,32 @@ class QuoridorGraphicalBoard:
                     self.turn = 1  # change turn to other player
 
             elif self.turn == 1:  # if it's player 2 turn
-                self.p2_pos = move  # moves player 2 to new position
+                self.p2_pos = (
+                    int(move[1]) - 1,
+                    ord(move[0]) - 97,
+                )  # moves player 2 to new position
                 if self.p2_pos[0] == 0:
                     # if the new position is on the winning row, game is over
                     self.over = True
                 else:
                     self.turn = 0  # change turn to other player
-        elif type(move[0]) == tuple:
+        elif len(move) == 3:
             # move is in format ((row, column), direction)
             # is a wall place
-            pos = move[0]
+            pos = (
+                int(move[1]) - 1,
+                ord(move[0]) - 97,
+            )
 
             # for a wall place, remove B as a neighbour from A and remove A as a neighbour from B and repeat for C and D
-            if move[1] == "h":
+            if move[2] == "h":
                 self.nodes[pos[0] * 9 + pos[1]][1].remove((pos[0] + 1, pos[1]))
                 self.nodes[pos[0] * 9 + pos[1] + 9][1].remove((pos[0], pos[1]))
 
                 self.nodes[pos[0] * 9 + pos[1] + 1][1].remove((pos[0] + 1, pos[1] + 1))
                 self.nodes[pos[0] * 9 + pos[1] + 10][1].remove((pos[0], pos[1] + 1))
 
-            elif move[1] == "v":
+            elif move[2] == "v":
                 self.nodes[pos[0] * 9 + pos[1]][1].remove((pos[0], pos[1] + 1))
                 self.nodes[pos[0] * 9 + pos[1] + 1][1].remove((pos[0], pos[1]))
 
@@ -231,46 +267,11 @@ class QuoridorGraphicalBoard:
                 self.p2_walls_placed += 1
                 self.turn = 0
 
-    def display(self):
-        # older version of display function
-        print()
-        print(f"Turn is {self.turn + 1}")
-        print(f"Player 1 has {10 - self.p1_walls_placed} walls left")
-        print(f"Player 2 has {10 - self.p2_walls_placed} walls left")
-
-        for row in range(9):
-            line = []
-            line_below = []
-            for column in range(9):
-                # print "w" for wall
-                # print "1" for player 1
-                # print "2" for player 2
-                # print " " for nothing
-                if (row, column) == self.p1_pos:
-                    line.append("1")
-                elif (row, column) == self.p2_pos:
-                    line.append("2")
-                else:
-                    line.append("_")
-                if (row, column + 1) in self.nodes[row * 9 + column][1]:
-                    line.append(" ")
-                else:
-                    if column != 8:
-                        line.append("w")
-                    else:
-                        line.append(" ")
-
-                if (row + 1, column) in self.nodes[row * 9 + column][1]:
-                    line_below.append(" ")
-                else:
-                    if row != 8:
-                        line_below.append("w")
-
-            print(" ".join(line))
-            print("   ".join(line_below))
-
     def display_beautiful(self):
-        for row in range(9):
+        # array is structured so that index 0 (A1) is at top left and index 80 (I9) is bottom right
+        # however, this is the wrong way around - index 0 shoudl be displayed at bottom left and index 80 should be top right
+        # so the array is printed in reverse
+        for row in range(8, -1, -1):
             line = []
             line_below = []
             for column in range(9):
@@ -310,7 +311,7 @@ class QuoridorGraphicalBoard:
                         """
                         if (row, column) not in self.nodes[row * 9 + column + 1][1]:
                             # wall between X1 and X2
-                            north = True
+                            south = True
                         if (row, column + 1) not in self.nodes[row * 9 + column + 10][
                             1
                         ]:
@@ -320,7 +321,7 @@ class QuoridorGraphicalBoard:
                             1
                         ]:
                             # wall between X3 and X4
-                            south = True
+                            north = True
                         if (row, column) not in self.nodes[row * 9 + column + 9][1]:
                             west = True
                             # wall between X1 and X3
@@ -438,13 +439,30 @@ class QuoridorGraphicalBoard:
                             and west == True
                         ):
                             line_below.append("\u254B")
-            print("".join(line))
-            print("".join(line_below))
+            print(" " + "".join(line_below))
+            print(str(row + 1) + "".join(line))
+        print("  a   b   c   d   e   f   g   h   i  ")
 
     def is_over(self):
         # returns if the game is over
         # if the game is over, return the player who won
-        if self.over == True:
-            return (True, self.turn)
-        else:
-            return (False, self.turn)
+        return self.over
+
+
+# # generate algebraic notations for moves
+#             # a-h from left to right and 1-9 from bottom to top
+#             # from perspective of player 1 who starts from bottom
+
+#             # player 1 starts at e1
+#             # player 2 starts at e9
+
+#             # wall move is formatted((index1, index2), type)
+#             # player move is formatted (index1, index2)
+#             # where index1 is zero-based indexing from the top
+#             # and where index2 is zero-based indexing from the left
+
+#             # index1 of 0 would actually be rank 9 and index1 of 8 would actually be rank 1
+#             # index2 of 1 would actually be file a and index2 of 8 would actually be file i
+if __name__ == "__main__":
+    print("not supposed to be run")
+    raise ImportError

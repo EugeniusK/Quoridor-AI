@@ -33,3 +33,7 @@ Optimised sorting based on distance to destination row in Greedy Best First Sear
 # 0.0.4.2
 
 Added random selection of moves
+
+# 0.0.5
+
+Added method of recording moves in a format inspired by PGN (Portable Game Notation)

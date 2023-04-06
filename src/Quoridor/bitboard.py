@@ -1,7 +1,7 @@
 import numpy as np
 import time
 import sys
-from path_finding import (
+from .path_finding import (
     Breadth_First_Search_BitBoard,
     Greedy_Best_First_Search_BitBoard,
 )
@@ -158,7 +158,7 @@ class QuoridorBitBoard:
         player_moves_index = np.array(
             np.where(player_moves & ~out_turn_pos), dtype=np.int8
         ).T
-
+        # gets available walls if there are any walls left for player in turn
         if walls_left == True:
             sliding_horizontal_walls = np.reshape(
                 np.lib.stride_tricks.sliding_window_view(self.walls[1::2], (1, 3)),
@@ -263,13 +263,12 @@ class QuoridorBitBoard:
                     self.over = True
                 else:
                     self.turn = False
+
         else:
             if move[2] == 0:  # horizontal wall
                 self.walls[move[0] * 2 + 1, move[1] * 2 : move[1] * 2 + 3] = True
             elif move[2] == 1:  # vertical wall
                 self.walls[move[0] * 2 : move[0] * 2 + 3, move[1] * 2 + 1] = True
-            else:
-                raise ValueError
             if self.turn == False:
                 self.p1_walls_placed += 1
                 self.turn = True
@@ -278,7 +277,7 @@ class QuoridorBitBoard:
                 self.turn = False
 
     def display_beautiful(self):
-        for row in range(9):
+        for row in range(8, -1, -1):
             line = []
             line_below = []
             for column in range(9):
@@ -307,9 +306,9 @@ class QuoridorBitBoard:
 
                         """
 
-                        north = self.walls[row * 2][column * 2 + 1]
+                        south = self.walls[row * 2][column * 2 + 1]
                         east = self.walls[row * 2 + 1][column * 2 + 2]
-                        south = self.walls[row * 2 + 2][column * 2 + 1]
+                        north = self.walls[row * 2 + 2][column * 2 + 1]
                         west = self.walls[row * 2 + 1][column * 2]
                         if (
                             north == False
@@ -423,11 +422,17 @@ class QuoridorBitBoard:
                             and west == True
                         ):
                             line_below.append("\u254B")
-            print("".join(line))
-            print("".join(line_below))
+            print(" " + "".join(line_below))
+            print(str(row + 1) + "".join(line))
+        print("  a   b   c   d   e   f   g   h   i ")
 
     def is_over(self):
         if self.over == True:
             return True
         else:
             return False
+
+
+if __name__ == "__main__":
+    print("not supposed to be run")
+    raise ImportError
