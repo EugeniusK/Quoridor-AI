@@ -29,3 +29,7 @@ Removed A* search from graph.py
 
 A few small tweaks made to code
 Optimised sorting based on distance to destination row in Greedy Best First Search for bitboards
+
+# 0.0.4.2
+
+Added random selection of moves
