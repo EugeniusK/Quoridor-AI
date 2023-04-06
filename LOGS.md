@@ -37,3 +37,8 @@ Added random selection of moves
 # 0.0.5
 
 Added method of recording moves in a format inspired by PGN (Portable Game Notation)
+
+# 0.0.5.1
+
+Added comments, tidied up imports
+Added simulating n number of games and comparing moves available from the same game state
