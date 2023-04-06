@@ -46,3 +46,7 @@ Added simulating n number of games and comparing moves available from the same g
 # 0.0.5.2
 
 Updated filenames to be supported on Windows 10 as well
+
+# 0.0.5.3
+
+Implement multiprocessing to accelerate comparison of moves
