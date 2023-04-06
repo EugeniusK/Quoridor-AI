@@ -150,6 +150,25 @@ class QuoridorGraphicalBoard:
                             in self.nodes[row * 9 + column + 1][1]
                             or self.nodes[row * 9 + column + 9][0]
                             in self.nodes[row * 9 + column + 10][1]
+                        ) or (
+                            row >= 1
+                            and row <= 6
+                            and (
+                                self.nodes[row * 9 + column - 9][0]
+                                not in self.nodes[row * 9 + column - 9 + 1][1]
+                            )
+                            and (
+                                self.nodes[row * 9 + column][0]
+                                not in self.nodes[row * 9 + column + 1][1]
+                            )
+                            and (
+                                self.nodes[row * 9 + column + 9][0]
+                                not in self.nodes[row * 9 + column + 9 + 1][1]
+                            )
+                            and (
+                                self.nodes[row * 9 + column + 18][0]
+                                not in self.nodes[row * 9 + column + 18 + 1][1]
+                            )
                         ):
                             # ensures that there is no vertical wall going through the candidate horizontal row
                             # by checking if a move from (row, column) to (row, column + 1) allowed
@@ -157,10 +176,10 @@ class QuoridorGraphicalBoard:
                             # if both of them are not allowed, there is a vertical wall going through the horizontal wall
                             # NEED A STAR SEARCH ALGORITHM TO VERIFFY EXISTING PATH
                             move = ((row, column), "h")
-                            BFS_1 = Greedy_Best_First_Search_Graph(
+                            BFS_1 = Breadth_First_Search_Graph(
                                 self.nodes, self.p1_pos, 8, move
                             )
-                            BFS_2 = Greedy_Best_First_Search_Graph(
+                            BFS_2 = Breadth_First_Search_Graph(
                                 self.nodes, self.p2_pos, 0, move
                             )
                             if BFS_1 == True and BFS_2 == True:
@@ -168,8 +187,8 @@ class QuoridorGraphicalBoard:
                     if (
                         self.nodes[row * 9 + column][0]
                         in self.nodes[row * 9 + column + 1][1]
-                        and self.nodes[row * 9 + 9 + column][0]
-                        in self.nodes[row * 9 + 9 + column + 1][1]
+                        and self.nodes[row * 9 + column + 9][0]
+                        in self.nodes[row * 9 + column + 10][1]
                     ):
                         # checks if a vertical wall can be placed with (row, column) to the left and top
                         # checking if a move from (row, column) to (row, column+1) AND (row+1, column)
@@ -180,7 +199,30 @@ class QuoridorGraphicalBoard:
                             self.nodes[row * 9 + column][0]
                             in self.nodes[row * 9 + column + 9][1]
                             or self.nodes[row * 9 + column + 1][0]
-                            in self.nodes[row * 9 + column + 10]
+                            in self.nodes[row * 9 + column + 10][1]
+                        ) or (
+                            column >= 1
+                            and column <= 6
+                            and (
+                                (
+                                    self.nodes[row * 9 + column - 1][0]
+                                    not in self.nodes[row * 9 + column + 9 - 1][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column][0]
+                                    not in self.nodes[row * 9 + column + 9][1]
+                                )
+                            )
+                            and (
+                                (
+                                    self.nodes[row * 9 + column + 1][0]
+                                    not in self.nodes[row * 9 + column + 9 + 1][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column + 2][0]
+                                    not in self.nodes[row * 9 + column + 9 + 2][1]
+                                )
+                            )
                         ):
                             # ensures that there is no horizontal wall going through the candidate vertical row
                             # by checking if a move from (row, column) to (row + 1, column) allowed
@@ -194,7 +236,7 @@ class QuoridorGraphicalBoard:
                             BFS_2 = Breadth_First_Search_Graph(
                                 self.nodes, self.p2_pos, 0, move
                             )
-                            if BFS_1 and BFS_2:
+                            if BFS_1 == True and BFS_2 == True:
                                 walls_available.append(move)
         algebraic_moves = []
         for move in (

@@ -50,3 +50,9 @@ Updated filenames to be supported on Windows 10 as well
 # 0.0.5.3
 
 Implement multiprocessing to accelerate comparison of moves
+
+# 0.0.5.4
+
+Remove unnecessary code in test.py for non multiprocessed versions
+
+Fix mistakes found in bitboard.py and graph.py found from testing

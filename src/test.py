@@ -35,6 +35,8 @@ def simulate(number_games, player_one_mode, player_two_mode, board_representatio
 def compare_moves(i):
     total_moves = 0
     valid_moves = 0
+    bitboard_error = 0
+    graph_error = 0
 
     valid = []
     difference_available = []
@@ -69,8 +71,39 @@ def compare_moves(i):
             move = random.choice(
                 list(set(bitboard_available_moves) & set(graph_available_moves))
             )
-            g_bitboard.make_move(move)
+
+            if (set(bitboard_available_moves) ^ set(graph_available_moves)) & set(
+                bitboard_available_moves
+            ) != set():
+                bitboard_error += len(
+                    (set(bitboard_available_moves) ^ set(graph_available_moves))
+                    & set(bitboard_available_moves)
+                )
+            if (set(bitboard_available_moves) ^ set(graph_available_moves)) & set(
+                graph_available_moves
+            ) != set():
+                graph_error += len(
+                    (set(bitboard_available_moves) ^ set(graph_available_moves))
+                    & set(graph_available_moves)
+                )
+
+            # g_bitboard.display()
+
+            # print("Bitboard moves available", sorted(bitboard_available_moves))
+            # print("Graph moves available", sorted(graph_available_moves))
+            print(
+                "Bitboard moves available unique",
+                (set(bitboard_available_moves) ^ set(graph_available_moves))
+                & set(bitboard_available_moves),
+            )
+            print(
+                "Graph moves available unique",
+                (set(bitboard_available_moves) ^ set(graph_available_moves))
+                & set(graph_available_moves),
+            )
+
             g_graph.make_move(move)
+            g_bitboard.make_move(move)
 
         if g_bitboard.is_over() and g_graph.is_over():
             over = True
@@ -82,24 +115,31 @@ def compare_moves(i):
         "Different available moves": difference_available,
     }
 
-    return one_round, total_moves, valid_moves
+    return one_round, total_moves, valid_moves, graph_error, bitboard_error
 
 
 def compare_moves_threaded(number_games):
     rounds = list(range(1, number_games + 1))
-    with Pool() as pool:
+    with Pool(processes=8) as pool:
         results = pool.imap_unordered(compare_moves, rounds)
 
         logs = []
 
         num_total_moves = 0
         num_valid_moves = 0
-        for one_round, total_moves, valid_moves in results:
+        num_graph_errors = 0
+        num_bitboard_errors = 0
+        for one_round, total_moves, valid_moves, graph_error, bitboard_error in results:
             num_total_moves += total_moves
             num_valid_moves += valid_moves
+            num_graph_errors += graph_error
+            num_bitboard_errors += bitboard_error
             logs.append(one_round)
         print(
             f"Number of moves made: {num_total_moves}\nNumber of moves without error: {num_valid_moves}"
+        )
+        print(
+            f"Bitboard errors: {num_bitboard_errors}\nGraph errors: {num_graph_errors}"
         )
         with open(
             f'{os.path.join(os.path.dirname(__file__), "Logs/")}{datetime.strftime(datetime.today(), "%Y-%m-%d_%H%M%S")}_compare_moves.json',
@@ -111,4 +151,8 @@ def compare_moves_threaded(number_games):
 
 if __name__ == "__main__":
     # simulate(1000)
-    compare_moves_threaded(1000)
+    import time
+
+    start = time.perf_counter()
+    compare_moves_threaded(10)
+    print(time.perf_counter() - start)

@@ -234,11 +234,11 @@ class QuoridorBitBoard:
         if walls_left == True:
             for m in range(128):
                 if (
-                    Greedy_Best_First_Search_BitBoard(
+                    Breadth_First_Search_BitBoard(
                         self.p1_pos, self.walls, np.int8(16), moves[m]
                     )
                     == False
-                    or Greedy_Best_First_Search_BitBoard(
+                    or Breadth_First_Search_BitBoard(
                         self.p2_pos, self.walls, np.int8(0), moves[m]
                     )
                     == False
