@@ -8,19 +8,19 @@ class QuoridorGraphicalBoard:
     def __init__(self):
         self.nodes = []  # all 81 positions possible
         """
-        Array represents nodes in this following order
+        Array represents positions in this following order
         0, 1, 2, 3, ...,
         9, 10, 11, 12, ...
         ...
         72, 73 ,74 ,75, 80
         
 
-        index 0 in nodes will be position a1 and index 80 in nodes will be e9
+        index 0 in nodes will be position a1 and index 80 in nodes will be e9 in Quoridor notation
 
         so player 1 will start at e1 (index 4)
         and player 2 will start at e9 (index 76)
 
-        however, when the board is displayed, a1 will be bottom left and e9 will be top left
+        However, when the board is displayed, a1 will be bottom left and e9 will be top left
         """
         self.p1_pos = (0, 4)
         self.p2_pos = (8, 4)
@@ -163,7 +163,7 @@ class QuoridorGraphicalBoard:
                             BFS_2 = Greedy_Best_First_Search_Graph(
                                 self.nodes, self.p2_pos, 0, move
                             )
-                            if BFS_1 == BFS_2:
+                            if BFS_1 == True and BFS_2 == True:
                                 walls_available.append(move)
                     if (
                         self.nodes[row * 9 + column][0]
