@@ -146,30 +146,94 @@ class QuoridorGraphicalBoard:
                         # this is only checked for rows 0~7 as row 8 will check for non-existant row 9
                         # and only for columns 0~7 as colum 8 will check for non-existant column 9
                         if (
-                            self.nodes[row * 9 + column][0]
-                            in self.nodes[row * 9 + column + 1][1]
-                            or self.nodes[row * 9 + column + 9][0]
-                            in self.nodes[row * 9 + column + 10][1]
-                        ) or (
-                            row >= 1
-                            and row <= 6
-                            and (
-                                self.nodes[row * 9 + column - 9][0]
-                                not in self.nodes[row * 9 + column - 9 + 1][1]
-                            )
-                            and (
+                            (
                                 self.nodes[row * 9 + column][0]
-                                not in self.nodes[row * 9 + column + 1][1]
+                                in self.nodes[row * 9 + column + 1][1]
+                                or self.nodes[row * 9 + column + 9][0]
+                                in self.nodes[row * 9 + column + 10][1]
                             )
-                            and (
-                                self.nodes[row * 9 + column + 9][0]
-                                not in self.nodes[row * 9 + column + 9 + 1][1]
+                            or (
+                                (row == 1 or row == 6)
+                                and (
+                                    self.nodes[row * 9 + column - 9][0]
+                                    not in self.nodes[row * 9 + column - 9 + 1][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column][0]
+                                    not in self.nodes[row * 9 + column + 1][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column + 9][0]
+                                    not in self.nodes[row * 9 + column + 9 + 1][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column + 18][0]
+                                    not in self.nodes[row * 9 + column + 18 + 1][1]
+                                )
                             )
-                            and (
-                                self.nodes[row * 9 + column + 18][0]
-                                not in self.nodes[row * 9 + column + 18 + 1][1]
+                            or (
+                                row > 1
+                                and row < 6
+                                and (
+                                    self.nodes[row * 9 + column - 18][0]
+                                    in self.nodes[row * 9 + column - 18 + 1][1]
+                                    or self.nodes[row * 9 + column + 27][0]
+                                    in self.nodes[row * 9 + column + 27 + 1][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column - 9][0]
+                                    not in self.nodes[row * 9 + column - 9 + 1][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column][0]
+                                    not in self.nodes[row * 9 + column + 1][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column + 9][0]
+                                    not in self.nodes[row * 9 + column + 9 + 1][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column + 18][0]
+                                    not in self.nodes[row * 9 + column + 18 + 1][1]
+                                )
+                            )
+                            or (
+                                (row == 3 or row == 4)
+                                and (
+                                    self.nodes[row * 9 + column - 27][0]
+                                    not in self.nodes[row * 9 + column - 27 + 1][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column - 18][0]
+                                    not in self.nodes[row * 9 + column - 18 + 1][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column - 9][0]
+                                    not in self.nodes[row * 9 + column - 9 + 1][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column][0]
+                                    not in self.nodes[row * 9 + column + 1][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column + 9][0]
+                                    not in self.nodes[row * 9 + column + 9 + 1][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column + 18][0]
+                                    not in self.nodes[row * 9 + column + 18 + 1][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column + 27][0]
+                                    not in self.nodes[row * 9 + column + 27 + 1][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column + 36][0]
+                                    not in self.nodes[row * 9 + column + 36 + 1][1]
+                                )
                             )
                         ):
+
                             # ensures that there is no vertical wall going through the candidate horizontal row
                             # by checking if a move from (row, column) to (row, column + 1) allowed
                             # and checking if a move from (row + 1, column) to (row + 1, column + 1) is allowed
@@ -196,15 +260,15 @@ class QuoridorGraphicalBoard:
                         # this is only checked for rows 0~7 as row 8 will check for non-existant row 9
                         # and only for columns 0~7 as colum 8 will check for non-existant column 9
                         if (
-                            self.nodes[row * 9 + column][0]
-                            in self.nodes[row * 9 + column + 9][1]
-                            or self.nodes[row * 9 + column + 1][0]
-                            in self.nodes[row * 9 + column + 10][1]
-                        ) or (
-                            column >= 1
-                            and column <= 6
-                            and (
-                                (
+                            (
+                                self.nodes[row * 9 + column][0]
+                                in self.nodes[row * 9 + column + 9][1]
+                                or self.nodes[row * 9 + column + 1][0]
+                                in self.nodes[row * 9 + column + 10][1]
+                            )
+                            or (
+                                (column == 1 or column == 6)
+                                and (
                                     self.nodes[row * 9 + column - 1][0]
                                     not in self.nodes[row * 9 + column + 9 - 1][1]
                                 )
@@ -212,15 +276,74 @@ class QuoridorGraphicalBoard:
                                     self.nodes[row * 9 + column][0]
                                     not in self.nodes[row * 9 + column + 9][1]
                                 )
-                            )
-                            and (
-                                (
+                                and (
                                     self.nodes[row * 9 + column + 1][0]
                                     not in self.nodes[row * 9 + column + 9 + 1][1]
                                 )
                                 and (
                                     self.nodes[row * 9 + column + 2][0]
                                     not in self.nodes[row * 9 + column + 9 + 2][1]
+                                )
+                            )
+                            or (
+                                column > 1
+                                and column < 6
+                                and (
+                                    self.nodes[row * 9 + column - 2][0]
+                                    in self.nodes[row * 9 + column + 9 - 2][1]
+                                    or self.nodes[row * 9 + column + 3][0]
+                                    in self.nodes[row * 9 + column + 9 + 3][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column - 1][0]
+                                    not in self.nodes[row * 9 + column + 9 - 1][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column][0]
+                                    not in self.nodes[row * 9 + column + 9][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column + 1][0]
+                                    not in self.nodes[row * 9 + column + 9 + 1][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column + 2][0]
+                                    not in self.nodes[row * 9 + column + 9 + 2][1]
+                                )
+                            )
+                            or (
+                                (column == 3 or column == 4)
+                                and (
+                                    self.nodes[row * 9 + column - 3][0]
+                                    not in self.nodes[row * 9 + column + 9 - 3][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column - 2][0]
+                                    not in self.nodes[row * 9 + column + 9 - 2][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column - 1][0]
+                                    not in self.nodes[row * 9 + column + 9 - 1][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column][0]
+                                    not in self.nodes[row * 9 + column + 9][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column + 1][0]
+                                    not in self.nodes[row * 9 + column + 9 + 1][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column + 2][0]
+                                    not in self.nodes[row * 9 + column + 9 + 2][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column + 3][0]
+                                    not in self.nodes[row * 9 + column + 9 + 3][1]
+                                )
+                                and (
+                                    self.nodes[row * 9 + column + 4][0]
+                                    not in self.nodes[row * 9 + column + 9 + 4][1]
                                 )
                             )
                         ):

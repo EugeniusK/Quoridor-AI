@@ -33,6 +33,7 @@ def simulate(number_games, player_one_mode, player_two_mode, board_representatio
 
 
 def compare_moves(i):
+    print(i)
     total_moves = 0
     valid_moves = 0
     bitboard_error = 0
@@ -87,21 +88,29 @@ def compare_moves(i):
                     & set(graph_available_moves)
                 )
 
-            # g_bitboard.display()
+            g_bitboard.display()
 
             # print("Bitboard moves available", sorted(bitboard_available_moves))
             # print("Graph moves available", sorted(graph_available_moves))
             print(
                 "Bitboard moves available unique",
-                (set(bitboard_available_moves) ^ set(graph_available_moves))
-                & set(bitboard_available_moves),
+                sorted(
+                    list(
+                        (set(bitboard_available_moves) ^ set(graph_available_moves))
+                        & set(bitboard_available_moves)
+                    )
+                ),
             )
             print(
                 "Graph moves available unique",
-                (set(bitboard_available_moves) ^ set(graph_available_moves))
-                & set(graph_available_moves),
+                sorted(
+                    list(
+                        (set(bitboard_available_moves) ^ set(graph_available_moves))
+                        & set(graph_available_moves)
+                    )
+                ),
             )
-
+            # print(g_graph.board.nodes)
             g_graph.make_move(move)
             g_bitboard.make_move(move)
 
@@ -120,7 +129,7 @@ def compare_moves(i):
 
 def compare_moves_threaded(number_games):
     rounds = list(range(1, number_games + 1))
-    with Pool(processes=8) as pool:
+    with Pool(processes=16) as pool:
         results = pool.imap_unordered(compare_moves, rounds)
 
         logs = []
@@ -154,5 +163,5 @@ if __name__ == "__main__":
     import time
 
     start = time.perf_counter()
-    compare_moves_threaded(10)
+    compare_moves_threaded(10000)
     print(time.perf_counter() - start)

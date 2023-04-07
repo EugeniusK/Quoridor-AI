@@ -56,3 +56,8 @@ Implement multiprocessing to accelerate comparison of moves
 Remove unnecessary code in test.py for non multiprocessed versions
 
 Fix mistakes found in bitboard.py and graph.py found from testing
+
+# 0.0.5.5
+
+Fix further mistakes when multiple rows inline in graphical representation
+Passed test with 10000 games
