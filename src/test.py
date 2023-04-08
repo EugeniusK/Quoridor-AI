@@ -9,7 +9,9 @@ from multiprocessing import Pool
 random.seed(0)
 
 
-def simulate(number_games, player_one_mode, player_two_mode, board_representation):
+def simulate(
+    number_games, player_one_mode, player_two_mode, board_representation, search_mode
+):
     rounds = []
     for i in range(1, number_games + 1):
         g = Game(
@@ -17,6 +19,7 @@ def simulate(number_games, player_one_mode, player_two_mode, board_representatio
             player_one=player_one_mode,
             player_two=player_two_mode,
             representation=board_representation,
+            search_mode=search_mode,
         )
         while g.is_over() == False:
             g.make_move(g.select(g.available_moves()))
@@ -32,7 +35,12 @@ def simulate(number_games, player_one_mode, player_two_mode, board_representatio
         json.dump(rounds, f)
 
 
-def compare_moves(i):
+def compare_moves(args):
+    i = args[0]
+    repr_1 = args[1]
+    repr_2 = args[2]
+    search_1 = args[3]
+    search_2 = args[3]
     print(i)
     total_moves = 0
     valid_moves = 0
@@ -42,14 +50,8 @@ def compare_moves(i):
     valid = []
     difference_available = []
 
-    g_bitboard = Game(
-        round=i,
-        representation="bitboard",
-    )
-    g_graph = Game(
-        round=i,
-        representation="graph",
-    )
+    g_bitboard = Game(round=i, representation=repr_1, search_mode=search_1)
+    g_graph = Game(round=i, representation=repr_2, search_mode=search_2)
     over = False
     while over == False:
         bitboard_available_moves = g_bitboard.available_moves()
@@ -127,10 +129,12 @@ def compare_moves(i):
     return one_round, total_moves, valid_moves, graph_error, bitboard_error
 
 
-def compare_moves_threaded(number_games):
+def compare_moves_threaded(number_games, repr_1, repr_2, search_1, search_2):
     rounds = list(range(1, number_games + 1))
+    args = [(x + 1, repr_1, repr_2, search_1, search_2) for x in range(number_games)]
+
     with Pool(processes=16) as pool:
-        results = pool.imap_unordered(compare_moves, rounds)
+        results = pool.imap_unordered(compare_moves, args)
 
         logs = []
 
@@ -159,9 +163,9 @@ def compare_moves_threaded(number_games):
 
 
 if __name__ == "__main__":
-    # simulate(1000)
+    # simulate(10, "random", "random", "bitboard", "UCT")
     import time
 
     start = time.perf_counter()
-    compare_moves_threaded(10000)
+    compare_moves_threaded(4, "bitboard", "graph", "BFS", "Astar")
     print(time.perf_counter() - start)

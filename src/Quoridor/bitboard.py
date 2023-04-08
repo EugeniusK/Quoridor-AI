@@ -2,8 +2,10 @@ import numpy as np
 import time
 import sys
 from .path_finding import (
+    Depth_First_Search_BitBoard,
     Breadth_First_Search_BitBoard,
     Greedy_Best_First_Search_BitBoard,
+    Uniform_Cost_Search_Bitboard,
 )
 
 north_mask = np.ones((17, 17), dtype=np.bool_)
@@ -20,7 +22,7 @@ short_west_mask = np.rot90(short_north_mask, 1)
 
 
 class QuoridorBitBoard:
-    def __init__(self):
+    def __init__(self, search_mode="GBFS"):
         self.walls = np.zeros((17, 17), dtype=np.bool_)
 
         self.p1_pos = np.zeros((17, 17), dtype=np.bool_)
@@ -35,6 +37,7 @@ class QuoridorBitBoard:
         self.turn = np.bool_(False)  # False if player 1 turn, True if player 2 turn
 
         self.over = np.bool_(False)
+        self.search_mode = search_mode
 
     def get_available_moves(self):
         # in_turn_pos references the 17x17 array that stores location of player in turn
@@ -232,22 +235,25 @@ class QuoridorBitBoard:
             )
         )
         if walls_left == True:
+            if self.search_mode == "BFS":
+                search = Breadth_First_Search_BitBoard
+            elif self.search_mode == "DFS":
+                search = Depth_First_Search_BitBoard
+            elif self.search_mode == "GBFS":
+                search = Greedy_Best_First_Search_BitBoard
+            elif self.search_mode == "UCT":
+                search = Uniform_Cost_Search_Bitboard
+            # elif self.search_mode == "Astar":
+            #     search = A_Star_Search_Graph
             for m in range(128):
                 if (
-                    Greedy_Best_First_Search_BitBoard(
-                        self.p1_pos, self.walls, np.int8(16), moves[m]
-                    )
-                    == False
-                    or Greedy_Best_First_Search_BitBoard(
-                        self.p2_pos, self.walls, np.int8(0), moves[m]
-                    )
-                    == False
+                    search(self.p1_pos, self.walls, np.int8(16), moves[m]) == False
+                    or search(self.p2_pos, self.walls, np.int8(0), moves[m]) == False
                 ):
                     moves[m] = [-1, -1, -1]
         return moves
 
     def make_move(self, move):
-
         if move[2] == 2:  # player move
             if self.turn == False:  # player 1's turn
                 self.p1_pos = np.zeros((17, 17), dtype=np.bool_)

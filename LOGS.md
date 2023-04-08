@@ -60,4 +60,9 @@ Fix mistakes found in bitboard.py and graph.py found from testing
 # 0.0.5.5
 
 Fix further mistakes when multiple rows inline in graphical representation
-Passed test with 10000 games
+Passed test with 10000 games with BFS vs BFS
+
+# 0.0.5.6
+
+Implement Uniform Cost Search, Depth First Search and A star search
+Implement selection of which search algorithm to be used during testing

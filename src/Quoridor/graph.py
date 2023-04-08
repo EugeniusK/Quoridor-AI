@@ -1,11 +1,14 @@
 from .path_finding import (
     Breadth_First_Search_Graph,
     Greedy_Best_First_Search_Graph,
+    Depth_First_Search_Graph,
+    Uniform_Cost_Search_Graph,
+    A_Star_Search_Graph,
 )
 
 
 class QuoridorGraphicalBoard:
-    def __init__(self):
+    def __init__(self, search_mode="BFS"):
         self.nodes = []  # all 81 positions possible
         """
         Array represents positions in this following order
@@ -53,6 +56,7 @@ class QuoridorGraphicalBoard:
                     neighbours.remove((row, column - 1))
 
                 self.nodes.append((position, neighbours))
+        self.search_mode = search_mode
 
     def get_available_moves(self):
         # for the player in turn, find the places the player can move to
@@ -131,7 +135,18 @@ class QuoridorGraphicalBoard:
 
         walls_available = []  # walls that players can place
         if walls_left == True:
+            if self.search_mode == "BFS":
+                search = Breadth_First_Search_Graph
+            elif self.search_mode == "DFS":
+                search = Depth_First_Search_Graph
+            elif self.search_mode == "GBFS":
+                search = Greedy_Best_First_Search_Graph
+            elif self.search_mode == "UCT":
+                search = Uniform_Cost_Search_Graph
+            elif self.search_mode == "Astar":
+                search = A_Star_Search_Graph
             # wall calculations are only made if there are walls left for player in turn to place
+            # self.display_beautiful()
             for row in range(8):
                 for column in range(8):
                     if (
@@ -233,19 +248,14 @@ class QuoridorGraphicalBoard:
                                 )
                             )
                         ):
-
                             # ensures that there is no vertical wall going through the candidate horizontal row
                             # by checking if a move from (row, column) to (row, column + 1) allowed
                             # and checking if a move from (row + 1, column) to (row + 1, column + 1) is allowed
                             # if both of them are not allowed, there is a vertical wall going through the horizontal wall
                             # NEED A STAR SEARCH ALGORITHM TO VERIFFY EXISTING PATH
                             move = ((row, column), "h")
-                            BFS_1 = Breadth_First_Search_Graph(
-                                self.nodes, self.p1_pos, 8, move
-                            )
-                            BFS_2 = Breadth_First_Search_Graph(
-                                self.nodes, self.p2_pos, 0, move
-                            )
+                            BFS_1 = search(self.nodes, self.p1_pos, 8, move)
+                            BFS_2 = search(self.nodes, self.p2_pos, 0, move)
                             if BFS_1 == True and BFS_2 == True:
                                 walls_available.append(move)
                     if (
@@ -353,12 +363,8 @@ class QuoridorGraphicalBoard:
                             # if both of them are not allowed, there is a horizontal wall going through the vertical wall
                             # NEED A STAR SEARCH ALGORITHM TO VERIFFY EXISTING PATH
                             move = ((row, column), "v")
-                            BFS_1 = Breadth_First_Search_Graph(
-                                self.nodes, self.p1_pos, 8, move
-                            )
-                            BFS_2 = Breadth_First_Search_Graph(
-                                self.nodes, self.p2_pos, 0, move
-                            )
+                            BFS_1 = search(self.nodes, self.p1_pos, 8, move)
+                            BFS_2 = search(self.nodes, self.p2_pos, 0, move)
                             if BFS_1 == True and BFS_2 == True:
                                 walls_available.append(move)
         algebraic_moves = []
@@ -456,7 +462,6 @@ class QuoridorGraphicalBoard:
                     # if no horizontal wall below (row, column) place thin lines
                     # otherwise, place thick lines to show a wall
                     if (row + 1, column) in self.nodes[row * 9 + column][1]:
-
                         line_below.append("\u2500\u2500\u2500")
                     else:
                         line_below.append("\u2501\u2501\u2501")

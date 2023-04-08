@@ -55,6 +55,7 @@ class Game:
         round=False,
         player_one="random",
         player_two="random",
+        search_mode="BFS",
         representation="graph",
         notes=False,
         round_data=None,
@@ -76,9 +77,9 @@ class Game:
             self.notes = notes
 
             if self.representation == "graph":
-                self.board = QuoridorGraphicalBoard()
+                self.board = QuoridorGraphicalBoard(search_mode=search_mode)
             elif self.representation == "bitboard":
-                self.board = QuoridorBitBoard()
+                self.board = QuoridorBitBoard(search_mode=search_mode)
 
         self.moves = []
         self.generate_times = []
