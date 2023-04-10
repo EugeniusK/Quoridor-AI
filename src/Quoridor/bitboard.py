@@ -6,6 +6,7 @@ from .path_finding import (
     Breadth_First_Search_BitBoard,
     Greedy_Best_First_Search_BitBoard,
     Uniform_Cost_Search_Bitboard,
+    A_Star_Search_Bitboard,
 )
 
 north_mask = np.ones((17, 17), dtype=np.bool_)
@@ -243,8 +244,8 @@ class QuoridorBitBoard:
                 search = Greedy_Best_First_Search_BitBoard
             elif self.search_mode == "UCT":
                 search = Uniform_Cost_Search_Bitboard
-            # elif self.search_mode == "Astar":
-            #     search = A_Star_Search_Graph
+            elif self.search_mode == "Astar":
+                search = A_Star_Search_Bitboard
             for m in range(128):
                 if (
                     search(self.p1_pos, self.walls, np.int8(16), moves[m]) == False

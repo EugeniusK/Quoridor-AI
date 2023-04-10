@@ -77,9 +77,9 @@ class Game:
             self.notes = notes
 
             if self.representation == "graph":
-                self.board = QuoridorGraphicalBoard(search_mode=search_mode)
+                self.board = QuoridorGraphicalBoard(search_mode)
             elif self.representation == "bitboard":
-                self.board = QuoridorBitBoard(search_mode=search_mode)
+                self.board = QuoridorBitBoard(search_mode)
 
         self.moves = []
         self.generate_times = []

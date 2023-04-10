@@ -66,3 +66,8 @@ Passed test with 10000 games with BFS vs BFS
 
 Implement Uniform Cost Search, Depth First Search and A star search
 Implement selection of which search algorithm to be used during testing
+
+# 0.0.5.7
+
+Implement UCT, DFS, A* for bitboard
+Fix comparison of search algorithms
