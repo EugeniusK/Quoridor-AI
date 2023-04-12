@@ -50,12 +50,14 @@ def compare_moves(args):
     valid = []
     difference_available = []
 
-    g_two = Game(round=i, representation=repr_1, search_mode=search_1)
-    g_one = Game(round=i, representation=repr_2, search_mode=search_2)
+    g_two = Game(round=i, representation=repr_2, search_mode=search_2)
+    g_one = Game(round=i, representation=repr_1, search_mode=search_1)
     over = False
     while over == False:
-        one_available_moves = g_two.available_moves()
-        two_available_moves = g_one.available_moves()
+        one_available_moves = g_one.available_moves()
+        two_available_moves = g_two.available_moves()
+        # print(repr_1, one_available_moves)
+        # print(repr_2, two_available_moves)
         if set(one_available_moves) == set(two_available_moves):
             total_moves += 1
             valid_moves += 1
@@ -70,6 +72,12 @@ def compare_moves(args):
             valid.append(False)
             difference_available.append(
                 sorted(list(set(one_available_moves) ^ set(two_available_moves)))
+            )
+            print(
+                "set",
+                one_available_moves,
+                two_available_moves,
+                list(set(one_available_moves) & set(two_available_moves)),
             )
             move = random.choice(
                 list(set(one_available_moves) & set(two_available_moves))
@@ -92,8 +100,8 @@ def compare_moves(args):
 
             g_two.display()
 
-            # print("Bitboard moves available", sorted(one_available_moves))
-            # print("Graph moves available", sorted(two_available_moves))
+            print(repr_1, "moves available", sorted(one_available_moves))
+            print(repr_2, " moves available", sorted(two_available_moves))
             print(
                 "One moves available unique",
                 sorted(
@@ -112,7 +120,6 @@ def compare_moves(args):
                     )
                 ),
             )
-            # print(g_one.board.nodes)
             g_one.make_move(move)
             g_two.make_move(move)
 
@@ -132,7 +139,7 @@ def compare_moves(args):
 def compare_moves_threaded(number_games, repr_1, repr_2, search_1, search_2):
     rounds = list(range(1, number_games + 1))
     args = [(x + 1, repr_1, repr_2, search_1, search_2) for x in range(number_games)]
-    with Pool(processes=16) as pool:
+    with Pool(processes=1) as pool:
         results = pool.imap_unordered(compare_moves, args)
 
         logs = []
@@ -160,9 +167,9 @@ def compare_moves_threaded(number_games, repr_1, repr_2, search_1, search_2):
 
 
 if __name__ == "__main__":
-    # simulate(10, "random", "random", "bitboard", "UCT")
+    # simulate(10, "random", "random", "graph_optim", "BFS")
     import time
 
     start = time.perf_counter()
-    compare_moves_threaded(1, "graph", "bitboard", "GBFS", "Astar")
+    compare_moves_threaded(1, "graph_optim", "graph_optim", "BFS", "BFS")
     print(time.perf_counter() - start)

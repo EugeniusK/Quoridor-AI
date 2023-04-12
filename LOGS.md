@@ -71,3 +71,11 @@ Implement selection of which search algorithm to be used during testing
 
 Implement UCT, DFS, A* for bitboard
 Fix comparison of search algorithms
+
+# 0.0.6
+
+Initial version of graph representation written with numpy, numba - using adjacency list
+
+Implement BFS for optimised graph
+
+Update test.py and log.py to support optimised graph

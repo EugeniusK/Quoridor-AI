@@ -1,5 +1,6 @@
 from .bitboard import QuoridorBitBoard
 from .graph import QuoridorGraphicalBoard
+from .graph_optimised import QuoridorGraphicalBoardOptim
 from AI.base import random_select
 import time
 import random
@@ -80,6 +81,8 @@ class Game:
                 self.board = QuoridorGraphicalBoard(search_mode)
             elif self.representation == "bitboard":
                 self.board = QuoridorBitBoard(search_mode)
+            elif self.representation == "graph_optim":
+                self.board = QuoridorGraphicalBoardOptim()
 
         self.moves = []
         self.generate_times = []
@@ -90,12 +93,15 @@ class Game:
     def available_moves(self):
         generate_start = time.perf_counter()
         moves = self.board.get_available_moves()
+        # print(moves, type(self).__name__)
         generate_end = time.perf_counter()
         self.generate_times.append(round((generate_end - generate_start), 8))
 
         available_moves = []
         for move in moves:
             if self.representation == "graph":
+                available_moves.append(move)
+            elif self.representation == "graph_optim":
                 available_moves.append(move)
             elif self.representation == "bitboard":
                 if move[2] == 0:
@@ -107,9 +113,9 @@ class Game:
         return available_moves
 
     def select(self, moves):
-        if self.board.turn == False:
+        if self.board.turn == False or self.board.turn == 1:
             mode = self.p1
-        elif self.board.turn == True:
+        elif self.board.turn == True or self.board.turn == 2:
             mode = self.p2
 
         if mode == "random":
@@ -123,7 +129,9 @@ class Game:
         if self.representation == "graph":
             self.moves.append(move)
             self.board.make_move(move)
-
+        elif self.representation == "graph_optim":
+            self.moves.append(move)
+            self.board.make_move(move)
         elif self.representation == "bitboard":
             self.moves.append(move)
             if len(move) == 2:
