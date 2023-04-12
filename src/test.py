@@ -10,7 +10,11 @@ random.seed(0)
 
 
 def simulate(
-    number_games, player_one_mode, player_two_mode, board_representation, search_mode
+    number_games,
+    player_one_mode,
+    player_two_mode,
+    board_representation,
+    path_finding_mode,
 ):
     rounds = []
     for i in range(1, number_games + 1):
@@ -19,12 +23,11 @@ def simulate(
             player_one=player_one_mode,
             player_two=player_two_mode,
             representation=board_representation,
-            search_mode=search_mode,
+            path_finding_mode=path_finding_mode,
         )
         while g.is_over() == False:
             g.make_move(g.select(g.available_moves()))
             # g.display()
-
         rounds.append(g.log())
         print(g.log()["Total time"])
     with open(
@@ -50,8 +53,8 @@ def compare_moves(args):
     valid = []
     difference_available = []
 
-    g_two = Game(round=i, representation=repr_2, search_mode=search_2)
-    g_one = Game(round=i, representation=repr_1, search_mode=search_1)
+    g_two = Game(round=i, representation=repr_2, path_finding_mode=search_2)
+    g_one = Game(round=i, representation=repr_1, path_finding_mode=search_1)
     over = False
     while over == False:
         one_available_moves = g_one.available_moves()
@@ -167,9 +170,12 @@ def compare_moves_threaded(number_games, repr_1, repr_2, search_1, search_2):
 
 
 if __name__ == "__main__":
-    # simulate(10, "random", "random", "graph_optim", "BFS")
+    simulate(10, "random", "random", "graph_optim", "UCT")
+    print("")
+    simulate(10, "random", "random", "graph_optim", "Astar")
+
     import time
 
-    start = time.perf_counter()
-    compare_moves_threaded(1, "graph_optim", "graph_optim", "BFS", "BFS")
-    print(time.perf_counter() - start)
+    # start = time.perf_counter()
+    # compare_moves_threaded(1, "graph_optim", "graph_optim", "BFS", "BFS")
+    # print(time.perf_counter() - start)

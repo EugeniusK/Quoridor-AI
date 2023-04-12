@@ -2,7 +2,13 @@ import numpy as np
 from numba import int8, boolean, njit
 from numba.experimental import jitclass
 
-from .path_finding_optimised import Breadth_First_Search_Graph_Optim
+from .path_finding_optimised import (
+    Breadth_First_Search_Graph_Optim,
+    Depth_First_Search_Graph_Optim,
+    Greedy_Best_First_Search_Graph_Optim,
+    Uniform_Cost_Search_Graph_Optim,
+    A_Star_Search_Graph_Optim,
+)
 from .functions import roll_numba
 
 
@@ -18,7 +24,10 @@ from .functions import roll_numba
 #     ]
 # )
 class QuoridorGraphicalBoardOptim:
-    def __init__(self):
+    def __init__(self, path_finding_mode="BFS"):
+        # Adjacenly list of 9x9x5x2 size
+        # 0th index on dim. 3 is index [row, col]
+        # 1-4th index on dim. 3 is index [row, col] of neighbours
         self.nodes = np.array(
             [
                 [
@@ -123,17 +132,29 @@ class QuoridorGraphicalBoardOptim:
             ],
             dtype=np.int8,
         )
+
+        # Position of both players represented as [row, col]
         self.p1_pos = np.array([0, 4], dtype=np.int8)
         self.p2_pos = np.array([8, 4], dtype=np.int8)
 
+        # Number of walls that each player has placed
         self.p1_walls_placed = np.int8(0)
         self.p2_walls_placed = np.int8(0)
 
+        # Player who is in turn
         self.turn = np.int8(1)
+
+        # If the game is over or not
         self.over = np.bool8(False)
 
-    # @profile
+        # Search mode to be used
+        self.path_finding_mode = path_finding_mode
+
     def get_available_moves(self):
+        # Ensures that if there are no walls left for the player in turn to place,
+        # there are no path finding algorithms run to improve efficiency
+
+        # Uses variable reference to simplify code with in_turn_pos, out_turn_pos
         walls_left = True
         if self.turn == 1:
             in_turn_pos = self.p1_pos
@@ -146,11 +167,17 @@ class QuoridorGraphicalBoardOptim:
             if self.p2_walls_placed == 10:
                 walls_left = False
 
+        # Retrieves the available moves for the both players in and out of turn
         in_turn_moves = self.nodes[in_turn_pos[0], in_turn_pos[1], 1:]
         out_turn_moves = self.nodes[out_turn_pos[0], out_turn_pos[1], 1:]
 
+        # Blank array that will store the moves available as [[row, col], [row, col], ...]
+        # Shape of blank array is 5x2 as there is a maximum of 5 places to move a piece to
         moves_available = np.full((5, 2), -1, dtype=np.int8)
 
+        # Determines if the two pieces are directly next to each other
+        # to calculate moves where player in turn jumps over other player
+        # Otherwise, add moves to moves_available normally
         adjacent = np.bool8(False)
         for i in range(4):
             if (
@@ -161,6 +188,11 @@ class QuoridorGraphicalBoardOptim:
 
             else:
                 moves_available[i] = in_turn_moves[i]
+
+        # If the players are adjacent, determine if the player can jump over the other
+        # or if there is no square to jump over to (due to wall, off the board)
+        # find moves to the "left" and "right" (immediately adjacent)
+
         if adjacent:
             relative_pos = out_turn_pos - in_turn_pos
             if relative_pos[0] == -1 and relative_pos[1] == 0:
@@ -249,6 +281,11 @@ class QuoridorGraphicalBoardOptim:
                                 if moves_available[j][0] == -1:
                                     moves_available[j] = out_turn_moves[i]
                                     break
+
+        # Default array of what wall placeemnts and moves are possible
+        # wall placeemnts are stored as [row, col, type]
+        # where type - horizontal: 0 and vertical : 1
+        # moves will be stored as [row, col, 2]
         walls_moves_available = np.array(
             [
                 [0, 0, 0],
@@ -386,11 +423,25 @@ class QuoridorGraphicalBoardOptim:
                 [-1, -1, -1],
             ]
         )
+        # Add moves to the end of walls_moves_available
         walls_moves_available[128:] = np.hstack(
             (moves_available, np.full((5, 1), 2, dtype=np.int8))
         )
 
+        # If there are walls that can be placed,
+        # ensure that there are no walls placed already
+        # and no walls of other type preventing it from being placed
         if walls_left:
+            if self.path_finding_mode == "BFS":
+                search = Breadth_First_Search_Graph_Optim
+            elif self.path_finding_mode == "DFS":
+                search = Depth_First_Search_Graph_Optim
+            elif self.path_finding_mode == "GBFS":
+                search = Greedy_Best_First_Search_Graph_Optim
+            elif self.path_finding_mode == "UCT":
+                search = Uniform_Cost_Search_Graph_Optim
+            elif self.path_finding_mode == "Astar":
+                search = A_Star_Search_Graph_Optim
             for row in range(8):
                 for col in range(8):
                     hor_found = False
@@ -454,12 +505,12 @@ class QuoridorGraphicalBoardOptim:
                                     and found[row + 4] == False
                                 )
                             ):
-                                if not Breadth_First_Search_Graph_Optim(
+                                if not search(
                                     self.nodes,
                                     self.p1_pos,
                                     np.int8(8),
                                     np.array([row, col, 0], dtype=np.int8),
-                                ) or not Breadth_First_Search_Graph_Optim(
+                                ) or not search(
                                     self.nodes,
                                     self.p2_pos,
                                     np.int8(0),
@@ -529,12 +580,12 @@ class QuoridorGraphicalBoardOptim:
                                     and found[col + 4] == False
                                 )
                             ):
-                                if not Breadth_First_Search_Graph_Optim(
+                                if not search(
                                     self.nodes,
                                     self.p1_pos,
                                     np.int8(8),
                                     np.array([row, col, 1], dtype=np.int8),
-                                ) or not Breadth_First_Search_Graph_Optim(
+                                ) or not search(
                                     self.nodes,
                                     self.p2_pos,
                                     np.int8(0),
@@ -550,6 +601,8 @@ class QuoridorGraphicalBoardOptim:
 
                     if ver_found == False:
                         walls_moves_available[64 + row * 8 + col] = [-1, -1, -1]
+
+        # Array for all algebraic moves as strings
         algebraic_moves = []
         for i in range(133):
             if walls_moves_available[i][0] != -1:
@@ -569,6 +622,7 @@ class QuoridorGraphicalBoardOptim:
         return algebraic_moves
 
     def make_move(self, alg_move):
+        # Converts algebraic notated move to numpy array
         if len(alg_move) == 2:
             move = np.array([int(alg_move[1]) - 1, ord(alg_move[0]) - 97, 2])
         elif len(alg_move) == 3:
@@ -577,7 +631,7 @@ class QuoridorGraphicalBoardOptim:
             elif alg_move[2] == "v":
                 move = np.array([int(alg_move[1]) - 1, ord(alg_move[0]) - 97, 1])
 
-        # move is of format (row, column, type - 0: hor, 1: ver, 2: nor)
+        # If the move is a normal move, change the player pos
         if move[2] == 2:  # player move
             if self.turn == 1:
                 self.p1_pos = move[0:2]
@@ -838,102 +892,7 @@ class QuoridorGraphicalBoardOptim:
 
 
 # board = QuoridorGraphicalBoardOptim()
-# board.make_move(np.array([0, 4, 0]))
 # board.display_beautiful()
 # board.get_available_moves()
 # # print(board.nodes)
 # board.display_beautiful()
-
-
-# @njit
-# def custom_isin(out_turn_pos, out_turn_moves):
-#     return ~(
-#         np.count_nonzero(
-#             (out_turn_moves - out_turn_pos - np.array([-1, 0]))
-#             .astype(np.bool8)
-#             .sum(axis=1)
-#         )
-#         == 4
-#     )
-
-
-# @njit
-# def custom_isin_for(out_turn_pos, out_turn_moves):
-#     for i in range(4):
-#         if (
-#             out_turn_moves[i][0] == out_turn_pos[0] - 1
-#             and out_turn_moves[i][1] == out_turn_pos[1]
-#         ):
-#             return True
-#         return False
-#     # return (
-#     #         np.count_nonzero(
-#     #             np.array(
-#     #                 out_turn_moves - out_turn_pos - np.array[-1, 0],
-#     #                 dtype=np.bool8,
-#     #             ).sum(axis=1)
-#     #         )
-#     #         == 4
-#     #     )
-
-
-# setup = """
-# import numpy as np
-# from numba import njit, int8, boolean
-
-# a = np.array([[-1, -1], [0, 5], [1, 4], [0, 3]], dtype=np.int8)
-# b = np.array([0, 4], dtype=np.int8)
-
-# @njit(boolean(int8[:], int8[:,:]))
-# def custom_isin_one(out_turn_pos, out_turn_moves):
-#     for move in out_turn_moves:
-#         if np.array_equal(move, out_turn_pos + np.array([-1, 0])):
-#             return True
-#     return False
-
-# @njit(boolean(int8[:], int8[:,:]))
-# def custom_isin_two(out_turn_pos, out_turn_moves):
-#     for i in range(4):
-#         if (
-#             out_turn_moves[i][0] == out_turn_pos[0] - 1
-#             and out_turn_moves[i][1] == out_turn_pos[1]
-#         ):
-#             return True
-#     return False
-
-# """
-
-# # print(a - b)
-
-
-# # import timeit
-
-# # print(timeit.timeit("custom_isin_one(b,a)", setup=setup, number=1))
-# # print(timeit.timeit("custom_isin_two(b,a)", setup=setup, number=1))
-
-# # print(timeit.timeit("custom_isin_one(b,a)", setup=setup) / 1_000_000)
-# # print(timeit.timeit("custom_isin_two(b,a)", setup=setup) / 1_000_000)
-
-# # # if __name__ == "__main__":
-# # #     print("not supposed to be run")
-# # #     raise ImportError
-
-# print(
-#     np.vstack(
-#         (
-#             np.hstack(
-#                 (
-#                     np.indices((8, 8), dtype=np.int8).reshape(2, -1).T,
-#                     np.full((64, 1), 0, dtype=np.int8),
-#                 )
-#             ),
-#             np.hstack(
-#                 (
-#                     np.indices((8, 8), dtype=np.int8).reshape(2, -1).T,
-#                     np.full((64, 1), 1, dtype=np.int8),
-#                 )
-#             ),
-#             np.full((5, 3), -1, dtype=np.int8),
-#         )
-#     )
-# )

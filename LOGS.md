@@ -79,3 +79,8 @@ Initial version of graph representation written with numpy, numba - using adjace
 Implement BFS for optimised graph
 
 Update test.py and log.py to support optimised graph
+
+# 0.0.6.1
+
+Implement DFS, GBFS, A*, UCT
+Rename variables in test.py and log.py
