@@ -84,3 +84,8 @@ Update test.py and log.py to support optimised graph
 
 Implement DFS, GBFS, A*, UCT
 Rename variables in test.py and log.py
+
+# 0.0.6.2
+
+Add psuedocode inline to path finding functions
+More tweaks to path finding functions
