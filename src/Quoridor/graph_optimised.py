@@ -152,7 +152,7 @@ class QuoridorGraphicalBoardOptim:
         # Search mode to be used
         self.path_finding_mode = path_finding_mode
 
-    def get_available_moves(self):
+    def get_available_actions(self):
         # Ensures that if there are no walls left for the player in turn to place,
         # there are no path finding algorithms run to improve efficiency
 
@@ -633,15 +633,15 @@ class QuoridorGraphicalBoardOptim:
                     )
         return algebraic_moves
 
-    def make_move(self, alg_move):
+    def take_action(self, action):
         # Converts algebraic notated move to numpy array
-        if len(alg_move) == 2:
-            move = np.array([int(alg_move[1]) - 1, ord(alg_move[0]) - 97, 2])
-        elif len(alg_move) == 3:
-            if alg_move[2] == "h":
-                move = np.array([int(alg_move[1]) - 1, ord(alg_move[0]) - 97, 0])
-            elif alg_move[2] == "v":
-                move = np.array([int(alg_move[1]) - 1, ord(alg_move[0]) - 97, 1])
+        if len(action) == 2:
+            move = np.array([int(action[1]) - 1, ord(action[0]) - 97, 2])
+        elif len(action) == 3:
+            if action[2] == "h":
+                move = np.array([int(action[1]) - 1, ord(action[0]) - 97, 0])
+            elif action[2] == "v":
+                move = np.array([int(action[1]) - 1, ord(action[0]) - 97, 1])
 
         # If the move is a normal move, change the player pos
         if move[2] == 2:  # player move
@@ -905,9 +905,9 @@ class QuoridorGraphicalBoardOptim:
 
 class QuoridorGraphicalBoardMoreOptim:
     def __init__(self, path_finding_mode="BFS"):
-        # Adjaceny list stores valid edges as boolean instead of representing index
+        # Adjaceny list stores valid edges as boolean instead of representing 2D index
         # 9x9x4 size as each position has 4 possible - North, East, South, West
-        # [1, 2, 3, 4] represents valid in North, East, South, West <-- in this order
+        # Each node has [1, 2, 3, 4] whichrepresents valid in North, East, South, West <-- in this order
         self.nodes = np.array(
             [
                 [
@@ -1014,6 +1014,7 @@ class QuoridorGraphicalBoardMoreOptim:
         )
 
         # Position of both players represented as [row, col]
+        # From perspective of player 1, [0,0] is a1 and [8,8] is h9
         self.p1_pos = np.array([0, 4], dtype=np.int8)
         self.p2_pos = np.array([8, 4], dtype=np.int8)
 
@@ -1030,7 +1031,7 @@ class QuoridorGraphicalBoardMoreOptim:
         # Search mode to be used
         self.path_finding_mode = path_finding_mode
 
-    def get_available_moves(self):
+    def get_available_actions(self):
         walls_left = True
         if self.turn == 1:
             in_turn_pos = self.p1_pos
@@ -1046,6 +1047,8 @@ class QuoridorGraphicalBoardMoreOptim:
         # Boolean array indicating if S,E,N,W moves are possible
         in_turn_moves = np.copy(self.nodes[in_turn_pos[0], in_turn_pos[1]])
 
+        # Array to hold a maximum of 133 actions
+        # Theoretically, 64 horizontal walls, 64 vertical walls and 5 moves are possible
         actions = np.array(
             [
                 [0, 0, 0],
@@ -1185,112 +1188,147 @@ class QuoridorGraphicalBoardMoreOptim:
             dtype=np.int8,
         )
 
+        # Ensures that any moves calculated will be added to unused index
         moves_added = 0
+
         adjacent = False
 
-        NORTH_MOVE = in_turn_pos + [1, 0]
-        EAST_MOVE = in_turn_pos + [0, 1]
-        SOUTH_MOVE = in_turn_pos + [-1, 0]
-        WEST_MOVE = in_turn_pos + [0, -1]
+        NORTH_MOVE = in_turn_pos + np.array([1, 0], dtype=np.int8)
+        EAST_MOVE = in_turn_pos + np.array([0, 1], dtype=np.int8)
+        SOUTH_MOVE = in_turn_pos + np.array([-1, 0], dtype=np.int8)
+        WEST_MOVE = in_turn_pos + np.array([0, -1], dtype=np.int8)
 
+        # Code below follows this structure:
+        # If the move in a direction is valid
+        # --> If the move causes the player in turn
+        #     to land on player out of turn
+        #         Record that players are adjacent
+        #     Otherwise, add the move to actions array
         if in_turn_moves[0]:
-            if np.array_equal(NORTH_MOVE, out_turn_pos):
+            if NORTH_MOVE[0] == out_turn_pos[0] and NORTH_MOVE[1] == out_turn_pos[1]:
                 adjacent = True
             else:
                 actions[128 + moves_added, 0:2] = NORTH_MOVE
-                if NORTH_MOVE[0] == 9:
-                    print("over", self.nodes)
-                    print(in_turn_moves, in_turn_pos)
-                    raise IndexError
                 moves_added += 1
         if in_turn_moves[1]:
-            if np.array_equal(EAST_MOVE, out_turn_pos):
+            if EAST_MOVE[0] == out_turn_pos[0] and EAST_MOVE[1] == out_turn_pos[1]:
                 adjacent = True
             else:
                 actions[128 + moves_added, 0:2] = EAST_MOVE
                 moves_added += 1
         if in_turn_moves[2]:
-            if np.array_equal(SOUTH_MOVE, out_turn_pos):
+            if SOUTH_MOVE[0] == out_turn_pos[0] and SOUTH_MOVE[1] == out_turn_pos[1]:
                 adjacent = True
             else:
                 actions[128 + moves_added, 0:2] = SOUTH_MOVE
                 moves_added += 1
         if in_turn_moves[3]:
-            if np.array_equal(WEST_MOVE, out_turn_pos):
+            if WEST_MOVE[0] == out_turn_pos[0] and WEST_MOVE[1] == out_turn_pos[1]:
                 adjacent = True
             else:
                 actions[128 + moves_added, 0:2] = WEST_MOVE
                 moves_added += 1
 
+        # If the 2 players are adjacent,
+        # Determine if the player in turn can jump over the other player
+        # or if there are moves available to the side
         if adjacent:
             relative_pos = out_turn_pos - in_turn_pos
             # player in turn is North of player out of turn
-            if np.array_equal(relative_pos, [1, 0]):
+            if relative_pos[0] == np.int8(1) and relative_pos[1] == np.int8(0):
                 # If double North move is possible, add
                 if self.nodes[out_turn_pos[0], out_turn_pos[1]][0]:
-                    actions[128 + moves_added, 0:2] = in_turn_pos + [2, 0]
+                    actions[128 + moves_added, 0:2] = in_turn_pos + np.array(
+                        [2, 0], dtype=np.int8
+                    )
                     moves_added += 1
                 else:
                     # Otherwise add North East, North West moves
                     if self.nodes[out_turn_pos[0], out_turn_pos[1]][1]:
-                        actions[128 + moves_added, 0:2] = in_turn_pos + [1, 1]
+                        actions[128 + moves_added, 0:2] = in_turn_pos + np.array(
+                            [1, 1], dtype=np.int8
+                        )
                         moves_added += 1
                     if self.nodes[out_turn_pos[0], out_turn_pos[1]][3]:
-                        actions[128 + moves_added, 0:2] = in_turn_pos + [
-                            1,
-                            -1,
-                        ]
+                        actions[128 + moves_added, 0:2] = in_turn_pos + np.array(
+                            [
+                                1,
+                                -1,
+                            ],
+                            dtype=np.int8,
+                        )
                         moves_added += 1
             # player in turn is East of player out of turn
-            elif np.array_equal(relative_pos, [0, 1]):
+            elif relative_pos[0] == np.int8(0) and relative_pos[1] == np.int8(1):
                 # If double East move is possible, add
                 if self.nodes[out_turn_pos[0], out_turn_pos[1]][1]:
-                    actions[128 + moves_added, 0:2] = in_turn_pos + [0, 2]
+                    actions[128 + moves_added, 0:2] = in_turn_pos + np.array(
+                        [0, 2], dtype=np.int8
+                    )
                     moves_added += 1
                 else:
                     # Otherwise add South East, North East moves
                     if self.nodes[out_turn_pos[0], out_turn_pos[1]][2]:
-                        actions[128 + moves_added, 0:2] = in_turn_pos + [-1, 1]
+                        actions[128 + moves_added, 0:2] = in_turn_pos + np.array(
+                            [-1, 1], dtype=np.int8
+                        )
                         moves_added += 1
                     if self.nodes[out_turn_pos[0], out_turn_pos[1]][0]:
-                        actions[128 + moves_added, 0:2] = in_turn_pos + [
-                            1,
-                            1,
-                        ]
+                        actions[128 + moves_added, 0:2] = in_turn_pos + np.array(
+                            [
+                                1,
+                                1,
+                            ],
+                            dtype=np.int8,
+                        )
                         moves_added += 1
             # player in turn is South of player out of turn
-            elif np.array_equal(relative_pos, [-1, 0]):
+            elif relative_pos[0] == np.int8(-1) and relative_pos[1] == np.int8(0):
                 # If double South move is possible, add
                 if self.nodes[out_turn_pos[0], out_turn_pos[1]][2]:
-                    actions[128 + moves_added, 0:2] = in_turn_pos + [-2, 0]
+                    actions[128 + moves_added, 0:2] = in_turn_pos + np.array(
+                        [-2, 0], dtype=np.int8
+                    )
                     moves_added += 1
                 else:
                     # Otherwise add South East, South West moves
                     if self.nodes[out_turn_pos[0], out_turn_pos[1]][1]:
-                        actions[128 + moves_added, 0:2] = in_turn_pos + [-1, 1]
+                        actions[128 + moves_added, 0:2] = in_turn_pos + np.array(
+                            [-1, 1], dtype=np.int8
+                        )
                         moves_added += 1
                     if self.nodes[out_turn_pos[0], out_turn_pos[1]][3]:
-                        actions[128 + moves_added, 0:2] = in_turn_pos + [
-                            -1,
-                            -1,
-                        ]
+                        actions[128 + moves_added, 0:2] = in_turn_pos + np.array(
+                            [
+                                -1,
+                                -1,
+                            ],
+                            dtype=np.int8,
+                        )
                         moves_added += 1
             # player in turn is West of player out of turn
-            elif np.array_equal(relative_pos, [0, -1]):
+            elif relative_pos[0] == np.int8(0) and relative_pos[1] == np.int8(-1):
                 # If double West move is possible, add
                 if self.nodes[out_turn_pos[0], out_turn_pos[1]][3]:
-                    actions[128 + moves_added, 0:2] = in_turn_pos + [0, -2]
+                    actions[128 + moves_added, 0:2] = in_turn_pos + np.array(
+                        [0, -2], dtype=np.int8
+                    )
                     moves_added += 1
                 else:
                     # Otherwise add South West, North West moves
                     if self.nodes[out_turn_pos[0], out_turn_pos[1]][2]:
-                        actions[128 + moves_added, 0:2] = in_turn_pos + [-1, -1]
+                        actions[128 + moves_added, 0:2] = in_turn_pos + np.array(
+                            [-1, -1], dtype=np.int8
+                        )
                         moves_added += 1
                     if self.nodes[out_turn_pos[0], out_turn_pos[1]][0]:
-                        actions[128 + moves_added, 0:2] = in_turn_pos + [
-                            1,
-                            -1,
-                        ]
+                        actions[128 + moves_added, 0:2] = in_turn_pos + np.array(
+                            [
+                                1,
+                                -1,
+                            ],
+                            dtype=np.int8,
+                        )
                         moves_added += 1
 
         if walls_left:
@@ -1347,13 +1385,16 @@ class QuoridorGraphicalBoardMoreOptim:
                                 self.p1_pos,
                                 8,
                                 np.array([row, col, 0], dtype=np.int8),
-                            ) or search(
+                            ) or not search(
                                 self.nodes,
                                 self.p2_pos,
                                 0,
                                 np.array([row, col, 0], dtype=np.int8),
                             ):
                                 actions[row * 8 + col] = [-1, -1, -1]
+                        else:
+                            actions[row * 8 + col] = [-1, -1, -1]
+
                     else:
                         actions[row * 8 + col] = [-1, -1, -1]
 
@@ -1375,7 +1416,7 @@ class QuoridorGraphicalBoardMoreOptim:
                                     or self.nodes[row, col + 3, 0]
                                 )
                                 and ~self.nodes[row, col - 1, 0]
-                                and ~self.nodes[row, col, 2]
+                                and ~self.nodes[row, col, 0]
                                 and ~self.nodes[row, col + 1, 0]
                                 and ~self.nodes[row, col + 2, 0]
                             )
@@ -1404,6 +1445,9 @@ class QuoridorGraphicalBoardMoreOptim:
                                 np.array([row, col, 1], dtype=np.int8),
                             ):
                                 actions[64 + row * 8 + col] = [-1, -1, -1]
+                        else:
+                            actions[64 + row * 8 + col] = [-1, -1, -1]
+
                     else:
                         actions[64 + row * 8 + col] = [-1, -1, -1]
 
@@ -1421,19 +1465,17 @@ class QuoridorGraphicalBoardMoreOptim:
                         )
                 if actions[i][2] == 2:
                     algebraic_moves.append(f"{chr(97+actions[i][1])}{actions[i][0]+1}")
-        # print(algebraic_moves)
-        # self.display_beautiful()
         return algebraic_moves
 
-    def make_move(self, alg_move):
+    def take_action(self, action):
         # print(alg_move)
-        if len(alg_move) == 2:
-            move = np.array([int(alg_move[1]) - 1, ord(alg_move[0]) - 97, 2])
-        elif len(alg_move) == 3:
-            if alg_move[2] == "h":
-                move = np.array([int(alg_move[1]) - 1, ord(alg_move[0]) - 97, 0])
-            elif alg_move[2] == "v":
-                move = np.array([int(alg_move[1]) - 1, ord(alg_move[0]) - 97, 1])
+        if len(action) == 2:
+            move = np.array([int(action[1]) - 1, ord(action[0]) - 97, 2])
+        elif len(action) == 3:
+            if action[2] == "h":
+                move = np.array([int(action[1]) - 1, ord(action[0]) - 97, 0])
+            elif action[2] == "v":
+                move = np.array([int(action[1]) - 1, ord(action[0]) - 97, 1])
 
         if move[2] == 2:
             if self.turn == 1:
@@ -1626,8 +1668,3 @@ class QuoridorGraphicalBoardMoreOptim:
 
     def is_over(self):
         return self.over
-
-
-# board = QuoridorGraphicalBoardMoreOptim()
-# print(board.get_available_actions())
-# board.display_beautiful()

@@ -31,7 +31,7 @@ class QuoridorGraphicalBoard:
         self.p1_walls_placed = 0
         self.p2_walls_placed = 0
 
-        self.turn = 0  # False if player 1 turn, True if player 2 turn
+        self.turn = 0  # 0 if player 1 turn, 1 if player 2 turn
 
         self.over = False
         for row in range(0, 9):
@@ -58,7 +58,7 @@ class QuoridorGraphicalBoard:
                 self.nodes.append((position, neighbours))
         self.search_mode = search_mode
 
-    def get_available_moves(self):
+    def get_available_actions(self):
         # for the player in turn, find the places the player can move to
         # as well as finding the location of walls that can be placed
         # while allowing the other player to reach their winning side
@@ -159,7 +159,7 @@ class QuoridorGraphicalBoard:
                         # checking if a move from (row, column) to (row + 1, column) AND (row, column + 1)
                         # and (row + 1, column + 1) is allowed
                         # this is only checked for rows 0~7 as row 8 will check for non-existant row 9
-                        # and only for columns 0~7 as colum 8 will check for non-existant column 9
+                        # and only for columns 0~7 as column 8 will check for non-existant column 9
                         if (
                             (
                                 self.nodes[row * 9 + column][0]
@@ -370,7 +370,7 @@ class QuoridorGraphicalBoard:
         algebraic_moves = []
         for move in (
             in_turn_moves + walls_available
-        ):  # wrong format to algebraic notation
+        ):  # Converts wrong format ((row, colymn), 'type') to algebraic notation
             if type(move[0]) == tuple:
                 if move[1] == "h":
                     algebraic_move = f"{chr(97+move[0][1])}{move[0][0]+1}h"
@@ -381,14 +381,14 @@ class QuoridorGraphicalBoard:
             algebraic_moves.append(algebraic_move)
         return algebraic_moves
 
-    def make_move(self, move):
-        if len(move) == 2:
-            # move is in format (row, column)
+    def take_action(self, action):
+        if len(action) == 2:
+            #
             # is a move to row, column
             if self.turn == 0:  # if it's player 1 turn
                 self.p1_pos = (
-                    int(move[1]) - 1,
-                    ord(move[0]) - 97,
+                    int(action[1]) - 1,
+                    ord(action[0]) - 97,
                 )  # moves player 1 to new position
                 if self.p1_pos[0] == 8:
                     # if the new position is on the winning row, game is over
@@ -398,31 +398,31 @@ class QuoridorGraphicalBoard:
 
             elif self.turn == 1:  # if it's player 2 turn
                 self.p2_pos = (
-                    int(move[1]) - 1,
-                    ord(move[0]) - 97,
+                    int(action[1]) - 1,
+                    ord(action[0]) - 97,
                 )  # moves player 2 to new position
                 if self.p2_pos[0] == 0:
                     # if the new position is on the winning row, game is over
                     self.over = True
                 else:
                     self.turn = 0  # change turn to other player
-        elif len(move) == 3:
+        elif len(action) == 3:
             # move is in format ((row, column), direction)
             # is a wall place
             pos = (
-                int(move[1]) - 1,
-                ord(move[0]) - 97,
+                int(action[1]) - 1,
+                ord(action[0]) - 97,
             )
 
             # for a wall place, remove B as a neighbour from A and remove A as a neighbour from B and repeat for C and D
-            if move[2] == "h":
+            if action[2] == "h":
                 self.nodes[pos[0] * 9 + pos[1]][1].remove((pos[0] + 1, pos[1]))
                 self.nodes[pos[0] * 9 + pos[1] + 9][1].remove((pos[0], pos[1]))
 
                 self.nodes[pos[0] * 9 + pos[1] + 1][1].remove((pos[0] + 1, pos[1] + 1))
                 self.nodes[pos[0] * 9 + pos[1] + 10][1].remove((pos[0], pos[1] + 1))
 
-            elif move[2] == "v":
+            elif action[2] == "v":
                 self.nodes[pos[0] * 9 + pos[1]][1].remove((pos[0], pos[1] + 1))
                 self.nodes[pos[0] * 9 + pos[1] + 1][1].remove((pos[0], pos[1]))
 

@@ -964,7 +964,7 @@ def A_Star_Search_Graph_Optim(nodes, pos, destination_row, move):
                     frontier[in_frontier_index, 2] = node[2] + 1
 
 
-# @njit(cache=True)
+@njit(cache=True)
 def Breadth_First_Search_Graph_More_Optim(nodes, pos, destination_row, move):
     change_idx = np.zeros(4, dtype=np.bool8)
     if move[2] == 0:  # horizontal wall move

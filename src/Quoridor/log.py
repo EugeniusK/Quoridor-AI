@@ -98,7 +98,7 @@ class Game:
 
     def available_moves(self):
         generate_start = time.perf_counter()
-        moves = self.board.get_available_moves()
+        moves = self.board.get_available_actions()
         # print(moves, type(self).__name__)
         generate_end = time.perf_counter()
         self.generate_times.append(round((generate_end - generate_start), 8))
@@ -137,17 +137,17 @@ class Game:
     def make_move(self, move):
         if self.representation == "graph":
             self.moves.append(move)
-            self.board.make_move(move)
+            self.board.take_action(move)
         elif (
             self.representation == "graph_optim"
             or self.representation == "graph_optim_more"
         ):
             self.moves.append(move)
-            self.board.make_move(move)
+            self.board.take_action(move)
         elif self.representation == "bitboard":
             self.moves.append(move)
             if len(move) == 2:
-                self.board.make_move(
+                self.board.take_action(
                     np.array(
                         [(int(move[1]) - 1) * 2, (ord(move[0]) - 97) * 2, 2],
                         dtype=np.int8,
@@ -155,13 +155,13 @@ class Game:
                 )
             else:
                 if move[2] == "h":
-                    self.board.make_move(
+                    self.board.take_action(
                         np.array(
                             [int(move[1]) - 1, ord(move[0]) - 97, 0], dtype=np.int8
                         )
                     )
                 elif move[2] == "v":
-                    self.board.make_move(
+                    self.board.take_action(
                         np.array(
                             [int(move[1]) - 1, ord(move[0]) - 97, 1], dtype=np.int8
                         )

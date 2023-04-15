@@ -40,7 +40,7 @@ class QuoridorBitBoard:
         self.over = np.bool_(False)
         self.search_mode = search_mode
 
-    def get_available_moves(self):
+    def get_available_actions(self):
         # in_turn_pos references the 17x17 array that stores location of player in turn
         # out_turn_pos references the 17x17 array that stores location of the player out of turn
         walls_left = True  # possible wall placements calculated only when player in turn hasn't placed 10 walls
@@ -254,28 +254,28 @@ class QuoridorBitBoard:
                     moves[m] = [-1, -1, -1]
         return moves
 
-    def make_move(self, move):
-        if move[2] == 2:  # player move
+    def take_action(self, action):
+        if action[2] == 2:  # player move
             if self.turn == False:  # player 1's turn
                 self.p1_pos = np.zeros((17, 17), dtype=np.bool_)
-                self.p1_pos[move[0]][move[1]] = True
-                if move[0] == 16:
+                self.p1_pos[action[0]][action[1]] = True
+                if action[0] == 16:
                     self.over = True
                 else:
                     self.turn = True
             else:  # player 2's turn
                 self.p2_pos = np.zeros((17, 17), dtype=np.bool_)
-                self.p2_pos[move[0]][move[1]] = True
-                if move[0] == 0:
+                self.p2_pos[action[0]][action[1]] = True
+                if action[0] == 0:
                     self.over = True
                 else:
                     self.turn = False
 
         else:
-            if move[2] == 0:  # horizontal wall
-                self.walls[move[0] * 2 + 1, move[1] * 2 : move[1] * 2 + 3] = True
-            elif move[2] == 1:  # vertical wall
-                self.walls[move[0] * 2 : move[0] * 2 + 3, move[1] * 2 + 1] = True
+            if action[2] == 0:  # horizontal wall
+                self.walls[action[0] * 2 + 1, action[1] * 2 : action[1] * 2 + 3] = True
+            elif action[2] == 1:  # vertical wall
+                self.walls[action[0] * 2 : action[0] * 2 + 3, action[1] * 2 + 1] = True
             if self.turn == False:
                 self.p1_walls_placed += 1
                 self.turn = True
