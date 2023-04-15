@@ -27,7 +27,7 @@ def simulate(
         )
         while g.is_over() == False:
             g.make_move(g.select(g.available_moves()))
-            # g.display()
+            g.display()
         rounds.append(g.log())
         print(g.log()["Total time"])
     with open(
@@ -76,12 +76,7 @@ def compare_moves(args):
             difference_available.append(
                 sorted(list(set(one_available_moves) ^ set(two_available_moves)))
             )
-            print(
-                "set",
-                one_available_moves,
-                two_available_moves,
-                list(set(one_available_moves) & set(two_available_moves)),
-            )
+
             move = random.choice(
                 list(set(one_available_moves) & set(two_available_moves))
             )
@@ -170,12 +165,12 @@ def compare_moves_threaded(number_games, repr_1, repr_2, search_1, search_2):
 
 
 if __name__ == "__main__":
-    simulate(10, "random", "random", "graph_optim", "UCT")
-    print("")
-    simulate(10, "random", "random", "graph_optim", "Astar")
+    # simulate(10, "random", "random", "graph_optim", "DFS")
+    print()
+    # simulate(1, "random", "random", "graph_optim_more", "DFS")
 
     import time
 
     # start = time.perf_counter()
-    # compare_moves_threaded(1, "graph_optim", "graph_optim", "BFS", "BFS")
+    compare_moves_threaded(1, "graph", "graph_optim_more", "BFS", "BFS")
     # print(time.perf_counter() - start)

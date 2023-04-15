@@ -89,3 +89,7 @@ Rename variables in test.py and log.py
 
 Add psuedocode inline to path finding functions
 More tweaks to path finding functions
+
+# 0.0.6.3
+
+Add more variants of optimised graphs - in python

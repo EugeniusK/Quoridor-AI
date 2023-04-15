@@ -3,7 +3,7 @@ from numba import njit, int8, boolean
 from .functions import roll_numba
 
 
-@njit(cache=True)  # @njit(boolean(int8[:, :, :, :], int8[:, :], int8, int8[:]))
+@njit(cache=True)
 def Breadth_First_Search_Graph_Optim(nodes, pos, destination_row, move):
     # Psuedocode from Artifical Intelligence: A modern approach
     # -------------------------------------------------------------------------------
@@ -750,8 +750,9 @@ def Uniform_Cost_Search_Graph_Optim(nodes, pos, destination_row, move):
             return False
 
         node = np.copy(frontier[0])
-        frontier_length -= 1
+        frontier[0] = [127, 127, 127]
         frontier = roll_numba(frontier, -1)
+        frontier_length -= 1
 
         if node[0] == destination_row:
             if move[2] == 0:
@@ -785,8 +786,6 @@ def Uniform_Cost_Search_Graph_Optim(nodes, pos, destination_row, move):
                     ):
                         in_frontier = True
                         in_frontier_index = frontier_node_idx
-                        break
-                    elif frontier[frontier_node_idx, 0] == 127:
                         break
                 if not in_frontier and explored[child_node[0], child_node[1]] == False:
                     frontier[frontier_length, 0:2] = child_node
@@ -956,8 +955,6 @@ def A_Star_Search_Graph_Optim(nodes, pos, destination_row, move):
                         in_frontier = True
                         in_frontier_index = frontier_node_idx
                         break
-                    elif frontier[frontier_node_idx, 0] == 127:
-                        break
                 if not in_frontier and explored[child_node[0], child_node[1]] == False:
                     frontier[frontier_length, 0:2] = child_node
                     frontier[frontier_length, 2] = node[2] + 1
@@ -965,3 +962,225 @@ def A_Star_Search_Graph_Optim(nodes, pos, destination_row, move):
                     frontier = frontier[np.sum(frontier[:, 2:], axis=1).argsort()]
                 elif in_frontier and frontier[in_frontier_index, 2] > node[2] + 1:
                     frontier[in_frontier_index, 2] = node[2] + 1
+
+
+# @njit(cache=True)
+def Breadth_First_Search_Graph_More_Optim(nodes, pos, destination_row, move):
+    change_idx = np.zeros(4, dtype=np.bool8)
+    if move[2] == 0:  # horizontal wall move
+        if nodes[pos[0], pos[1], 0]:
+            nodes[pos[0], pos[1], 0] = False
+            change_idx[0] = True
+        if pos[1] + 1 < 9:
+            if nodes[pos[0], pos[1] + 1, 0]:
+                nodes[pos[0], pos[1] + 1, 0] = False
+                change_idx[1] = True
+        if pos[0] + 1 < 9:
+            if nodes[pos[0] + 1, pos[1], 2]:
+                nodes[pos[0] + 1, pos[1], 2] = False
+                change_idx[2] = True
+        if pos[0] + 1 < 9 and pos[1] + 1 < 9:
+            if nodes[pos[0] + 1, pos[1] + 1, 2]:
+                nodes[pos[0] + 1, pos[1] + 1, 2] = False
+                change_idx[3] = True
+    elif move[2] == 0:
+        if nodes[pos[0], pos[1], 1]:
+            nodes[pos[0], pos[1], 1] = False
+            change_idx[0] = True
+        if pos[1] + 1 < 9:
+            if nodes[pos[0], pos[1] + 1, 3]:
+                nodes[pos[0], pos[1] + 1, 3] = False
+                change_idx[1] = True
+        if pos[0] + 1 < 9:
+            if nodes[pos[0] + 1, pos[1], 1]:
+                nodes[pos[0] + 1, pos[1], 1] = False
+                change_idx[2] = True
+        if pos[0] + 1 < 9 and pos[1] + 1 < 9:
+            if nodes[pos[0] + 1, pos[1] + 1, 3]:
+                nodes[pos[0] + 1, pos[1] + 1, 3] = False
+                change_idx[3] = True
+
+    node = np.copy(pos)
+    if node[0] == destination_row:
+        if move[2] == 0:  # horizontal wall move
+            if change_idx[0]:
+                nodes[pos[0], pos[1], 0] = True
+            if change_idx[1]:
+                nodes[pos[0], pos[1] + 1, 0] = True
+            if change_idx[2]:
+                nodes[pos[0] + 1, pos[1], 2] = True
+            if change_idx[3]:
+                nodes[pos[0] + 1, pos[1] + 1, 2] = True
+        elif move[2] == 1:
+            if change_idx[0]:
+                nodes[pos[0], pos[1], 1] = True
+            if change_idx[1]:
+                nodes[pos[0], pos[1] + 1, 3] = True
+            if change_idx[2]:
+                nodes[pos[0] + 1, pos[1], 1] = True
+            if change_idx[3]:
+                nodes[pos[0] + 1, pos[1] + 1, 3] = True
+        return True
+    frontier = np.full((81, 2), 127, dtype=np.int8)
+    frontier[0] = node
+    frontier_length = 1
+
+    explored = np.zeros((9, 9), dtype=np.bool8)
+
+    while True:
+        if frontier_length == 0:
+            if move[2] == 0:  # horizontal wall move
+                if change_idx[0]:
+                    nodes[pos[0], pos[1], 0] = True
+                if change_idx[1]:
+                    nodes[pos[0], pos[1] + 1, 0] = True
+                if change_idx[2]:
+                    nodes[pos[0] + 1, pos[1], 2] = True
+                if change_idx[3]:
+                    nodes[pos[0] + 1, pos[1] + 1, 2] = True
+            elif move[2] == 1:
+                if change_idx[0]:
+                    nodes[pos[0], pos[1], 1] = True
+                if change_idx[1]:
+                    nodes[pos[0], pos[1] + 1, 3] = True
+                if change_idx[2]:
+                    nodes[pos[0] + 1, pos[1], 1] = True
+                if change_idx[3]:
+                    nodes[pos[0] + 1, pos[1] + 1, 3] = True
+            return False
+
+        node = np.copy(frontier[0])
+        frontier[0] = [127, 127]
+        frontier = roll_numba(frontier, -1)
+        frontier_length -= 1
+
+        explored[node[0], node[1]] = True
+
+        # South move possible
+        if nodes[node[0], node[1], 2]:
+            in_frontier = False
+            for idx in range(81):
+                if frontier[idx][0] == node[0] - 1 and frontier[idx][1] == node[1]:
+                    in_frontier = True
+                    break
+                elif frontier[idx][0] == 127:
+                    break
+            if not in_frontier and explored[node[0] - 1, node[1]] == False:
+                if node[0] - 1 == destination_row:
+                    if move[2] == 0:  # horizontal wall move
+                        if change_idx[0]:
+                            nodes[pos[0], pos[1], 0] = True
+                        if change_idx[1]:
+                            nodes[pos[0], pos[1] + 1, 0] = True
+                        if change_idx[2]:
+                            nodes[pos[0] + 1, pos[1], 2] = True
+                        if change_idx[3]:
+                            nodes[pos[0] + 1, pos[1] + 1, 2] = True
+                    elif move[2] == 1:
+                        if change_idx[0]:
+                            nodes[pos[0], pos[1], 1] = True
+                        if change_idx[1]:
+                            nodes[pos[0], pos[1] + 1, 3] = True
+                        if change_idx[2]:
+                            nodes[pos[0] + 1, pos[1], 1] = True
+                        if change_idx[3]:
+                            nodes[pos[0] + 1, pos[1] + 1, 3] = True
+                    return True
+                frontier[frontier_length] = [node[0] - 1, node[1]]
+                frontier_length += 1
+        # East move
+        if nodes[node[0], node[1], 1]:
+            in_frontier = False
+            for idx in range(81):
+                if frontier[idx][0] == node[0] and frontier[idx][1] == node[1] + 1:
+                    in_frontier = True
+                    break
+                elif frontier[idx][0] == 127:
+                    break
+            if not in_frontier and explored[node[0], node[1] + 1] == False:
+                if node[1] == destination_row:
+                    if move[2] == 0:  # horizontal wall move
+                        if change_idx[0]:
+                            nodes[pos[0], pos[1], 0] = True
+                        if change_idx[1]:
+                            nodes[pos[0], pos[1] + 1, 0] = True
+                        if change_idx[2]:
+                            nodes[pos[0] + 1, pos[1], 2] = True
+                        if change_idx[3]:
+                            nodes[pos[0] + 1, pos[1] + 1, 2] = True
+                    elif move[2] == 1:
+                        if change_idx[0]:
+                            nodes[pos[0], pos[1], 1] = True
+                        if change_idx[1]:
+                            nodes[pos[0], pos[1] + 1, 3] = True
+                        if change_idx[2]:
+                            nodes[pos[0] + 1, pos[1], 1] = True
+                        if change_idx[3]:
+                            nodes[pos[0] + 1, pos[1] + 1, 3] = True
+                    return True
+                frontier[frontier_length] = [node[0], node[1] + 1]
+                frontier_length += 1
+        # North move
+        if nodes[node[0], node[1], 0]:
+            in_frontier = False
+            for idx in range(81):
+                if frontier[idx][0] == node[0] + 1 and frontier[idx][1] == node[1]:
+                    in_frontier = True
+                    break
+                elif frontier[idx][0] == 127:
+                    break
+            if not in_frontier and explored[node[0] + 1, node[1]] == False:
+                if node[0] + 1 == destination_row:
+                    if move[2] == 0:  # horizontal wall move
+                        if change_idx[0]:
+                            nodes[pos[0], pos[1], 0] = True
+                        if change_idx[1]:
+                            nodes[pos[0], pos[1] + 1, 0] = True
+                        if change_idx[2]:
+                            nodes[pos[0] + 1, pos[1], 2] = True
+                        if change_idx[3]:
+                            nodes[pos[0] + 1, pos[1] + 1, 2] = True
+                    elif move[2] == 1:
+                        if change_idx[0]:
+                            nodes[pos[0], pos[1], 1] = True
+                        if change_idx[1]:
+                            nodes[pos[0], pos[1] + 1, 3] = True
+                        if change_idx[2]:
+                            nodes[pos[0] + 1, pos[1], 1] = True
+                        if change_idx[3]:
+                            nodes[pos[0] + 1, pos[1] + 1, 3] = True
+                    return True
+                frontier[frontier_length] = [node[0] + 1, node[1]]
+                frontier_length += 1
+        # West move
+        if nodes[node[0], node[1], 3]:
+            in_frontier = False
+            for idx in range(81):
+                if frontier[idx][0] == node[0] and frontier[idx][1] == node[1] - 1:
+                    in_frontier = True
+                    break
+                elif frontier[idx][0] == 127:
+                    break
+            if not in_frontier and explored[node[0], node[1] - 1] == False:
+                if node[1] == destination_row:
+                    if move[2] == 0:  # horizontal wall move
+                        if change_idx[0]:
+                            nodes[pos[0], pos[1], 0] = True
+                        if change_idx[1]:
+                            nodes[pos[0], pos[1] + 1, 0] = True
+                        if change_idx[2]:
+                            nodes[pos[0] + 1, pos[1], 2] = True
+                        if change_idx[3]:
+                            nodes[pos[0] + 1, pos[1] + 1, 2] = True
+                    elif move[2] == 1:
+                        if change_idx[0]:
+                            nodes[pos[0], pos[1], 1] = True
+                        if change_idx[1]:
+                            nodes[pos[0], pos[1] + 1, 3] = True
+                        if change_idx[2]:
+                            nodes[pos[0] + 1, pos[1], 1] = True
+                        if change_idx[3]:
+                            nodes[pos[0] + 1, pos[1] + 1, 3] = True
+                    return True
+                frontier[frontier_length] = [node[0], node[1] - 1]
+                frontier_length += 1
