@@ -9,13 +9,13 @@ from .path_finding import (
     A_Star_Search_Bitboard,
 )
 
-north_mask = np.ones((17, 17), dtype=np.bool_)
+north_mask = np.ones((17, 17), dtype=np.bool8)
 north_mask[15:] = False
 east_mask = np.rot90(north_mask, 3)
 south_mask = np.rot90(north_mask, 2)
 west_mask = np.rot90(north_mask, 1)
 
-short_north_mask = np.ones((17, 17), dtype=np.bool_)
+short_north_mask = np.ones((17, 17), dtype=np.bool8)
 short_north_mask[16:] = False
 short_east_mask = np.rot90(short_north_mask, 3)
 short_south_mask = np.rot90(short_north_mask, 2)
@@ -24,34 +24,34 @@ short_west_mask = np.rot90(short_north_mask, 1)
 
 class QuoridorBitBoard:
     def __init__(self, search_mode="GBFS"):
-        self.walls = np.zeros((17, 17), dtype=np.bool_)
+        self.walls = np.zeros((17, 17), dtype=np.bool8)
 
-        self.p1_pos = np.zeros((17, 17), dtype=np.bool_)
+        self.p1_pos = np.zeros((17, 17), dtype=np.bool8)
         self.p1_pos[0][8] = True
 
-        self.p2_pos = np.zeros((17, 17), dtype=np.bool_)
+        self.p2_pos = np.zeros((17, 17), dtype=np.bool8)
         self.p2_pos[16][8] = True
 
         self.p1_walls_placed = np.int8(0)
         self.p2_walls_placed = np.int8(0)
 
-        self.turn = np.bool_(False)  # False if player 1 turn, True if player 2 turn
+        self.turn = np.int8(1)  # 1 if player 1 turn, 2 if player 2 turn
 
-        self.over = np.bool_(False)
+        self.over = np.bool8(False)
         self.search_mode = search_mode
 
     def get_available_actions(self):
         # in_turn_pos references the 17x17 array that stores location of player in turn
         # out_turn_pos references the 17x17 array that stores location of the player out of turn
         walls_left = True  # possible wall placements calculated only when player in turn hasn't placed 10 walls
-        if self.turn == False:
+        if self.turn == np.int8(1):
             # player 1's turn
             in_turn_pos = self.p1_pos
             out_turn_pos = self.p2_pos
 
             if self.p1_walls_placed == np.int8(10):
                 walls_left = False
-        elif self.turn == True:
+        elif self.turn == np.int8(2):
             # player 2's turn
             in_turn_pos = self.p2_pos
             out_turn_pos = self.p1_pos
@@ -59,7 +59,7 @@ class QuoridorBitBoard:
             if self.p2_walls_placed == np.int8(10):
                 walls_left = False
 
-        player_moves = np.zeros((17, 17), dtype=np.bool_)
+        player_moves = np.zeros((17, 17), dtype=np.bool8)
         # moves the player in each cardinal direction
         # then checks if the direction of move doesn't go off board using a mask and AND operation
         # then checks if the move doesn't land on a wall
@@ -175,10 +175,10 @@ class QuoridorBitBoard:
                             np.reshape(~sliding_horizontal_walls.any(axis=1), (8, 15))[
                                 :, ::2
                             ],
-                            np.zeros((8, 1), dtype=np.bool_),
+                            np.zeros((8, 1), dtype=np.bool8),
                         )
                     ),
-                    np.zeros((1, 9), dtype=np.bool_),
+                    np.zeros((1, 9), dtype=np.bool8),
                 )
             )
             horizontal_walls_index = np.array(
@@ -197,10 +197,10 @@ class QuoridorBitBoard:
                             np.fliplr(np.rot90(~sliding_vertical_walls.any(axis=2), 3))[
                                 ::2, 1::2
                             ],
-                            np.zeros((8, 1), dtype=np.bool_),
+                            np.zeros((8, 1), dtype=np.bool8),
                         )
                     ),
-                    np.zeros((1, 9), dtype=np.bool_),
+                    np.zeros((1, 9), dtype=np.bool8),
                 )
             )
 
@@ -214,8 +214,7 @@ class QuoridorBitBoard:
         # the 128~132 rows will be filled with possible player moves
         # unused indexes will be filled with -1 (maximum value allowed with np.int8)
         # final column in array represents type of move - 0: horizontal wall, 1: vertical wall, 2: player move
-        moves = np.zeros((133, 3), dtype=np.int8)
-        moves.fill(-1)
+        moves = np.full((133, 3), -1, dtype=np.int8)
         if walls_left == True:
             moves[0 : 0 + len(horizontal_walls_index)] = np.hstack(
                 (
@@ -256,32 +255,32 @@ class QuoridorBitBoard:
 
     def take_action(self, action):
         if action[2] == 2:  # player move
-            if self.turn == False:  # player 1's turn
-                self.p1_pos = np.zeros((17, 17), dtype=np.bool_)
+            if self.turn == np.int8(1):  # player 1's turn
+                self.p1_pos = np.zeros((17, 17), dtype=np.bool8)
                 self.p1_pos[action[0]][action[1]] = True
                 if action[0] == 16:
                     self.over = True
                 else:
-                    self.turn = True
+                    self.turn = np.int8(2)
             else:  # player 2's turn
-                self.p2_pos = np.zeros((17, 17), dtype=np.bool_)
+                self.p2_pos = np.zeros((17, 17), dtype=np.bool8)
                 self.p2_pos[action[0]][action[1]] = True
                 if action[0] == 0:
                     self.over = True
                 else:
-                    self.turn = False
+                    self.turn = np.int8(1)
 
         else:
             if action[2] == 0:  # horizontal wall
                 self.walls[action[0] * 2 + 1, action[1] * 2 : action[1] * 2 + 3] = True
             elif action[2] == 1:  # vertical wall
                 self.walls[action[0] * 2 : action[0] * 2 + 3, action[1] * 2 + 1] = True
-            if self.turn == False:
+            if self.turn == np.int8(1):
                 self.p1_walls_placed += 1
-                self.turn = True
-            elif self.turn == True:
+                self.turn = np.int8(2)
+            elif self.turn == np.int8(2):
                 self.p2_walls_placed += 1
-                self.turn = False
+                self.turn = np.int8(1)
 
     def display_beautiful(self):
         for row in range(8, -1, -1):
@@ -434,10 +433,13 @@ class QuoridorBitBoard:
         print("  a   b   c   d   e   f   g   h   i ")
 
     def is_over(self):
-        if self.over == True:
-            return True
-        else:
-            return False
+        return self.over
+
+    def winner(self):
+        if self.turn == np.int8(1):
+            return 1
+        elif self.turn == np.int8(2):
+            return 2
 
 
 if __name__ == "__main__":

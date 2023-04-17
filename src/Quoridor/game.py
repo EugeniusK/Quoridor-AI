@@ -1,10 +1,15 @@
+# Import game implementations
 from .bitboard import QuoridorBitBoard
 from .graph import QuoridorGraphicalBoard
 from .graph_optimised import (
     QuoridorGraphicalBoardOptim,
     QuoridorGraphicalBoardMoreOptim,
 )
+
+# Import AI algorithms
 from AI.base import random_select
+
+# Import rest
 import time
 import random
 import json
@@ -56,19 +61,16 @@ class Game:
     def __init__(
         self,
         load=False,
-        round=False,
+        round=1,
         player_one="random",
         player_two="random",
         path_finding_mode="BFS",
         representation="graph",
         notes=False,
-        round_data=None,
     ):
         if load == True:
-            self.board = QuoridorGraphicalBoard()
-            log = json.loads(round_data)
-            print(log)
-        else:
+            raise NotImplementedError
+        elif load == False:
             self.date = datetime.now(tz=timezone.utc)
             self.round = round
             self.p1 = player_one
@@ -88,43 +90,63 @@ class Game:
             elif self.representation == "graph_optim":
                 self.board = QuoridorGraphicalBoardOptim(path_finding_mode)
             elif self.representation == "graph_optim_more":
-                self.board = QuoridorGraphicalBoardMoreOptim()
+                self.board = QuoridorGraphicalBoardMoreOptim(path_finding_mode)
+            else:
+                raise ValueError
 
-        self.moves = []
+        # All moves made until game over
+        self.actions = []
+        # Times taken to generate available actions each turn
         self.generate_times = []
+        # Times taken to choose each turn
         self.choose_times = []
-
+        # Total time taken - generate and select
         self.total_time = 0
 
-    def available_moves(self):
+    def available_actions(self):
+        """
+        Gets an array of available actions for current move state
+        in algebraic format like a1v, e9, d7h
+        """
+        # Get available actions and record time taken to generate
         generate_start = time.perf_counter()
-        moves = self.board.get_available_actions()
-        # print(moves, type(self).__name__)
+        generated_actions = self.board.get_available_actions()
         generate_end = time.perf_counter()
+
         self.generate_times.append(round((generate_end - generate_start), 8))
 
-        available_moves = []
-        for move in moves:
+        # Get available actions in algebraic notation
+        available_actions = []
+        # Bitboard, Graph (more) optimised returns available actions as ndarray
+        # of [row, col, type]
+        # where type 0 = horizontal wall
+        #       type 1 = vertical wall
+        #       type 2 = move
+        for action in generated_actions:
             if self.representation == "graph":
-                available_moves.append(move)
+                available_actions.append(action)
             elif (
-                self.representation == "graph_optim"
+                self.representation == "bitboard"
+                or self.representation == "graph_optim"
                 or self.representation == "graph_optim_more"
             ):
-                available_moves.append(move)
-            elif self.representation == "bitboard":
-                if move[2] == 0:
-                    available_moves.append(f"{chr(97 + move[1])}{move[0] + 1}h")
-                elif move[2] == 1:
-                    available_moves.append(f"{chr(97 + move[1])}{move[0] + 1}v")
-                elif move[2] == 2:
-                    available_moves.append(f"{chr(97 + move[1]//2)}{move[0]//2 + 1}")
-        return available_moves
+                if action[2] == 0:
+                    available_actions.append(f"{chr(97 + action[1])}{action[0] + 1}h")
+                elif action[2] == 1:
+                    available_actions.append(f"{chr(97 + action[1])}{action[0] + 1}v")
+                elif action[2] == 2:
+                    available_actions.append(
+                        f"{chr(97 + action[1]//2)}{action[0]//2 + 1}"
+                    )
+        return available_actions
 
     def select(self, moves):
-        if self.board.turn == False or self.board.turn == 1:
+        """
+        Randomly selects a move based on method defined on init
+        """
+        if self.board.turn == 1:
             mode = self.p1
-        elif self.board.turn == True or self.board.turn == 2:
+        elif self.board.turn == 2:
             mode = self.p2
 
         if mode == "random":
@@ -134,18 +156,16 @@ class Game:
             self.choose_times.append(round(choose_end - choose_start, 8))
         return move
 
-    def make_move(self, move):
+    def take_action(self, move):
         if self.representation == "graph":
-            self.moves.append(move)
+            self.actions.append(move)
             self.board.take_action(move)
         elif (
-            self.representation == "graph_optim"
+            self.representation == "bitboard"
+            or self.representation == "graph_optim"
             or self.representation == "graph_optim_more"
         ):
-            self.moves.append(move)
-            self.board.take_action(move)
-        elif self.representation == "bitboard":
-            self.moves.append(move)
+            self.actions.append(move)
             if len(move) == 2:
                 self.board.take_action(
                     np.array(
@@ -197,7 +217,7 @@ class Game:
             "Number moves": self.number_moves,
             "Total time": self.total_time,
             "Notes": self.notes,
-            "Moves": " ".join(self.moves),
+            "Moves": " ".join(self.actions),
             "Generate times": " ".join([str(x) for x in self.generate_times]),
             "Choose times": " ".join([str(x) for x in self.choose_times]),
         }

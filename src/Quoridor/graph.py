@@ -31,7 +31,7 @@ class QuoridorGraphicalBoard:
         self.p1_walls_placed = 0
         self.p2_walls_placed = 0
 
-        self.turn = 0  # 0 if player 1 turn, 1 if player 2 turn
+        self.turn = 1  # 0 if player 1 turn, 1 if player 2 turn
 
         self.over = False
         for row in range(0, 9):
@@ -69,7 +69,7 @@ class QuoridorGraphicalBoard:
         # out_turn_pos stores the location of the player out of turn
 
         walls_left = True
-        if self.turn == 0:
+        if self.turn == 1:
             # It's player 1's turn
             in_turn_moves = self.nodes[self.p1_pos[0] * 9 + self.p1_pos[1]][1][:]
             out_turn_moves = self.nodes[self.p2_pos[0] * 9 + self.p2_pos[1]][1][:]
@@ -79,7 +79,7 @@ class QuoridorGraphicalBoard:
 
             if self.p1_walls_placed == 10:
                 walls_left = False
-        elif self.turn == 1:
+        elif self.turn == 2:
             # It's the player 2's turn
             in_turn_moves = self.nodes[self.p2_pos[0] * 9 + self.p2_pos[1]][1][:]
             out_turn_moves = self.nodes[self.p1_pos[0] * 9 + self.p1_pos[1]][1][:]
@@ -385,7 +385,7 @@ class QuoridorGraphicalBoard:
         if len(action) == 2:
             #
             # is a move to row, column
-            if self.turn == 0:  # if it's player 1 turn
+            if self.turn == 1:  # if it's player 1 turn
                 self.p1_pos = (
                     int(action[1]) - 1,
                     ord(action[0]) - 97,
@@ -394,9 +394,9 @@ class QuoridorGraphicalBoard:
                     # if the new position is on the winning row, game is over
                     self.over = True
                 else:
-                    self.turn = 1  # change turn to other player
+                    self.turn = 2  # change turn to other player
 
-            elif self.turn == 1:  # if it's player 2 turn
+            elif self.turn == 2:  # if it's player 2 turn
                 self.p2_pos = (
                     int(action[1]) - 1,
                     ord(action[0]) - 97,
@@ -405,7 +405,7 @@ class QuoridorGraphicalBoard:
                     # if the new position is on the winning row, game is over
                     self.over = True
                 else:
-                    self.turn = 0  # change turn to other player
+                    self.turn = 1  # change turn to other player
         elif len(action) == 3:
             # move is in format ((row, column), direction)
             # is a wall place
@@ -431,12 +431,12 @@ class QuoridorGraphicalBoard:
 
             # add 1 to number of walls placed
             # and change turn to other player
-            if self.turn == 0:
+            if self.turn == 1:
                 self.p1_walls_placed += 1
-                self.turn = 1
-            elif self.turn == 1:
+                self.turn = 2
+            elif self.turn == 2:
                 self.p2_walls_placed += 1
-                self.turn = 0
+                self.turn = 1
 
     def display_beautiful(self):
         # array is structured so that index 0 (A1) is at top left and index 80 (I9) is bottom right
@@ -617,6 +617,9 @@ class QuoridorGraphicalBoard:
         # returns if the game is over
         # if the game is over, return the player who won
         return self.over
+
+    def winner(self):
+        return self.turn
 
 
 # # generate algebraic notations for moves

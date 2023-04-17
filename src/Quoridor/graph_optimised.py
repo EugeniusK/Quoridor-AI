@@ -476,7 +476,6 @@ class QuoridorGraphicalBoardOptim:
                                     found[7] = True
                                 if self.nodes[8, col, j, 1] == col + 1:
                                     found[8] = True
-                            # print(found, row, col, "h")
                             if (
                                 (found[row] == True or found[row + 1] == True)
                                 or (
@@ -507,7 +506,6 @@ class QuoridorGraphicalBoardOptim:
                                     and found[row + 4] == False
                                 )
                             ):
-                                # start = time.perf_counter()
                                 if not search(
                                     self.nodes,
                                     self.p1_pos,
@@ -520,10 +518,6 @@ class QuoridorGraphicalBoardOptim:
                                     np.array([row, col, 0], dtype=np.int8),
                                 ):
                                     walls_moves_available[row * 8 + col] = [-1, -1, -1]
-                                # end = time.perf_counter()
-                                # if end - start > 0.5:
-                                #     self.display_beautiful()
-                                #     print(self.search_mode, end - start)
                             else:
                                 walls_moves_available[row * 8 + col] = [-1, -1, -1]
 
@@ -587,7 +581,6 @@ class QuoridorGraphicalBoardOptim:
                                     and found[col + 4] == False
                                 )
                             ):
-                                # start = time.perf_counter()
                                 if not search(
                                     self.nodes,
                                     self.p1_pos,
@@ -604,16 +597,12 @@ class QuoridorGraphicalBoardOptim:
                                         -1,
                                         -1,
                                     ]
-                                # end = time.perf_counter()
-                                # if end - start > 0.5:
-                                #     self.display_beautiful()
-                                #     print(self.search_mode, end - start)
                             else:
                                 walls_moves_available[64 + row * 8 + col] = [-1, -1, -1]
 
                     if ver_found == False:
                         walls_moves_available[64 + row * 8 + col] = [-1, -1, -1]
-
+        return walls_moves_available
         # Array for all algebraic moves as strings
         algebraic_moves = []
         for i in range(133):
@@ -634,90 +623,85 @@ class QuoridorGraphicalBoardOptim:
         return algebraic_moves
 
     def take_action(self, action):
+        if action[0] > 8 or action[1] > 8:
+            raise IndexError
         # Converts algebraic notated move to numpy array
-        if len(action) == 2:
-            move = np.array([int(action[1]) - 1, ord(action[0]) - 97, 2])
-        elif len(action) == 3:
-            if action[2] == "h":
-                move = np.array([int(action[1]) - 1, ord(action[0]) - 97, 0])
-            elif action[2] == "v":
-                move = np.array([int(action[1]) - 1, ord(action[0]) - 97, 1])
 
         # If the move is a normal move, change the player pos
-        if move[2] == 2:  # player move
+        if action[2] == 2:  # player move
             if self.turn == 1:
-                self.p1_pos = move[0:2]
+                self.p1_pos = action[0:2]
                 if self.p1_pos[0] == 8:
                     self.over = True
                 else:
                     self.turn = 2
             else:
-                self.p2_pos = move[0:2]
+                self.p2_pos = action[0:2]
                 if self.p2_pos[0] == 0:
                     self.over = True
                 else:
                     self.turn = 1
         else:
-            if move[2] == 0:  # horizontal wall move
+            if action[2] == 0:  # horizontal wall move
                 for i in range(1, 5):
                     if (
-                        self.nodes[move[0] + 1, move[1]][i][0]
-                        == self.nodes[move[0], move[1]][0][0]
-                        and self.nodes[move[0] + 1, move[1]][i][1]
-                        == self.nodes[move[0], move[1]][0][1]
+                        self.nodes[action[0] + 1, action[1]][i][0]
+                        == self.nodes[action[0], action[1]][0][0]
+                        and self.nodes[action[0] + 1, action[1]][i][1]
+                        == self.nodes[action[0], action[1]][0][1]
                     ):
-                        self.nodes[move[0] + 1, move[1]][i] = [-1, -1]
+                        self.nodes[action[0] + 1, action[1]][i] = [-1, -1]
                     if (
-                        self.nodes[move[0], move[1]][i][0]
-                        == self.nodes[move[0] + 1, move[1]][0][0]
-                        and self.nodes[move[0], move[1]][i][1]
-                        == self.nodes[move[0] + 1, move[1]][0][1]
+                        self.nodes[action[0], action[1]][i][0]
+                        == self.nodes[action[0] + 1, action[1]][0][0]
+                        and self.nodes[action[0], action[1]][i][1]
+                        == self.nodes[action[0] + 1, action[1]][0][1]
                     ):
-                        self.nodes[move[0], move[1]][i] = [-1, -1]
+                        self.nodes[action[0], action[1]][i] = [-1, -1]
                     if (
-                        self.nodes[move[0] + 1, move[1] + 1][i][0]
-                        == self.nodes[move[0], move[1] + 1][0][0]
-                        and self.nodes[move[0] + 1, move[1] + 1][i][1]
-                        == self.nodes[move[0], move[1] + 1][0][1]
+                        self.nodes[action[0] + 1, action[1] + 1][i][0]
+                        == self.nodes[action[0], action[1] + 1][0][0]
+                        and self.nodes[action[0] + 1, action[1] + 1][i][1]
+                        == self.nodes[action[0], action[1] + 1][0][1]
                     ):
-                        self.nodes[move[0] + 1, move[1] + 1][i] = [-1, -1]
+                        self.nodes[action[0] + 1, action[1] + 1][i] = [-1, -1]
                     if (
-                        self.nodes[move[0], move[1] + 1][i][0]
-                        == self.nodes[move[0] + 1, move[1] + 1][0][0]
-                        and self.nodes[move[0], move[1] + 1][i][1]
-                        == self.nodes[move[0] + 1, move[1] + 1][0][1]
+                        self.nodes[action[0], action[1] + 1][i][0]
+                        == self.nodes[action[0] + 1, action[1] + 1][0][0]
+                        and self.nodes[action[0], action[1] + 1][i][1]
+                        == self.nodes[action[0] + 1, action[1] + 1][0][1]
                     ):
-                        self.nodes[move[0], move[1] + 1][i] = [-1, -1]
+                        self.nodes[action[0], action[1] + 1][i] = [-1, -1]
             else:  # vertical wall move
                 for i in range(5):
                     if (
-                        self.nodes[move[0], move[1] + 1][i][0]
-                        == self.nodes[move[0], move[1]][0][0]
-                        and self.nodes[move[0], move[1] + 1][i][1]
-                        == self.nodes[move[0], move[1]][0][1]
+                        self.nodes[action[0], action[1] + 1][i][0]
+                        == self.nodes[action[0], action[1]][0][0]
+                        and self.nodes[action[0], action[1] + 1][i][1]
+                        == self.nodes[action[0], action[1]][0][1]
                     ):
-                        self.nodes[move[0], move[1] + 1][i] = [-1, -1]
+                        self.nodes[action[0], action[1] + 1][i] = [-1, -1]
                     if (
-                        self.nodes[move[0], move[1]][i][0]
-                        == self.nodes[move[0], move[1] + 1][0][0]
-                        and self.nodes[move[0], move[1]][i][1]
-                        == self.nodes[move[0], move[1] + 1][0][1]
+                        self.nodes[action[0], action[1]][i][0]
+                        == self.nodes[action[0], action[1] + 1][0][0]
+                        and self.nodes[action[0], action[1]][i][1]
+                        == self.nodes[action[0], action[1] + 1][0][1]
                     ):
-                        self.nodes[move[0], move[1]][i] = [-1, -1]
+                        self.nodes[action[0], action[1]][i] = [-1, -1]
                     if (
-                        self.nodes[move[0] + 1, move[1] + 1][i][0]
-                        == self.nodes[move[0] + 1, move[1]][0][0]
-                        and self.nodes[move[0] + 1, move[1] + 1][i][1]
-                        == self.nodes[move[0] + 1, move[1]][0][1]
+                        self.nodes[action[0] + 1, action[1] + 1][i][0]
+                        == self.nodes[action[0] + 1, action[1]][0][0]
+                        and self.nodes[action[0] + 1, action[1] + 1][i][1]
+                        == self.nodes[action[0] + 1, action[1]][0][1]
                     ):
-                        self.nodes[move[0] + 1, move[1] + 1][i] = [-1, -1]
+                        self.nodes[action[0] + 1, action[1] + 1][i] = [-1, -1]
                     if (
-                        self.nodes[move[0] + 1, move[1]][i][0]
-                        == self.nodes[move[0] + 1, move[1] + 1][0][0]
-                        and self.nodes[move[0] + 1, move[1]][i][1]
-                        == self.nodes[move[0] + 1, move[1] + 1][0][1]
+                        self.nodes[action[0] + 1, action[1]][i][0]
+                        == self.nodes[action[0] + 1, action[1] + 1][0][0]
+                        and self.nodes[action[0] + 1, action[1]][i][1]
+                        == self.nodes[action[0] + 1, action[1] + 1][0][1]
                     ):
-                        self.nodes[move[0] + 1, move[1]][i] = [-1, -1]
+                        self.nodes[action[0] + 1, action[1]][i] = [-1, -1]
             if self.turn == 1:
                 self.p1_walls_placed += 1
                 self.turn = 2
@@ -901,6 +885,9 @@ class QuoridorGraphicalBoardOptim:
 
     def is_over(self):
         return self.over
+
+    def winner(self):
+        return self.turn
 
 
 class QuoridorGraphicalBoardMoreOptim:
@@ -1450,7 +1437,7 @@ class QuoridorGraphicalBoardMoreOptim:
 
                     else:
                         actions[64 + row * 8 + col] = [-1, -1, -1]
-
+        return actions
         algebraic_moves = []
         for i in range(133):
             if actions[i][0] != -1:
@@ -1468,39 +1455,30 @@ class QuoridorGraphicalBoardMoreOptim:
         return algebraic_moves
 
     def take_action(self, action):
-        # print(alg_move)
-        if len(action) == 2:
-            move = np.array([int(action[1]) - 1, ord(action[0]) - 97, 2])
-        elif len(action) == 3:
-            if action[2] == "h":
-                move = np.array([int(action[1]) - 1, ord(action[0]) - 97, 0])
-            elif action[2] == "v":
-                move = np.array([int(action[1]) - 1, ord(action[0]) - 97, 1])
-
-        if move[2] == 2:
+        if action[2] == 2:
             if self.turn == 1:
-                self.p1_pos = move[0:2]
+                self.p1_pos = action[0:2]
                 if self.p1_pos[0] == 8:
                     self.over = True
                 else:
                     self.turn = 2
             else:
-                self.p2_pos = move[0:2]
+                self.p2_pos = action[0:2]
                 if self.p2_pos[0] == 0:
                     self.over = True
                 else:
                     self.turn = 1
         else:
-            if move[2] == 0:
-                self.nodes[move[0], move[1], 0] = False
-                self.nodes[move[0] + 1, move[1], 2] = False
-                self.nodes[move[0], move[1] + 1, 0] = False
-                self.nodes[move[0] + 1, move[1] + 1, 2] = False
-            if move[2] == 1:
-                self.nodes[move[0], move[1], 1] = False
-                self.nodes[move[0], move[1] + 1, 3] = False
-                self.nodes[move[0] + 1, move[1], 1] = False
-                self.nodes[move[0] + 1, move[1] + 1, 3] = False
+            if action[2] == 0:
+                self.nodes[action[0], action[1], 0] = False
+                self.nodes[action[0] + 1, action[1], 2] = False
+                self.nodes[action[0], action[1] + 1, 0] = False
+                self.nodes[action[0] + 1, action[1] + 1, 2] = False
+            if action[2] == 1:
+                self.nodes[action[0], action[1], 1] = False
+                self.nodes[action[0], action[1] + 1, 3] = False
+                self.nodes[action[0] + 1, action[1], 1] = False
+                self.nodes[action[0] + 1, action[1] + 1, 3] = False
             if self.turn == 1:
                 self.p1_walls_placed += 1
                 self.turn = 2
@@ -1668,3 +1646,6 @@ class QuoridorGraphicalBoardMoreOptim:
 
     def is_over(self):
         return self.over
+
+    def winner(self):
+        return self.turn
