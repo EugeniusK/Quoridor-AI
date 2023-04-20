@@ -1,6 +1,5 @@
 .DS_Store
 docs/
-functions.py
 src/Logs
 # Visual Studio Code files
 .vscode
