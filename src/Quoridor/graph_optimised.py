@@ -602,6 +602,9 @@ class QuoridorGraphicalBoardOptim:
 
                     if ver_found == False:
                         walls_moves_available[64 + row * 8 + col] = [-1, -1, -1]
+        else:
+            walls_moves_available[0:128] = [-1, -1, -1]
+
         return walls_moves_available
         # Array for all algebraic moves as strings
         algebraic_moves = []
@@ -624,6 +627,7 @@ class QuoridorGraphicalBoardOptim:
 
     def take_action(self, action):
         if action[0] > 8 or action[1] > 8:
+            print(action)
             raise IndexError
         # Converts algebraic notated move to numpy array
 
@@ -1437,6 +1441,8 @@ class QuoridorGraphicalBoardMoreOptim:
 
                     else:
                         actions[64 + row * 8 + col] = [-1, -1, -1]
+        else:
+            actions[0:128] = [-1, -1, -1]
         return actions
         algebraic_moves = []
         for i in range(133):

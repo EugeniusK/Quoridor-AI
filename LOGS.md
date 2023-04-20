@@ -93,3 +93,7 @@ More tweaks to path finding functions
 # 0.0.6.3
 
 Add more variants of optimised graphs - in python
+
+# 0.0.6.4
+
+More tweaks and fixes to names and optimised graph

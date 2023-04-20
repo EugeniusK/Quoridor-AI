@@ -112,7 +112,6 @@ class Game:
         generate_start = time.perf_counter()
         generated_actions = self.board.get_available_actions()
         generate_end = time.perf_counter()
-
         self.generate_times.append(round((generate_end - generate_start), 8))
 
         # Get available actions in algebraic notation
@@ -126,17 +125,24 @@ class Game:
             if self.representation == "graph":
                 available_actions.append(action)
             elif (
-                self.representation == "bitboard"
-                or self.representation == "graph_optim"
+                self.representation == "graph_optim"
                 or self.representation == "graph_optim_more"
             ):
-                if action[2] == 0:
+                if action[2] == 0 and action[0] != -1:
                     available_actions.append(f"{chr(97 + action[1])}{action[0] + 1}h")
-                elif action[2] == 1:
+                elif action[2] == 1 and action[0] != -1:
                     available_actions.append(f"{chr(97 + action[1])}{action[0] + 1}v")
-                elif action[2] == 2:
+                elif action[2] == 2 and action[0] != -1:
+                    available_actions.append(f"{chr(97 + action[1])}{action[0] + 1}")
+
+            elif self.representation == "bitboard":
+                if action[2] == 0 and action[0] != -1:
+                    available_actions.append(f"{chr(97 + action[1])}{action[0] + 1}h")
+                elif action[2] == 1 and action[0] != -1:
+                    available_actions.append(f"{chr(97 + action[1])}{action[0] + 1}v")
+                elif action[2] == 2 and action[0] != -1:
                     available_actions.append(
-                        f"{chr(97 + action[1]//2)}{action[0]//2 + 1}"
+                        f"{chr(97 + (action[1] // 2))}{(action[0]//2) + 1}"
                     )
         return available_actions
 
@@ -156,34 +162,55 @@ class Game:
             self.choose_times.append(round(choose_end - choose_start, 8))
         return move
 
-    def take_action(self, move):
+    def take_action(self, action):
         if self.representation == "graph":
-            self.actions.append(move)
-            self.board.take_action(move)
+            self.actions.append(action)
+            self.board.take_action(action)
         elif (
-            self.representation == "bitboard"
-            or self.representation == "graph_optim"
+            self.representation == "graph_optim"
             or self.representation == "graph_optim_more"
         ):
-            self.actions.append(move)
-            if len(move) == 2:
+            self.actions.append(action)
+            if len(action) == 2:
                 self.board.take_action(
                     np.array(
-                        [(int(move[1]) - 1) * 2, (ord(move[0]) - 97) * 2, 2],
+                        [int(action[1]) - 1, ord(action[0]) - 97, 2],
                         dtype=np.int8,
                     )
                 )
             else:
-                if move[2] == "h":
+                if action[2] == "h":
                     self.board.take_action(
                         np.array(
-                            [int(move[1]) - 1, ord(move[0]) - 97, 0], dtype=np.int8
+                            [int(action[1]) - 1, ord(action[0]) - 97, 0], dtype=np.int8
                         )
                     )
-                elif move[2] == "v":
+                elif action[2] == "v":
                     self.board.take_action(
                         np.array(
-                            [int(move[1]) - 1, ord(move[0]) - 97, 1], dtype=np.int8
+                            [int(action[1]) - 1, ord(action[0]) - 97, 1], dtype=np.int8
+                        )
+                    )
+        elif self.representation == "bitboard":
+            self.actions.append(action)
+            if len(action) == 2:
+                self.board.take_action(
+                    np.array(
+                        [(int(action[1]) - 1) * 2, (ord(action[0]) - 97) * 2, 2],
+                        dtype=np.int8,
+                    )
+                )
+            else:
+                if action[2] == "h":
+                    self.board.take_action(
+                        np.array(
+                            [int(action[1]) - 1, ord(action[0]) - 97, 0], dtype=np.int8
+                        )
+                    )
+                elif action[2] == "v":
+                    self.board.take_action(
+                        np.array(
+                            [int(action[1]) - 1, ord(action[0]) - 97, 1], dtype=np.int8
                         )
                     )
         else:

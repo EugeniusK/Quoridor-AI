@@ -1,4 +1,4 @@
-from Quoridor.log import Game
+from Quoridor.game import Game
 from datetime import datetime
 import json
 import os
@@ -26,7 +26,7 @@ def simulate(
             path_finding_mode=path_finding_mode,
         )
         while g.is_over() == False:
-            g.make_move(g.select(g.available_moves()))
+            g.take_action(g.select(g.available_actions()))
             # g.display()
         rounds.append(g.log())
         print(g.log()["Total time"])
@@ -59,8 +59,6 @@ def compare_moves(args):
     while over == False:
         one_available_moves = g_one.available_moves()
         two_available_moves = g_two.available_moves()
-        # print(repr_1, one_available_moves)
-        # print(repr_2, two_available_moves)
         if set(one_available_moves) == set(two_available_moves):
             total_moves += 1
             valid_moves += 1
@@ -173,8 +171,3 @@ if __name__ == "__main__":
     print()
     simulate(10, "random", "random", "bitboard", "BFS")
     print()
-    import time
-
-    # start = time.perf_counter()
-    compare_moves_threaded(1, "graph", "graph_optim_more", "BFS", "BFS")
-    # print(time.perf_counter() - start)
