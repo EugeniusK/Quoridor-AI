@@ -57,20 +57,19 @@ def compare_moves(args):
     g_one = Game(round=i, representation=repr_1, path_finding_mode=search_1)
     over = False
     while over == False:
-        one_available_moves = g_one.available_moves()
-        two_available_moves = g_two.available_moves()
+        one_available_moves = g_one.available_actions()
+        two_available_moves = g_two.available_actions()
         if set(one_available_moves) == set(two_available_moves):
             total_moves += 1
             valid_moves += 1
-            valid.append(True)
+            valid.append("T")
             move = random.choice(one_available_moves)
-            g_two.make_move(move)
-            g_one.make_move(move)
+            g_two.take_action(move)
+            g_one.take_action(move)
 
-            difference_available.append([])
         else:
             total_moves += 1
-            valid.append(False)
+            valid.append("F")
             difference_available.append(
                 sorted(list(set(one_available_moves) ^ set(two_available_moves)))
             )
@@ -116,26 +115,27 @@ def compare_moves(args):
                     )
                 ),
             )
-            g_one.make_move(move)
-            g_two.make_move(move)
+            g_one.take_action(move)
+            g_two.take_action(move)
 
         if g_two.is_over() and g_one.is_over():
             over = True
     one_round = {
         "Round": i,
-        "Valid": valid,
+        "Valid": " ".join(valid),
         "Number moves": g_two.number_moves,
-        "Moves": " ".join(g_two.moves),
+        "Moves": " ".join(g_two.actions),
         "Different available moves": difference_available,
     }
 
     return one_round, total_moves, valid_moves, one_error, two_error
 
 
-def compare_moves_threaded(number_games, repr_1, repr_2, search_1, search_2):
-    rounds = list(range(1, number_games + 1))
+def compare_moves_threaded(
+    number_games, repr_1, repr_2, search_1, search_2, threads_use=4
+):
     args = [(x + 1, repr_1, repr_2, search_1, search_2) for x in range(number_games)]
-    with Pool(processes=1) as pool:
+    with Pool(processes=threads_use) as pool:
         results = pool.imap_unordered(compare_moves, args)
 
         logs = []
@@ -163,11 +163,12 @@ def compare_moves_threaded(number_games, repr_1, repr_2, search_1, search_2):
 
 
 if __name__ == "__main__":
+    # compare_moves_threaded(4, "graph", "graph_optim", "BFS", "BFS")
     simulate(10, "random", "random", "graph_optim", "BFS")
-    print()
-    simulate(10, "random", "random", "graph_optim_more", "BFS")
-    print()
-    simulate(10, "random", "random", "graph", "BFS")
-    print()
-    simulate(10, "random", "random", "bitboard", "BFS")
-    print()
+    # print()
+    # simulate(10, "random", "random", "graph_optim_more", "BFS")
+    # print()
+    # simulate(10, "random", "random", "graph", "BFS")
+    # print()
+    # simulate(10, "random", "random", "bitboard", "BFS")
+    # print()
