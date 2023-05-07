@@ -39,6 +39,7 @@ def simulate(
 
 
 def compare_moves(args):
+    print(args)
     i = args[0]
     repr_1 = args[1]
     repr_2 = args[2]
@@ -135,7 +136,7 @@ def compare_moves_threaded(
     number_games, repr_1, repr_2, search_1, search_2, threads_use=4
 ):
     args = [(x + 1, repr_1, repr_2, search_1, search_2) for x in range(number_games)]
-    with Pool(processes=threads_use) as pool:
+    with Pool(processes=1) as pool:
         results = pool.imap_unordered(compare_moves, args)
 
         logs = []
@@ -163,8 +164,8 @@ def compare_moves_threaded(
 
 
 if __name__ == "__main__":
-    # compare_moves_threaded(4, "graph", "graph_optim", "BFS", "BFS")
-    simulate(10, "random", "random", "graph_optim", "BFS")
+    compare_moves_threaded(10, "graph", "graph_optim_more", "BFS", "BFS")
+    # simulate(10, "random", "random", "graph_optim", "BFS")
     # print()
     # simulate(10, "random", "random", "graph_optim_more", "BFS")
     # print()

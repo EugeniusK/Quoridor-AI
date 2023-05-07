@@ -2,7 +2,6 @@
 from .bitboard import QuoridorBitBoard
 from .graph import QuoridorGraphicalBoard
 from .graph_optimised import (
-    QuoridorGraphicalBoardOptim,
     QuoridorGraphicalBoardMoreOptim,
 )
 
@@ -87,8 +86,8 @@ class Game:
                 self.board = QuoridorGraphicalBoard(path_finding_mode)
             elif self.representation == "bitboard":
                 self.board = QuoridorBitBoard(path_finding_mode)
-            elif self.representation == "graph_optim":
-                self.board = QuoridorGraphicalBoardOptim(path_finding_mode)
+            # elif self.representation == "graph_optim":
+            #     self.board = QuoridorGraphicalBoardOptim(path_finding_mode)
             elif self.representation == "graph_optim_more":
                 self.board = QuoridorGraphicalBoardMoreOptim(path_finding_mode)
             else:
