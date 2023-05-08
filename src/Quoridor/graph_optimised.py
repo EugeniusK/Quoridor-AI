@@ -4,135 +4,153 @@ from numba.experimental import jitclass
 
 from .path_finding_optimised import (
     Breadth_First_Search_Graph_More_Optim,
+    Depth_First_Search_Graph_More_Optim,
+    Greedy_Best_First_Search_Graph_More_Optim,
 )
 from .functions import roll_numba
 
 
 class QuoridorGraphicalBoardMoreOptim:
-    def __init__(self, path_finding_mode="BFS"):
+    def __init__(self, path_finding_mode="BFS", **kwargs):
         # Adjaceny list stores valid edges as boolean instead of representing 2D index
         # 9x9x4 size as each position has 4 possible - North, East, South, West
         # Each node has [1, 2, 3, 4] whichrepresents valid in North, East, South, West <-- in this order
-        self.nodes = np.array(
-            [
+        if (
+            kwargs.get("nodes") == None
+            and kwargs.get("p1_pos") == None
+            and kwargs.get("p2_pos") == None
+            and kwargs.get("p1_walls_placed") == None
+            and kwargs.get("p2_walls_placed") == None
+            and kwargs.get("turn") == None
+            and kwargs.get("over") == None
+        ):
+            self.nodes = np.array(
                 [
-                    [True, True, False, False],
-                    [True, True, False, True],
-                    [True, True, False, True],
-                    [True, True, False, True],
-                    [True, True, False, True],
-                    [True, True, False, True],
-                    [True, True, False, True],
-                    [True, True, False, True],
-                    [True, False, False, True],
+                    [
+                        [True, True, False, False],
+                        [True, True, False, True],
+                        [True, True, False, True],
+                        [True, True, False, True],
+                        [True, True, False, True],
+                        [True, True, False, True],
+                        [True, True, False, True],
+                        [True, True, False, True],
+                        [True, False, False, True],
+                    ],
+                    [
+                        [True, True, True, False],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, False, True, True],
+                    ],
+                    [
+                        [True, True, True, False],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, False, True, True],
+                    ],
+                    [
+                        [True, True, True, False],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, False, True, True],
+                    ],
+                    [
+                        [True, True, True, False],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, False, True, True],
+                    ],
+                    [
+                        [True, True, True, False],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, False, True, True],
+                    ],
+                    [
+                        [True, True, True, False],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, False, True, True],
+                    ],
+                    [
+                        [True, True, True, False],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, True, True, True],
+                        [True, False, True, True],
+                    ],
+                    [
+                        [False, True, True, False],
+                        [False, True, True, True],
+                        [False, True, True, True],
+                        [False, True, True, True],
+                        [False, True, True, True],
+                        [False, True, True, True],
+                        [False, True, True, True],
+                        [False, True, True, True],
+                        [False, False, True, True],
+                    ],
                 ],
-                [
-                    [True, True, True, False],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, False, True, True],
-                ],
-                [
-                    [True, True, True, False],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, False, True, True],
-                ],
-                [
-                    [True, True, True, False],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, False, True, True],
-                ],
-                [
-                    [True, True, True, False],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, False, True, True],
-                ],
-                [
-                    [True, True, True, False],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, False, True, True],
-                ],
-                [
-                    [True, True, True, False],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, False, True, True],
-                ],
-                [
-                    [True, True, True, False],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, True, True, True],
-                    [True, False, True, True],
-                ],
-                [
-                    [False, True, True, False],
-                    [False, True, True, True],
-                    [False, True, True, True],
-                    [False, True, True, True],
-                    [False, True, True, True],
-                    [False, True, True, True],
-                    [False, True, True, True],
-                    [False, True, True, True],
-                    [False, False, True, True],
-                ],
-            ],
-            dtype=np.bool8,
-        )
+                dtype=np.bool8,
+            )
 
-        # Position of both players represented as [row, col]
-        # From perspective of player 1, [0,0] is a1 and [8,8] is h9
-        self.p1_pos = np.array([0, 4], dtype=np.int8)
-        self.p2_pos = np.array([8, 4], dtype=np.int8)
+            # Position of both players represented as [row, col]
+            # From perspective of player 1, [0,0] is a1 and [8,8] is h9
+            self.p1_pos = np.array([0, 4], dtype=np.int8)
+            self.p2_pos = np.array([8, 4], dtype=np.int8)
 
-        # Number of walls that each player has placed
-        self.p1_walls_placed = np.int8(0)
-        self.p2_walls_placed = np.int8(0)
+            # Number of walls that each player has placed
+            self.p1_walls_placed = np.int8(0)
+            self.p2_walls_placed = np.int8(0)
 
-        # Player who is in turn
-        self.turn = np.int8(1)
+            # Player who is in turn
+            self.turn = np.int8(1)
 
-        # If the game is over or not
-        self.over = np.bool8(False)
-
+            # If the game is over or not
+            self.over = np.bool8(False)
+        else:
+            self.nodes = kwargs["nodes"]
+            self.p1_pos = kwargs["p1_pos"]
+            self.p2_pos = kwargs["p2_pos"]
+            self.p1_walls_placed = kwargs["p1_walls_placed"]
+            self.p2_walls_placed = kwargs["p2_walls_placed"]
+            self.turn = kwargs["turn"]
+            self.over = kwargs["over"]
         # Search mode to be used
         self.path_finding_mode = path_finding_mode
 
@@ -439,10 +457,10 @@ class QuoridorGraphicalBoardMoreOptim:
         if walls_left:
             if self.path_finding_mode == "BFS":
                 search = Breadth_First_Search_Graph_More_Optim
-            # elif self.path_finding_mode == "DFS":
-            #     search = Depth_First_Search_Graph_More_Optim
-            # elif self.path_finding_mode == "GBFS":
-            #     search = Greedy_Best_First_Search_Graph_More_Optim
+            elif self.path_finding_mode == "DFS":
+                search = Depth_First_Search_Graph_More_Optim
+            elif self.path_finding_mode == "GBFS":
+                search = Greedy_Best_First_Search_Graph_More_Optim
             # elif self.path_finding_mode == "UCT":
             #     search = Uniform_Cost_Search_Graph_More_Optim
             # elif self.path_finding_mode == "Astar":

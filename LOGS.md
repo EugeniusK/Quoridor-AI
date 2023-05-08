@@ -97,3 +97,7 @@ Add more variants of optimised graphs - in python
 # 0.0.6.4
 
 More tweaks and fixes to names and optimised graph
+
+# 0.0.6.5
+
+Remove unused versions of graphs that are slower
