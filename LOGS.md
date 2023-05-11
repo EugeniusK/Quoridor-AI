@@ -101,3 +101,8 @@ More tweaks and fixes to names and optimised graph
 # 0.0.6.5
 
 Remove unused versions of graphs that are slower
+
+# 0.0.6.6
+
+GBFS and UCT implemented for optimised graph - BFS and DFS already implemented
+Versions of GBFS and UCT available with numpy sort used

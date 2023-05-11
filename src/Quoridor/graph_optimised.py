@@ -6,6 +6,7 @@ from .path_finding_optimised import (
     Breadth_First_Search_Graph_More_Optim,
     Depth_First_Search_Graph_More_Optim,
     Greedy_Best_First_Search_Graph_More_Optim,
+    Uniform_Cost_Search_Graph_More_Optim,
 )
 from .functions import roll_numba
 
@@ -461,8 +462,8 @@ class QuoridorGraphicalBoardMoreOptim:
                 search = Depth_First_Search_Graph_More_Optim
             elif self.path_finding_mode == "GBFS":
                 search = Greedy_Best_First_Search_Graph_More_Optim
-            # elif self.path_finding_mode == "UCT":
-            #     search = Uniform_Cost_Search_Graph_More_Optim
+            elif self.path_finding_mode == "UCT":
+                search = Uniform_Cost_Search_Graph_More_Optim
             # elif self.path_finding_mode == "Astar":
             #     search = A_Star_Search_Graph_More_Optim
             for row in range(8):
