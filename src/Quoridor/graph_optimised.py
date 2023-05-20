@@ -7,6 +7,7 @@ from .path_finding_optimised import (
     Depth_First_Search_Graph_More_Optim,
     Greedy_Best_First_Search_Graph_More_Optim,
     Uniform_Cost_Search_Graph_More_Optim,
+    A_Star_Search_Graph_More_Optim,
 )
 from .functions import roll_numba
 
@@ -464,8 +465,8 @@ class QuoridorGraphicalBoardMoreOptim:
                 search = Greedy_Best_First_Search_Graph_More_Optim
             elif self.path_finding_mode == "UCT":
                 search = Uniform_Cost_Search_Graph_More_Optim
-            # elif self.path_finding_mode == "Astar":
-            #     search = A_Star_Search_Graph_More_Optim
+            elif self.path_finding_mode == "Astar":
+                search = A_Star_Search_Graph_More_Optim
             for row in range(8):
                 for col in range(8):
                     # Checks if horizontal wall position is empty

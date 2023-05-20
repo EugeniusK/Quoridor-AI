@@ -16,6 +16,8 @@ def simulate(
     board_representation,
     path_finding_mode,
 ):
+    print()
+    print(path_finding_mode)
     rounds = []
     for i in range(1, number_games + 1):
         g = Game(
@@ -164,12 +166,20 @@ def compare_moves_threaded(
 
 
 if __name__ == "__main__":
-    compare_moves_threaded(10, "graph", "graph_optim_more", "BFS", "BFS")
-    # simulate(10, "random", "random", "graph_optim", "BFS")
-    # print()
+    # compare_moves_threaded(10, "graph_optim_more", "graph", "BFS", "BFS")
+    # compare_moves_threaded(10, "graph_optim_more", "graph", "DFS", "BFS")
+    # compare_moves_threaded(10, "graph_optim_more", "graph", "GBFS", "BFS")
+    # compare_moves_threaded(10, "graph_optim_more", "graph", "UCT", "BFS")
+
     # simulate(10, "random", "random", "graph_optim_more", "BFS")
-    # print()
-    # simulate(10, "random", "random", "graph", "BFS")
-    # print()
-    # simulate(10, "random", "random", "bitboard", "BFS")
-    # print()
+    # simulate(10, "random", "random", "graph_optim_more", "DFS")
+    # simulate(10, "random", "random", "graph_optim_more", "GBFS")
+    # simulate(10, "random", "random", "graph_optim_more", "UCT")
+    simulate(10, "random", "random", "graph_optim_more", "Astar")
+    board = Game(False, 1, "random", "random", "BFS", "graph")
+    board.take_action("a5h")
+    board.take_action("c5h")
+
+    board.take_action("e5h")
+    # board.take_action("g5h")
+    board.display()
