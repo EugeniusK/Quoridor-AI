@@ -5,44 +5,73 @@ from numba import njit
 import copy
 
 UCT_CONST = 2
+"""
+    Notes taken after from https://vgarciasc.github.io/mcts-viz/
+
+    Start from current state (root)
+    Leaf - get random child node if root has no children
+         - get child node with MAXIMUM UCT
+
+    Randomly simulate from the leaf until the state is terminal
+    Backpropagate values
+
+    ALWAYS maximimse UCT during selection
+
+    If it is the machine's turn,
+
+    the root node has most recently made the human's move
+    - the children are indicative of the moves that the machine can play
+"""
 
 
 def select(root):
-    """Selection: Start from root R and select successive child nodes until a leaf node L is reached.
+    """Selection: Start from root and select sucessive child nodes until a leaf is reached.
+    The root is the game state that Monte-Carlo Tree Search will run from.
+    The leaf is the node that has no games played yet - effectively infinite UCT score.
+
+    Input:
+    root -> MCTS_NODE
+
+    Ouput:
+    path -> list
+
+    Function returns a path from the root to the leaf.
+    """
+
+    """Description from Wikipedia - Selection: Start from root R and select successive child nodes until a leaf node L is reached.
     The root is the current game state and a leaf is any node that has a potential child from
     which no simulation (playout) has yet been initiated."""
 
     def uct(node, parent_node, exploration_const):
-        if node.games_played == 0:
+        if (
+            node.games_played == 0
+        ):  # prevent division by zero errors when node hasn't been visited
             return float("inf")
         return node.games_won / node.games_played + exploration_const * math.sqrt(
             math.log(parent_node.games_played) / node.games_played
         )
 
     path = [root]
-    node = path[-1]
+    last_node = path[-1]
     while True:
-        if len(node.children) == 0:
-            node.generate_children()
+        if len(last_node.children) == 0:
             return path
-        # if min(node.children, key=lambda child: child.games_played).games_played == 0:
-        #     path.append(
-        #         random.choice(
-        #             [child for child in node.children if child.games_played == 0]
-        #         )
-        #     )
-        #     return path
         else:
-            node = max(node.children, key=lambda child: uct(child, node, UCT_CONST))
-            path.append(node)
+            last_node = max(
+                last_node.children, key=lambda child: uct(child, last_node, UCT_CONST)
+            )
+            path.append(last_node)
 
 
 def expand(node):
     """Expansion: Unless L ends the game decisively (e.g. win/loss/draw) for either player, create one (or more)
     child nodes and choose node C from one of them. Child nodes are any valid moves from the game position defined by L.
     """
-    if node.children == list():
-        node.generate_children()
+    if node.children != []:
+        raise AttributeError(
+            "This function should be called on a leaf node with no children"
+        )
+    node.children = [MCTS_NODE(child) for child in node.state.get_available_states()]
     return random.choice(node.children)
 
 
@@ -61,7 +90,6 @@ def backpropagate(path, reward):
     """Backpropagation: Use the result of the playout to update information in the nodes on the path from C to R."""
     for node in reversed(path):
         # node.state.display_beautiful()
-        reward = 1 - reward
 
         node.games_won += reward
         node.games_played += 1
@@ -74,15 +102,7 @@ def backpropagate(path, reward):
         #     node.games_won,
         #     node.games_played,
         # )
-
-
-def roll_out(root):
-    path = select(root)
-    print(path)
-    leaf = path[-1]
-    child = expand(leaf)
-    reward = simulate(child.state, child.state.turn)
-    backpropagate(path, reward)
+        reward = 1 - reward
 
 
 class QuoridorGraphicalBoardMoreOptimB:
@@ -834,7 +854,14 @@ class MCTS_NODE:
     def generate_children(self):
         self.children = [
             MCTS_NODE(child) for child in self.state.get_available_states()
-        ][0:5]
+        ]
+
+    def __sizeof__(self):
+        return (
+            object.__sizeof__(self)
+            + sum(sys.getsizeof(v) for v in self.__dict__.values())
+            + sum(sys.getsizeof(item) for item in self.children)
+        )
 
     # def __repr__(self):
     #     return f"{self.games_won}/{self.games_played}"
@@ -844,22 +871,46 @@ board = QuoridorGraphicalBoardMoreOptimB()
 
 
 root = MCTS_NODE(board)
-for i in range(10):
+
+import sys
+
+
+def roll_out(root):
+    path = select(root)
+    leaf = path[-1]
+    child = expand(leaf)
+    reward = simulate(child.state, child.state.turn)
+    backpropagate(path + [child], reward)
+    print(sys.getsizeof(root) / 1e6, "MB")
+
+
+for i in range(500):
     roll_out(root)
+print(
+    [
+        (c.games_won, c.games_played)
+        for c in sorted(root.children, key=lambda x: x.games_played)
+    ]
+)
+# for i in range(500):
+#     print(i + 1, "th rollout")
+#     roll_out(root)
 
 
-def display_mcts(root, depth=1):
-    if root.children == []:
-        print("-----------------------------")
-        return
-    print(f"{root.games_won}/{root.games_played}")
-    print([f"{c.games_won}/{c.games_played}" for c in root.children])
+# def display_mcts(root, depth=1):
+#     if root.children == []:
+#         return
+#     print(f"{root.games_won}/{root.games_played}")
+#     children_games = [
+#         f"{c.games_won}/{c.games_played}" for c in root.children if c.games_played != 0
+#     ]
+#     if children_games == []:
+#         pass
+#     else:
+#         print(children_games)
 
-    for c in root.children:
-        display_mcts(c)
 
-
-print(display_mcts(root))
+# print(display_mcts(root))
 
 
 # print(
