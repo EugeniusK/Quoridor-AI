@@ -29,7 +29,16 @@ def is_in_2d_numba(test_arr, arr):
     return False
 
 
-if __name__ == "__main__":
-    print(roll_numba(np.arange(9), -2))
-    print("not supposed to be run")
-    raise ImportError
+@njit(cache=True)
+def shift_bitboard(bitboard, shift):
+    # right is positive shift EAST
+    if shift > 0 and shift < 64:
+        rshift = np.uint64(shift)
+        lshift = np.uint64(64 - shift)
+        copy_bitboard = (bitboard >> rshift) + (np.roll(bitboard, 1) << lshift)
+        copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
+    elif shift < 0 and shift > -64:
+        rshift = np.uint64(64 + shift)
+        lshift = np.uint64(-shift)
+        copy_bitboard = (bitboard << lshift) + (np.roll(bitboard, -1) >> rshift)
+    return copy_bitboard
