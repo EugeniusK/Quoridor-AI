@@ -1,26 +1,56 @@
 import numpy as np
 import time
 import sys
-from numba import njit, int32, uint32, int64, uint64
+from numba import njit, int32, uint32, int64, uint64, int8, boolean
+from numba.experimental import jitclass
+from bitboard_pathfinding import (
+    BreadthFirstSearch_Bitboard,
+    DepthFirstSearch_Bitboard,
+    GreedyBestFirstSearch_Bitboard,
+    UniformCostSearch_Bitboard,
+    AStarSearch_Bitboard,
+)
+
+# spec = [
+#     ("p1", uint64[:]),
+#     ("p2", uint64[:]),
+#     ("walls", uint64[:]),
+#     ("p1_walls_placed", int8),
+#     ("p2_walls_placed", int8),
+#     ("turn", int8),
+#     ("over", boolean),
+# ]
 
 
 @njit(cache=True)
 def shift_bitboard(bitboard, shift):
     # right is positive shift EAST
+    """
+    0001 0000 0000 --> 0000 1000 0000 = everything >> 1 and add 0000 1000 0000
+    0000 1000 0000 is equal to roll init (0000 0001 0000) and << 4-1
+    BUT IF 0000 0001 >> 1 = 0000 0000
+    using above, 0000 0001 >> 1 ??= 0000 0000 + 1000 0000
+
+    """
     if shift > 0 and shift < 64:
         rshift = np.uint64(shift)
         lshift = np.uint64(64 - shift)
         copy_bitboard = (bitboard >> rshift) + (np.roll(bitboard, 1) << lshift)
         copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
+        if bitboard[0] == 0:
+            copy_bitboard[0] = 0
     elif shift < 0 and shift > -64:
         rshift = np.uint64(64 + shift)
         lshift = np.uint64(-shift)
         copy_bitboard = (bitboard << lshift) + (np.roll(bitboard, -1) >> rshift)
+        if bitboard[4] == 0:
+            copy_bitboard[4] = 0
     return copy_bitboard
 
 
+# @jitclass(spec)
 class QuoridorBitBoard:
-    def __init__(self, **kwargs):
+    def __init__(self, path_finding_mode="BFS"):
         # Methods of representing Quoridor bitboards are
         # - use 3 17x17 array of bits to represent location of p1, p2 and walls
         #   which requires 3 sets of 6 64 bit integers (384)
@@ -30,48 +60,47 @@ class QuoridorBitBoard:
         # 97~160 are 3th
         # 161~224 are 2nd
         # 225~288 are 1st
-        if kwargs.get("load") == True:
-            pass
-        else:
-            self.p1 = np.array([0, 0, 0, 0, 2**39], dtype=np.uint64)
-            self.p2 = np.array([2**55, 0, 0, 0, 0], dtype=np.uint64)
-            self.walls = np.array([0, 0, 0, 0, 0], dtype=np.uint64)
 
-            # board is represented as
-            # 9   │   │   │   │ 2 │   │   │   │
-            # .───┼───┼───┼───┼───┼───┼───┼───┼───
-            # 8   │   │   │   │   │   │   │   │
-            # .───┼───┼───┼───┼───┼───┼───┼───┼───
-            # 7   │   │   │   │   │   │   │   │
-            # .───┼───┼───┼───┼───┼───┼───┼───┼───
-            # 6   │   │   │   │   │   │   │   │
-            # .───┼───┼───┼───┼───┼───┼───┼───┼───
-            # 5   │   │   │   │   │   │   │   │
-            # .───┼───┼───┼───┼───┼───┼───┼───┼───
-            # 4   │   │   │   │   │   │   │   │
-            # .───┼───┼───┼───┼───┼───┼───┼───┼───
-            # 3   │   │   │   │   │   │   │   │
-            # .───┼───┼───┼───┼───┼───┼───┼───┼───
-            # 2   │   │   │   │   │   │   │   │
-            # .───┼───┼───┼───┼───┼───┼───┼───┼───
-            # 1   │   │   │   │ 1 │   │   │   │
-            # . a   b   c   d   e   f   g   h   i
-            # location a9 is MSB of 1st 64 bit, horizontal wall below g8 is LSB
-            # location i1 is 31st bit of 5th 64 bit (from LSB), insection to NE of a1 is MSB of
+        self.path_finding_mode = path_finding_mode
+        self.p1 = np.array([0, 0, 0, 0, 2**39], dtype=np.uint64)
+        self.p2 = np.array([2**55, 0, 0, 0, 0], dtype=np.uint64)
+        self.walls = np.array([0, 0, 0, 0, 0], dtype=np.uint64)
 
-            self.p1_walls_placed = np.int8(0)
-            self.p2_walls_placed = np.int8(0)
+        # board is represented as
+        # 9   │   │   │   │ 2 │   │   │   │
+        # .───┼───┼───┼───┼───┼───┼───┼───┼───
+        # 8   │   │   │   │   │   │   │   │
+        # .───┼───┼───┼───┼───┼───┼───┼───┼───
+        # 7   │   │   │   │   │   │   │   │
+        # .───┼───┼───┼───┼───┼───┼───┼───┼───
+        # 6   │   │   │   │   │   │   │   │
+        # .───┼───┼───┼───┼───┼───┼───┼───┼───
+        # 5   │   │   │   │   │   │   │   │
+        # .───┼───┼───┼───┼───┼───┼───┼───┼───
+        # 4   │   │   │   │   │   │   │   │
+        # .───┼───┼───┼───┼───┼───┼───┼───┼───
+        # 3   │   │   │   │   │   │   │   │
+        # .───┼───┼───┼───┼───┼───┼───┼───┼───
+        # 2   │   │   │   │   │   │   │   │
+        # .───┼───┼───┼───┼───┼───┼───┼───┼───
+        # 1   │   │   │   │ 1 │   │   │   │
+        # . a   b   c   d   e   f   g   h   i
+        # location a9 is MSB of 1st 64 bit, horizontal wall below g8 is LSB
+        # location i1 is 31st bit of 5th 64 bit (from LSB), insection to NE of a1 is MSB of
 
-            # Player who is in turn
-            self.turn = np.int8(1)
+        self.p1_walls_placed = np.int8(0)
+        self.p2_walls_placed = np.int8(0)
 
-            # If the game is over or not
-            self.over = np.bool8(False)
-            # 63~60 bits represent the number of walls p1 has placed
-            # 59~56 bits represent the number of walls p2 has placed
-            # 1 bit represents the player who is in turn - 0: p1, 1: p2
-            # 0 bit represents if the game is over - 0: False, 1: True
-            # All above counted from RHS
+        # Player who is in turn
+        self.turn = np.int8(1)
+
+        # If the game is over or not
+        self.over = np.bool8(False)
+        # 63~60 bits represent the number of walls p1 has placed
+        # 59~56 bits represent the number of walls p2 has placed
+        # 1 bit represents the player who is in turn - 0: p1, 1: p2
+        # 0 bit represents if the game is over - 0: False, 1: True
+        # All above counted from RHS
 
     def _place_wall(self, wall_number):
         # wall number indexed from 0 to 127
@@ -176,6 +205,9 @@ class QuoridorBitBoard:
                 self.p2_walls_placed += 1
             elif 128 <= move_number < 144:
                 self._move_player(self.p2, self.p1, move_number)
+
+        if self.is_over():
+            self.over = True
 
     def get_available_actions(self):
         walls_left = True
@@ -310,27 +342,35 @@ class QuoridorBitBoard:
         # get the wall actions available by iterating through all 128 possible,
         # see if wall can be placed and then run pathfinding algorithm
         if walls_left:
+            if self.path_finding_mode == "BFS":
+                search = BreadthFirstSearch_Bitboard
+            elif self.path_finding_mode == "DFS":
+                search = DepthFirstSearch_Bitboard
+            elif self.path_finding_mode == "GBFS":
+                search = GreedyBestFirstSearch_Bitboard
+            elif self.path_finding_mode == "UCT":
+                search = UniformCostSearch_Bitboard
+            elif self.path_finding_mode == "Astar":
+                search = AStarSearch_Bitboard
             for wall_number in range(128):
                 if wall_number < 64:
                     # horizontal wall placed
                     idx_wall = (
                         (wall_number // 8 + 1) * 34 - 1 - 2 * (wall_number % 8),
-                        (wall_number // 8 + 1) * 34 - 1 - 2 * (wall_number % 8) - 1,
-                        (wall_number // 8 + 1) * 34 - 1 - 2 * (wall_number % 8) - 2,
+                        (wall_number // 8 + 1) * 34 - 2 - 2 * (wall_number % 8),
+                        (wall_number // 8 + 1) * 34 - 3 - 2 * (wall_number % 8),
                     )
                 elif wall_number < 128:
                     # vertical wall placed
                     idx_wall = (
+                        ((wall_number % 64) // 8 + 1) * 34 - 19 - 2 * (wall_number % 8),
                         ((wall_number % 64) // 8 + 1) * 34
                         - 19
-                        - 2 * ((wall_number % 64) % 8),
-                        ((wall_number % 64) // 8 + 1) * 34
-                        - 19
-                        - 2 * ((wall_number % 64) % 8)
+                        - 2 * (wall_number % 8)
                         + 17,
                         ((wall_number % 64) // 8 + 1) * 34
                         - 19
-                        - 2 * ((wall_number % 64) % 8)
+                        - 2 * (wall_number % 8)
                         + 34,
                     )
                 else:
@@ -355,13 +395,15 @@ class QuoridorBitBoard:
                         if self.walls[0] & np.uint64(2 ** (idx - 225)) != 0:
                             valid = False
 
-                if valid:
+                if valid and search(
+                    bitboard_in_turn, self.turn, self.walls, wall_number
+                ):
                     actions[wall_number] = True
 
         return actions
 
     def is_over(self):
-        if self.p1[0] > 140737488355328 or 2**16 > self.p2[4] > 0:
+        if self.p1[0] >= 140737488355328 or 140737488355328 <= self.p2[4]:
             return True
 
     def display(self):
@@ -371,10 +413,11 @@ class QuoridorBitBoard:
         print()
 
 
-board = QuoridorBitBoard()
-print(id(board), id(board.p1), id(board.p2))
-print(board.get_available_actions())
-board.take_action(64 + 5)
+board = QuoridorBitBoard("BFS")
+# board.take_action(64 + 5)
 
-board.display()
-print(board.get_available_actions())
+import timeit
+
+print(
+    timeit.timeit("board.get_available_actions()", globals=globals(), number=100) / 100
+)
