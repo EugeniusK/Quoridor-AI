@@ -1,4 +1,4 @@
-from .path_finding import (
+from Quoridor.bg_pathfinding import (
     Breadth_First_Search_Graph,
     Greedy_Best_First_Search_Graph,
     Depth_First_Search_Graph,
@@ -6,10 +6,102 @@ from .path_finding import (
     A_Star_Search_Graph,
 )
 
+"""
+This is the initial implementation of the graphical representation.
+The board is represented using an undirected graph that is stored
+as an adjacency list.
+
+This implementation only uses pure "vanilla" Python with
+no additional libraries.
+"""
+
 
 class QuoridorGraphicalBoard:
     def __init__(self, search_mode="BFS"):
-        self.nodes = []  # all 81 positions possible
+        # Blank adjacency list
+        self.nodes = [
+            ((0, 0), [(0, 1), (1, 0)]),
+            ((0, 1), [(0, 2), (1, 1), (0, 0)]),
+            ((0, 2), [(0, 3), (1, 2), (0, 1)]),
+            ((0, 3), [(0, 4), (1, 3), (0, 2)]),
+            ((0, 4), [(0, 5), (1, 4), (0, 3)]),
+            ((0, 5), [(0, 6), (1, 5), (0, 4)]),
+            ((0, 6), [(0, 7), (1, 6), (0, 5)]),
+            ((0, 7), [(0, 8), (1, 7), (0, 6)]),
+            ((0, 8), [(1, 8), (0, 7)]),
+            ((1, 0), [(0, 0), (1, 1), (2, 0)]),
+            ((1, 1), [(0, 1), (1, 2), (2, 1), (1, 0)]),
+            ((1, 2), [(0, 2), (1, 3), (2, 2), (1, 1)]),
+            ((1, 3), [(0, 3), (1, 4), (2, 3), (1, 2)]),
+            ((1, 4), [(0, 4), (1, 5), (2, 4), (1, 3)]),
+            ((1, 5), [(0, 5), (1, 6), (2, 5), (1, 4)]),
+            ((1, 6), [(0, 6), (1, 7), (2, 6), (1, 5)]),
+            ((1, 7), [(0, 7), (1, 8), (2, 7), (1, 6)]),
+            ((1, 8), [(0, 8), (2, 8), (1, 7)]),
+            ((2, 0), [(1, 0), (2, 1), (3, 0)]),
+            ((2, 1), [(1, 1), (2, 2), (3, 1), (2, 0)]),
+            ((2, 2), [(1, 2), (2, 3), (3, 2), (2, 1)]),
+            ((2, 3), [(1, 3), (2, 4), (3, 3), (2, 2)]),
+            ((2, 4), [(1, 4), (2, 5), (3, 4), (2, 3)]),
+            ((2, 5), [(1, 5), (2, 6), (3, 5), (2, 4)]),
+            ((2, 6), [(1, 6), (2, 7), (3, 6), (2, 5)]),
+            ((2, 7), [(1, 7), (2, 8), (3, 7), (2, 6)]),
+            ((2, 8), [(1, 8), (3, 8), (2, 7)]),
+            ((3, 0), [(2, 0), (3, 1), (4, 0)]),
+            ((3, 1), [(2, 1), (3, 2), (4, 1), (3, 0)]),
+            ((3, 2), [(2, 2), (3, 3), (4, 2), (3, 1)]),
+            ((3, 3), [(2, 3), (3, 4), (4, 3), (3, 2)]),
+            ((3, 4), [(2, 4), (3, 5), (4, 4), (3, 3)]),
+            ((3, 5), [(2, 5), (3, 6), (4, 5), (3, 4)]),
+            ((3, 6), [(2, 6), (3, 7), (4, 6), (3, 5)]),
+            ((3, 7), [(2, 7), (3, 8), (4, 7), (3, 6)]),
+            ((3, 8), [(2, 8), (4, 8), (3, 7)]),
+            ((4, 0), [(3, 0), (4, 1), (5, 0)]),
+            ((4, 1), [(3, 1), (4, 2), (5, 1), (4, 0)]),
+            ((4, 2), [(3, 2), (4, 3), (5, 2), (4, 1)]),
+            ((4, 3), [(3, 3), (4, 4), (5, 3), (4, 2)]),
+            ((4, 4), [(3, 4), (4, 5), (5, 4), (4, 3)]),
+            ((4, 5), [(3, 5), (4, 6), (5, 5), (4, 4)]),
+            ((4, 6), [(3, 6), (4, 7), (5, 6), (4, 5)]),
+            ((4, 7), [(3, 7), (4, 8), (5, 7), (4, 6)]),
+            ((4, 8), [(3, 8), (5, 8), (4, 7)]),
+            ((5, 0), [(4, 0), (5, 1), (6, 0)]),
+            ((5, 1), [(4, 1), (5, 2), (6, 1), (5, 0)]),
+            ((5, 2), [(4, 2), (5, 3), (6, 2), (5, 1)]),
+            ((5, 3), [(4, 3), (5, 4), (6, 3), (5, 2)]),
+            ((5, 4), [(4, 4), (5, 5), (6, 4), (5, 3)]),
+            ((5, 5), [(4, 5), (5, 6), (6, 5), (5, 4)]),
+            ((5, 6), [(4, 6), (5, 7), (6, 6), (5, 5)]),
+            ((5, 7), [(4, 7), (5, 8), (6, 7), (5, 6)]),
+            ((5, 8), [(4, 8), (6, 8), (5, 7)]),
+            ((6, 0), [(5, 0), (6, 1), (7, 0)]),
+            ((6, 1), [(5, 1), (6, 2), (7, 1), (6, 0)]),
+            ((6, 2), [(5, 2), (6, 3), (7, 2), (6, 1)]),
+            ((6, 3), [(5, 3), (6, 4), (7, 3), (6, 2)]),
+            ((6, 4), [(5, 4), (6, 5), (7, 4), (6, 3)]),
+            ((6, 5), [(5, 5), (6, 6), (7, 5), (6, 4)]),
+            ((6, 6), [(5, 6), (6, 7), (7, 6), (6, 5)]),
+            ((6, 7), [(5, 7), (6, 8), (7, 7), (6, 6)]),
+            ((6, 8), [(5, 8), (7, 8), (6, 7)]),
+            ((7, 0), [(6, 0), (7, 1), (8, 0)]),
+            ((7, 1), [(6, 1), (7, 2), (8, 1), (7, 0)]),
+            ((7, 2), [(6, 2), (7, 3), (8, 2), (7, 1)]),
+            ((7, 3), [(6, 3), (7, 4), (8, 3), (7, 2)]),
+            ((7, 4), [(6, 4), (7, 5), (8, 4), (7, 3)]),
+            ((7, 5), [(6, 5), (7, 6), (8, 5), (7, 4)]),
+            ((7, 6), [(6, 6), (7, 7), (8, 6), (7, 5)]),
+            ((7, 7), [(6, 7), (7, 8), (8, 7), (7, 6)]),
+            ((7, 8), [(6, 8), (8, 8), (7, 7)]),
+            ((8, 0), [(7, 0), (8, 1)]),
+            ((8, 1), [(7, 1), (8, 2), (8, 0)]),
+            ((8, 2), [(7, 2), (8, 3), (8, 1)]),
+            ((8, 3), [(7, 3), (8, 4), (8, 2)]),
+            ((8, 4), [(7, 4), (8, 5), (8, 3)]),
+            ((8, 5), [(7, 5), (8, 6), (8, 4)]),
+            ((8, 6), [(7, 6), (8, 7), (8, 5)]),
+            ((8, 7), [(7, 7), (8, 8), (8, 6)]),
+            ((8, 8), [(7, 8), (8, 7)]),
+        ]
         """
         Array represents positions in this following order
         0, 1, 2, 3, ...,
@@ -25,116 +117,275 @@ class QuoridorGraphicalBoard:
 
         However, when the board is displayed, a1 will be bottom left and e9 will be top left
         """
+        # Position of both players stored as (row, col)
         self.p1_pos = (0, 4)
         self.p2_pos = (8, 4)
 
+        # Number of walls that each player has placed
         self.p1_walls_placed = 0
         self.p2_walls_placed = 0
 
-        self.turn = 1  # 0 if player 1 turn, 1 if player 2 turn
+        # Player who is in turn
+        self.turn = 1
 
+        # If the game is over or not
         self.over = False
-        for row in range(0, 9):
-            for column in range(0, 9):
-                # adds the neighbours for each node
-                position = (row, column)
-                neighbours = [
-                    (row - 1, column),
-                    (row, column + 1),
-                    (row + 1, column),
-                    (row, column - 1),
-                ]
-                # removes neighbours if they are beyond what is allowed
-                # like row = -1 and column = -1
-                if row == 0:
-                    neighbours.remove((row - 1, column))
-                if column == 8:
-                    neighbours.remove((row, column + 1))
-                if row == 8:
-                    neighbours.remove((row + 1, column))
-                if column == 0:
-                    neighbours.remove((row, column - 1))
 
-                self.nodes.append((position, neighbours))
+        # Search mode to be used when verifying if a wall is allowed
         self.search_mode = search_mode
 
+        # Previously, an adjacency list was created from scratch everytime
+        # a new board was created. However, as the inital state is always the same,
+        # it is now coded into self.nodes in advance
+
     def get_available_actions(self):
-        # for the player in turn, find the places the player can move to
-        # as well as finding the location of walls that can be placed
-        # while allowing the other player to reach their winning side
+        """
+        For the player in turn, return available actions with a boolean array
+        where if index X is True, action X is valid and vice versa.
 
-        # in_turn_moves stores the moves possible by the player in turn
-        # out_turn_moves stores the moves posisble by the player not in turn
-        # in_turn_pos stores the location of the player in turn
-        # out_turn_pos stores the location of the player out of turn
+        Actions 0~63 represent horizontal wall placements
+        where 0 represents a1h, 1 represents b1h, ..., 63 represents i8h
 
+        Actions 64~127 represent vertical wall placements
+        where 0 represents a1v, 1 represents b1v, ..., 63 represents i8v
+
+        Actions 128~139 represent the moves from the player's position
+        -  N, E, S, W, NN, NE, EE, SE, SS, SW, WW, NW
+        """
+
+        # Boolean array where index X records if action X is possible
+        available_actions = [
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+        ]
+
+        # If the player in turn has no walls left (placed all 10),
+        # there is no need to find all the available walls.
         walls_left = True
-        if self.turn == 1:
-            # It's player 1's turn
-            in_turn_moves = self.nodes[self.p1_pos[0] * 9 + self.p1_pos[1]][1][:]
-            out_turn_moves = self.nodes[self.p2_pos[0] * 9 + self.p2_pos[1]][1][:]
 
+        # Depending on the player whose turn it is,
+        # in_turn_pos, out_turn_pos are temporarily used to reference
+        # the corrent positions(according to their name)
+        # in_turn_moves, out_turn_moves are also temporarily used to refrence
+        # the correct possible moves from each player's position
+        if self.turn == 1:
             in_turn_pos = self.p1_pos
             out_turn_pos = self.p2_pos
 
             if self.p1_walls_placed == 10:
                 walls_left = False
-        elif self.turn == 2:
-            # It's the player 2's turn
-            in_turn_moves = self.nodes[self.p2_pos[0] * 9 + self.p2_pos[1]][1][:]
-            out_turn_moves = self.nodes[self.p1_pos[0] * 9 + self.p1_pos[1]][1][:]
 
+            in_turn_moves = self.nodes[self.p1_pos[0] * 9 + self.p1_pos[1]][1][:]
+            out_turn_moves = self.nodes[self.p2_pos[0] * 9 + self.p2_pos[1]][1][:]
+        elif self.turn == 2:
             in_turn_pos = self.p2_pos
             out_turn_pos = self.p1_pos
 
             if self.p2_walls_placed == 10:
                 walls_left = False
 
+            in_turn_moves = self.nodes[self.p2_pos[0] * 9 + self.p2_pos[1]][1][:]
+            out_turn_moves = self.nodes[self.p1_pos[0] * 9 + self.p1_pos[1]][1][:]
+
+        # If the position of the player not in turn (out_turn_pos) is in the list of nodes adjacent to
+        # the player in turn (in_turn_moves), the two players are adjacent to each other
+        # So determine if the player in turn can jump over the other player
+        # or if there are moves available to the side
         if out_turn_pos in in_turn_moves:
-            # removes any moves that goes to the out of turn player's position - will lead to overlap
-            # this means that it may be possible for the player in turn to jump over the other player
+            # As the players are adjacent, it is impossible for the player in turn to move to the
+            # square where the out of turn player is as this would lead to players sharing the square
+            # Therefore the position of the out of turn player is removed
             in_turn_moves.remove(out_turn_pos)
 
+            # Calculate the relative position of player out of turn from player in turn
             relative_pos = (
                 out_turn_pos[0] - in_turn_pos[0],
                 out_turn_pos[1] - in_turn_pos[1],
-            )  # calculates relative position of out of turn player from in turn player
-
-            # IF the move that jumps over out of turn player is available, add the move
-            # OTHERWISE, add the moves from the position of out of turn player
-            # and remove the in turn position as this will just move player in turn to its original position
+            )
 
             if relative_pos == (-1, 0):
-                # player out of turn is North of player in turn
+                # If the player in turn can jump over the player out of turn
+                # without going over a wall, set the move NN as possible
                 if (in_turn_pos[0] - 2, in_turn_pos[1]) in out_turn_moves:
                     in_turn_moves.append((in_turn_pos[0] - 2, in_turn_pos[1]))
                 else:
+                    # Add the neighbours of the player in turn but not the position of the
+                    # player in turn
                     in_turn_moves.extend(out_turn_moves)
                     in_turn_moves.remove(in_turn_pos)
             elif relative_pos == (0, 1):
-                # player out of turn is East of player in turn
+                # If the player in turn can jump over the player out of turn
+                # without going over a wall, set the move EE as possible
                 if (in_turn_pos[0], in_turn_pos[1] + 2) in out_turn_moves:
                     in_turn_moves.append((in_turn_pos[0], in_turn_pos[1] + 2))
                 else:
+                    # Add the neighbours of the player in turn but not the position of the
+                    # player in turn
                     in_turn_moves.extend(out_turn_moves)
                     in_turn_moves.remove(in_turn_pos)
             elif relative_pos == (1, 0):
-                # player out of turn is South of player in turn
+                # If the player in turn can jump over the player out of turn
+                # without going over a wall, set the move SS as possible
                 if (in_turn_pos[0] + 2, in_turn_pos[1]) in out_turn_moves:
                     in_turn_moves.append((in_turn_pos[0] + 2, in_turn_pos[1]))
                 else:
+                    # Add the neighbours of the player in turn but not the position of the
+                    # player in turn
                     in_turn_moves.extend(out_turn_moves)
                     in_turn_moves.remove(in_turn_pos)
             elif relative_pos == (0, -1):
-                # player out of turn is West of player in turn
+                # If the player in turn can jump over the player out of turn
+                # without going over a wall, set the move WW as possible
                 if (in_turn_pos[0], in_turn_pos[1] - 2) in out_turn_moves:
                     in_turn_moves.append((in_turn_pos[0], in_turn_pos[1] - 2))
                 else:
+                    # Add the neighbours of the player in turn but not the position of the
+                    # player in turn
                     in_turn_moves.extend(out_turn_moves)
                     in_turn_moves.remove(in_turn_pos)
 
-        walls_available = []  # walls that players can place
+        # Only attempt to find the possible walls if the player has walls available
+        # Otherwise, only focus on the possible movements
         if walls_left == True:
+            # Set the pathfinding mode based on parameter during initialisation of board
             if self.search_mode == "BFS":
                 search = Breadth_First_Search_Graph
             elif self.search_mode == "DFS":
@@ -149,17 +400,14 @@ class QuoridorGraphicalBoard:
             # self.display_beautiful()
             for row in range(8):
                 for column in range(8):
+                    # Check if horizontal wall at position (row, col) can be placed
+                    # taking into account the possibility of multiple walls being placed in a line
                     if (
                         self.nodes[row * 9 + column][0]
                         in self.nodes[row * 9 + column + 9][1]
                         and self.nodes[row * 9 + column + 1][0]
                         in self.nodes[row * 9 + column + 10][1]
                     ):
-                        # checks if a horizontal wall can be placed with (row, column) to the left and top
-                        # checking if a move from (row, column) to (row + 1, column) AND (row, column + 1)
-                        # and (row + 1, column + 1) is allowed
-                        # this is only checked for rows 0~7 as row 8 will check for non-existant row 9
-                        # and only for columns 0~7 as column 8 will check for non-existant column 9
                         if (
                             (
                                 self.nodes[row * 9 + column][0]
@@ -248,27 +496,23 @@ class QuoridorGraphicalBoard:
                                 )
                             )
                         ):
-                            # ensures that there is no vertical wall going through the candidate horizontal row
-                            # by checking if a move from (row, column) to (row, column + 1) allowed
-                            # and checking if a move from (row + 1, column) to (row + 1, column + 1) is allowed
-                            # if both of them are not allowed, there is a vertical wall going through the horizontal wall
-                            # NEED A STAR SEARCH ALGORITHM TO VERIFFY EXISTING PATH
+                            # Check if the vertical wall placed at (row, column)
+                            # still allows both players to reach their destinations
+                            # using the pathfinding algorithm set above
                             move = ((row, column), "h")
                             BFS_1 = search(self.nodes, self.p1_pos, 8, move)
                             BFS_2 = search(self.nodes, self.p2_pos, 0, move)
                             if BFS_1 == True and BFS_2 == True:
-                                walls_available.append(move)
+                                # Set True only if pathfinding successful for both players
+                                available_actions[row * 8 + column] = True
                     if (
                         self.nodes[row * 9 + column][0]
                         in self.nodes[row * 9 + column + 1][1]
                         and self.nodes[row * 9 + column + 9][0]
                         in self.nodes[row * 9 + column + 10][1]
                     ):
-                        # checks if a vertical wall can be placed with (row, column) to the left and top
-                        # checking if a move from (row, column) to (row, column+1) AND (row+1, column)
-                        # and (row + 1, column + 1) is allowed
-                        # this is only checked for rows 0~7 as row 8 will check for non-existant row 9
-                        # and only for columns 0~7 as colum 8 will check for non-existant column 9
+                        # Check if vertical wall at position (row, col) can be placed
+                        # taking into account the possibility of multiple walls being placed in a line
                         if (
                             (
                                 self.nodes[row * 9 + column][0]
@@ -357,80 +601,123 @@ class QuoridorGraphicalBoard:
                                 )
                             )
                         ):
-                            # ensures that there is no horizontal wall going through the candidate vertical row
-                            # by checking if a move from (row, column) to (row + 1, column) allowed
-                            # and checking if a move from (row, column + 1) to (row + 1, column + 1) is allowed
-                            # if both of them are not allowed, there is a horizontal wall going through the vertical wall
-                            # NEED A STAR SEARCH ALGORITHM TO VERIFFY EXISTING PATH
+                            # Check if the vertical wall placed at (row, column)
+                            # still allows both players to reach their destinations
+                            # using the pathfinding algorithm set above
                             move = ((row, column), "v")
                             BFS_1 = search(self.nodes, self.p1_pos, 8, move)
                             BFS_2 = search(self.nodes, self.p2_pos, 0, move)
                             if BFS_1 == True and BFS_2 == True:
-                                walls_available.append(move)
-        algebraic_moves = []
-        for move in (
-            in_turn_moves + walls_available
-        ):  # Converts wrong format ((row, colymn), 'type') to algebraic notation
-            if type(move[0]) == tuple:
-                if move[1] == "h":
-                    algebraic_move = f"{chr(97+move[0][1])}{move[0][0]+1}h"
-                elif move[1] == "v":
-                    algebraic_move = f"{chr(97+move[0][1])}{move[0][0]+1}v"
-            elif type(move[0]) == int:
-                algebraic_move = f"{chr(97+move[1])}{move[0]+1}"
-            algebraic_moves.append(algebraic_move)
-        return algebraic_moves
+                                # Set True only if pathfinding successful for both players
+                                available_actions[64 + row * 8 + column] = True
 
-    def take_action(self, action):
-        if len(action) == 2:
-            #
-            # is a move to row, column
-            if self.turn == 1:  # if it's player 1 turn
+        # For each move that can be taken by the player in turn,
+        # add to available_actions by setting True at index
+        for move in in_turn_moves:
+            rel_move = (move[0] - in_turn_pos[0], move[1] - in_turn_pos[1])
+            if rel_move == (1, 0):  # N
+                available_actions[128] = True
+            elif rel_move == (0, 1):  # E
+                available_actions[129] = True
+            elif rel_move == (-1, 0):  # S
+                available_actions[130] = True
+            elif rel_move == (0, -1):  # W
+                available_actions[131] = True
+            elif rel_move == (2, 0):  # NN
+                available_actions[132] = True
+            elif rel_move == (1, 1):  # NE
+                available_actions[133] = True
+            elif rel_move == (0, 2):  # EE
+                available_actions[134] = True
+            elif rel_move == (-1, 1):  # SE
+                available_actions[135] = True
+            elif rel_move == (-2, 0):  # SS
+                available_actions[136] = True
+            elif rel_move == (-1, -1):  # SW
+                available_actions[137] = True
+            elif rel_move == (0, -2):  # WW
+                available_actions[138] = True
+            elif rel_move == (1, -1):  # NW
+                available_actions[139] = True
+
+        return available_actions
+
+    def take_action(self, action_number):
+        """
+        For the player in turn, perform the action inputed
+
+        Actions 0~63 represent horizontal wall placements
+        where 0 represents a1h, 1 represents b1h, ..., 63 represents i8h
+
+        Actions 64~127 represent vertical wall placements
+        where 0 represents a1v, 1 represents b1v, ..., 63 represents i8v
+
+        Actions 128~139 represent the moves from the player's position
+        -  N, E, S, W, NN, NE, EE, SE, SS, SW, WW, NW
+        """
+
+        rel_move = [
+            (1, 0),
+            (0, 1),
+            (-1, 0),
+            (0, -1),
+            (2, 0),
+            (1, 1),
+            (0, 2),
+            (-1, 1),
+            (-2, 0),
+            (-1, -1),
+            (0, -2),
+            (1, -1),
+        ]
+
+        # Action is a movement
+        if action_number >= 128:
+            if self.turn == 1:
+                # Move player 1 according to the relative motion defined in rel_move
                 self.p1_pos = (
-                    int(action[1]) - 1,
-                    ord(action[0]) - 97,
-                )  # moves player 1 to new position
+                    self.p1_pos[0] + rel_move[action_number - 128][0],
+                    self.p1_pos[1] + rel_move[action_number - 128][1],
+                )
+                # If the new position of player 1 is on the winning row, the game is over
+                # Otherwise, set the turn to player 2
                 if self.p1_pos[0] == 8:
-                    # if the new position is on the winning row, game is over
                     self.over = True
                 else:
-                    self.turn = 2  # change turn to other player
+                    self.turn = 2
 
-            elif self.turn == 2:  # if it's player 2 turn
+            elif self.turn == 2:
+                # Move player 2 according to the relative motion defined in rel_move
                 self.p2_pos = (
-                    int(action[1]) - 1,
-                    ord(action[0]) - 97,
-                )  # moves player 2 to new position
+                    self.p2_pos[0] + rel_move[action_number - 128][0],
+                    self.p2_pos[1] + rel_move[action_number - 128][1],
+                )
+                # If the new position of player 2 is on the winning row, the game is over
+                # Otherwise, set the turn to player 1
                 if self.p2_pos[0] == 0:
-                    # if the new position is on the winning row, game is over
                     self.over = True
                 else:
-                    self.turn = 1  # change turn to other player
-        elif len(action) == 3:
-            # move is in format ((row, column), direction)
-            # is a wall place
-            pos = (
-                int(action[1]) - 1,
-                ord(action[0]) - 97,
-            )
+                    self.turn = 1
 
-            # for a wall place, remove B as a neighbour from A and remove A as a neighbour from B and repeat for C and D
-            if action[2] == "h":
+        # Action is a wall placement
+        else:
+            # Horizontal wall
+            if action_number < 64:
+                pos = (action_number // 8, action_number % 8)
                 self.nodes[pos[0] * 9 + pos[1]][1].remove((pos[0] + 1, pos[1]))
                 self.nodes[pos[0] * 9 + pos[1] + 9][1].remove((pos[0], pos[1]))
-
                 self.nodes[pos[0] * 9 + pos[1] + 1][1].remove((pos[0] + 1, pos[1] + 1))
                 self.nodes[pos[0] * 9 + pos[1] + 10][1].remove((pos[0], pos[1] + 1))
-
-            elif action[2] == "v":
+            # Vertical wall
+            elif action_number < 128:
+                pos = ((action_number - 64) // 8, action_number % 8)
                 self.nodes[pos[0] * 9 + pos[1]][1].remove((pos[0], pos[1] + 1))
                 self.nodes[pos[0] * 9 + pos[1] + 1][1].remove((pos[0], pos[1]))
-
                 self.nodes[pos[0] * 9 + pos[1] + 9][1].remove((pos[0] + 1, pos[1] + 1))
                 self.nodes[pos[0] * 9 + pos[1] + 10][1].remove((pos[0] + 1, pos[1]))
 
-            # add 1 to number of walls placed
-            # and change turn to other player
+            # Increment the number of walls placed for the relevant player
+            # Set the turn to the other player
             if self.turn == 1:
                 self.p1_walls_placed += 1
                 self.turn = 2
@@ -622,20 +909,11 @@ class QuoridorGraphicalBoard:
         return self.turn
 
 
-# # generate algebraic notations for moves
-#             # a-h from left to right and 1-9 from bottom to top
-#             # from perspective of player 1 who starts from bottom
-
-#             # player 1 starts at e1
-#             # player 2 starts at e9
-
-#             # wall move is formatted((index1, index2), type)
-#             # player move is formatted (index1, index2)
-#             # where index1 is zero-based indexing from the top
-#             # and where index2 is zero-based indexing from the left
-
-#             # index1 of 0 would actually be rank 9 and index1 of 8 would actually be rank 1
-#             # index2 of 1 would actually be file a and index2 of 8 would actually be file i
 if __name__ == "__main__":
+    board = QuoridorGraphicalBoard()
+    print(board.nodes)
+    print(board.get_available_actions())
+    board.take_action(131)
+    board.display_beautiful()
     print("not supposed to be run")
     raise ImportError

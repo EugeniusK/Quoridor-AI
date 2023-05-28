@@ -1,7 +1,5 @@
 import numpy as np
-import time
-import sys
-from .path_finding import (
+from Quoridor.bg_pathfinding import (
     Depth_First_Search_BitBoard,
     Breadth_First_Search_BitBoard,
     Greedy_Best_First_Search_BitBoard,
@@ -9,6 +7,19 @@ from .path_finding import (
     A_Star_Search_Bitboard,
 )
 
+"""
+This is the initial implementation of the bitboard representation.
+Instead of using individual bits to represent each possible position, 
+a boolean data type of 8 bits (1 byte) is used to represent a 
+corresponding 1 or a 0.
+
+Therefore, this implementation cannot be considered a true bitboard.
+A true bitboard would use multiple (u)int16, (u)int32, or (u)int64
+but in this implementation, a 17x17 array of bools are used
+"""
+
+# Binary masks which are used to prevent the player going off the board
+# when "rolling" the bitboard array
 north_mask = np.ones((17, 17), dtype=np.bool8)
 north_mask[15:] = False
 east_mask = np.rot90(north_mask, 3)
@@ -24,146 +35,191 @@ short_west_mask = np.rot90(short_north_mask, 1)
 
 class QuoridorBitBoard:
     def __init__(self, search_mode="GBFS"):
+        # Bitboards to represent the walls and players' position
+        # as well as having the inital positions of players set
         self.walls = np.zeros((17, 17), dtype=np.bool8)
-
         self.p1_pos = np.zeros((17, 17), dtype=np.bool8)
         self.p1_pos[0][8] = True
-
         self.p2_pos = np.zeros((17, 17), dtype=np.bool8)
         self.p2_pos[16][8] = True
 
+        # Number of walls that each player has placed
         self.p1_walls_placed = np.int8(0)
         self.p2_walls_placed = np.int8(0)
 
-        self.turn = np.int8(1)  # 1 if player 1 turn, 2 if player 2 turn
+        # Player who is in turn
+        self.turn = np.int8(1)
 
+        # If the game is over or not
         self.over = np.bool8(False)
+
+        # Search mode to be used when verifying if a wall is allowed
         self.search_mode = search_mode
 
     def get_available_actions(self):
-        # in_turn_pos references the 17x17 array that stores location of player in turn
-        # out_turn_pos references the 17x17 array that stores location of the player out of turn
-        walls_left = True  # possible wall placements calculated only when player in turn hasn't placed 10 walls
-        if self.turn == np.int8(1):
-            # player 1's turn
+        """
+        For the player in turn, return available actions with a boolean array
+        where if index X is True, action X is valid and vice versa.
+
+        Actions 0~63 represent horizontal wall placements
+        where 0 represents a1h, 1 represents b1h, ..., 63 represents i8h
+
+        Actions 64~127 represent vertical wall placements
+        where 0 represents a1v, 1 represents b1v, ..., 63 represents i8v
+
+        Actions 128~139 represent the moves from the player's position
+        -  N, E, S, W, NN, NE, EE, SE, SS, SW, WW, NW
+        """
+
+        # Boolean array where index X records if action X is possible
+        available_actions = np.zeros(140, dtype=np.bool8)
+
+        # If the player in turn has no walls left (placed all 10),
+        # there is no need to find all the available walls.
+        walls_left = True
+
+        # Depending on the player whose turn it is,
+        # in_turn_pos, out_turn_pos are temporarily used to reference
+        # the corrent bitboard (according to their name)
+        if self.turn == 1:
             in_turn_pos = self.p1_pos
             out_turn_pos = self.p2_pos
 
-            if self.p1_walls_placed == np.int8(10):
+            if self.p1_walls_placed == 10:
                 walls_left = False
-        elif self.turn == np.int8(2):
-            # player 2's turn
+        elif self.turn == 2:
             in_turn_pos = self.p2_pos
             out_turn_pos = self.p1_pos
 
-            if self.p2_walls_placed == np.int8(10):
+            if self.p2_walls_placed == 10:
                 walls_left = False
 
+        # Move the player in each cardinal direction (N, E, S, W) by 1
+        # If the player lands on a wall (check through bitwise AND with wall bitboard)
+        # the movement in that direction isn't possible as it is blocked by a wall
+        # Otherwise, add the move in that direction to player_moves, a bitboard
+        # that stores the possible moves of one square
         player_moves = np.zeros((17, 17), dtype=np.bool8)
-        # moves the player in each cardinal direction
-        # then checks if the direction of move doesn't go off board using a mask and AND operation
-        # then checks if the move doesn't land on a wall
-        # then adds move if it doesn't land on a wall
-
-        # If the player doesn't go off the board
-        # and If it doesn't land on a wall
-        # add move
-
-        if True in np.roll(in_turn_pos, -17) & short_north_mask:
+        if True in np.roll(in_turn_pos, -17) & short_north_mask:  # North
             if True not in np.roll(in_turn_pos, -17) & self.walls:
                 player_moves += np.roll(in_turn_pos, -34)
-        if True in np.roll(in_turn_pos, 1) & short_east_mask:
+        if True in np.roll(in_turn_pos, 1) & short_east_mask:  # East
             if True not in np.roll(in_turn_pos, 1) & self.walls:
                 player_moves += np.roll(in_turn_pos, 2)
-        if True in np.roll(in_turn_pos, 17) & short_south_mask:
+        if True in np.roll(in_turn_pos, 17) & short_south_mask:  # South
             if True not in np.roll(in_turn_pos, 17) & self.walls:
                 player_moves += np.roll(in_turn_pos, 34)
-        if True in np.roll(in_turn_pos, -1) & short_west_mask:
+        if True in np.roll(in_turn_pos, -1) & short_west_mask:  # West
             if True not in np.roll(in_turn_pos, -1) & self.walls:
                 player_moves += np.roll(in_turn_pos, -2)
-        # if there is a overlap in the two player positions
+
+        # If the 2 players are adjacent,
+        # determine if the player in turn can jump over the other player
+        # or if there are moves available to the side
         if True in player_moves & out_turn_pos:
-            # finds the position of out of turn player relative to in turn player
-            # then if the jump over the out of turn player is allowed - doesn't go off board and no wall,
-            #     add the move that jumps in a straight line above out of turn player
-            # if there is a wall or the edgee of the board blocking the move,
-            #     check if each move to the side is possible then add
+            # Calculate the relative position of player out of turn from player in turn
             relative_pos = np.subtract(
                 np.where(in_turn_pos == True), np.where(out_turn_pos == True)
             )
+            # Player in turn is North of player out of turn
             if np.array_equal(
                 relative_pos,
                 np.array([[2], [0]]),
             ):
-                # out of turn player is north of in turn player
+                # If the player in turn can jump over the player out of turn
+                # without going over a wall, set the move NN as possible
                 if (
                     True in np.roll(out_turn_pos, -17) & short_north_mask
                     and True not in np.roll(out_turn_pos, -17) & self.walls
-                ):
+                ):  # NN
                     player_moves += np.roll(out_turn_pos, -34)
                 else:
-                    if True in np.roll(out_turn_pos, 1) & short_east_mask:
+                    # Check if the moves to the sides of player out of turn
+                    # are possible
+                    if True in np.roll(out_turn_pos, 1) & short_east_mask:  # NE
                         if True not in np.roll(out_turn_pos, 1) & self.walls:
                             player_moves += np.roll(out_turn_pos, 2)
-                    if True in np.roll(out_turn_pos, -1) & short_west_mask:
+                    if True in np.roll(out_turn_pos, -1) & short_west_mask:  # NW
                         if True not in np.roll(out_turn_pos, -1) & self.walls:
                             player_moves += np.roll(out_turn_pos, -2)
+
+            # Player in turn is East of player out of turn
             elif np.array_equal(
                 relative_pos,
                 np.array([[0], [-2]]),
             ):
-                # out of turn player is east of in turn player
+                # If the player in turn can jump over the player out of turn
+                # without going over a wall, set the move EE as possible
                 if (
                     True in np.roll(out_turn_pos, 1) & short_east_mask
                     and True not in np.roll(out_turn_pos, 1) & self.walls
-                ):
+                ):  # EE
                     player_moves += np.roll(out_turn_pos, 2)
                 else:
-                    if True in np.roll(out_turn_pos, -17) & short_north_mask:
+                    # Check if the moves to the sides of player out of turn
+                    # are possible
+                    if True in np.roll(out_turn_pos, -17) & short_north_mask:  # NE
                         if True not in np.roll(out_turn_pos, -17) & self.walls:
                             player_moves += np.roll(out_turn_pos, -34)
-                    if True in np.roll(out_turn_pos, 17) & short_south_mask:
+                    if True in np.roll(out_turn_pos, 17) & short_south_mask:  # SE
                         if True not in np.roll(out_turn_pos, 17) & self.walls:
                             player_moves += np.roll(out_turn_pos, 34)
+
+            # Player in turn is South of player out of turn
             elif np.array_equal(
                 relative_pos,
                 np.array([[-2], [0]]),
-            ):
-                # out of turn player is south of in turn player
+            ):  # SS
+                # If the player in turn can jump over the player out of turn
+                # without going over a wall, set the move WW as possible
                 if (
                     True in np.roll(out_turn_pos, 17) & short_south_mask
                     and True not in np.roll(out_turn_pos, 17) & self.walls
                 ):
                     player_moves += np.roll(out_turn_pos, 34)
                 else:
-                    if True in np.roll(out_turn_pos, 1) & short_east_mask:
+                    # Check if the moves to the sides of player out of turn
+                    # are possible
+                    if True in np.roll(out_turn_pos, 1) & short_east_mask:  # SE
                         if True not in np.roll(out_turn_pos, 1) & self.walls:
                             player_moves += np.roll(out_turn_pos, 2)
-                    if True in np.roll(out_turn_pos, -1) & short_west_mask:
+                    if True in np.roll(out_turn_pos, -1) & short_west_mask:  # SW
                         if True not in np.roll(out_turn_pos, -1) & self.walls:
                             player_moves += np.roll(out_turn_pos, -2)
+
+            # Player in turn is West of player out of turn
             elif np.array_equal(
                 relative_pos,
                 np.array([[0], [2]]),
-            ):
-                # out of turn player is west of in turn player
+            ):  # WW
+                # If the player in turn can jump over the player out of turn
+                # without going over a wall, set the move WW as possible
                 if (
                     True in np.roll(out_turn_pos, -1) & short_west_mask
                     and True not in np.roll(out_turn_pos, -1) & self.walls
                 ):
                     player_moves += np.roll(out_turn_pos, -2)
                 else:
-                    if True in np.roll(out_turn_pos, -17) & short_north_mask:
+                    # Check if the moves to the sides of player out of turn
+                    # are possible
+                    if True in np.roll(out_turn_pos, -17) & short_north_mask:  # NW
                         if True not in np.roll(out_turn_pos, -17) & self.walls:
                             player_moves += np.roll(out_turn_pos, -34)
-                    if True in np.roll(out_turn_pos, 17) & short_south_mask:
+                    if True in np.roll(out_turn_pos, 17) & short_south_mask:  # SW
                         if True not in np.roll(out_turn_pos, 17) & self.walls:
                             player_moves += np.roll(out_turn_pos, 34)
+
+        # The indexes of where the player in turn can move to excluding the position of
+        # the player out of turn
         player_moves_index = np.array(
             np.where(player_moves & ~out_turn_pos), dtype=np.int8
         ).T
-        # gets available walls if there are any walls left for player in turn
+
+        # Only attempt to find the possible walls if the player has walls available
+        # Otherwise, only focus on the possible movements
         if walls_left == True:
+            # Get the indexes of the horizontal walls possible
+            # by getting indexes of 3 zeros in a line
             sliding_horizontal_walls = np.reshape(
                 np.lib.stride_tricks.sliding_window_view(self.walls[1::2], (1, 3)),
                 (120, 3),
@@ -184,12 +240,15 @@ class QuoridorBitBoard:
             horizontal_walls_index = np.array(
                 np.where(horizontal_walls), dtype=np.int8
             ).T
+
+            # Get the indexes of the verrtical walls possible
+            # by getting indexes of 3 zeros in a line
             sliding_vertical_walls = np.reshape(
                 np.lib.stride_tricks.sliding_window_view(
                     np.fliplr(np.rot90(self.walls, 3)), (1, 3)
                 ),
                 (17, 15, 3),
-            )  # [1::2, ::2]
+            )
             vertical_walls = np.vstack(
                 (
                     np.hstack(
@@ -203,38 +262,41 @@ class QuoridorBitBoard:
                     np.zeros((1, 9), dtype=np.bool8),
                 )
             )
-
             vertical_walls_index = np.array(np.where(vertical_walls), dtype=np.int8).T
-        # maximum number of horizontal wall placements is 8*8 = 64
-        # maxmium number of vertical wall placements is 8*8 = 64
-        # maximum number of moves is 5
-        # so, combining them into an array of 133*2 is possible
-        # the 0~63 rows will be filled with possible horizontal wall placements
-        # the 64~127 rows will be filled with possible vertical wall placements
-        # the 128~132 rows will be filled with possible player moves
-        # unused indexes will be filled with -1 (maximum value allowed with np.int8)
-        # final column in array represents type of move - 0: horizontal wall, 1: vertical wall, 2: player move
-        moves = np.full((133, 3), -1, dtype=np.int8)
+        # Maximum number of horizontal wall placements is 8*8 = 64
+        # Maxmium number of vertical wall placements is 8*8 = 64
+        # Maximum number of moves is 5
+        # So, combining them into an array of 133*2 is possible
+        # Row 0~63 will be filled with possible horizontal wall placements
+        # Row 64~127 will be filled with possible vertical wall placements
+        # Row 128~132 will be filled with possible player moves
+        # Unused indexes will be filled with -1 (maximum value allowed with np.int8)
+        # Final column in array represents type of move - 0: horizontal wall, 1: vertical wall, 2: player move
+        # THIS IS AN INTERMEDIARY TO THE FULL 140 LENGTH ARRAY
+        actions = np.full((133, 3), -1, dtype=np.int8)
         if walls_left == True:
-            moves[0 : 0 + len(horizontal_walls_index)] = np.hstack(
+            actions[0 : 0 + len(horizontal_walls_index)] = np.hstack(
                 (
                     horizontal_walls_index,
                     np.zeros((len(horizontal_walls_index), 1), dtype=np.int8),
                 )
             )
-            moves[64 : 64 + len(vertical_walls_index)] = np.hstack(
+            actions[64 : 64 + len(vertical_walls_index)] = np.hstack(
                 (
                     vertical_walls_index,
                     np.ones((len(vertical_walls_index), 1), dtype=np.int8),
                 )
             )
-        moves[128 : 128 + len(player_moves_index)] = np.hstack(
+        actions[128 : 128 + len(player_moves_index)] = np.hstack(
             (
                 player_moves_index,
                 np.full((len(player_moves_index), 1), 2, dtype=np.int8),
             )
         )
+
+        # Validate that the walls are possible only when the player in turn has walls left
         if walls_left == True:
+            # Set the pathfinding mode based on parameter during initialisation of board
             if self.search_mode == "BFS":
                 search = Breadth_First_Search_BitBoard
             elif self.search_mode == "DFS":
@@ -247,40 +309,125 @@ class QuoridorBitBoard:
                 search = A_Star_Search_Bitboard
             for m in range(128):
                 if (
-                    search(self.p1_pos, self.walls, np.int8(16), moves[m]) == False
-                    or search(self.p2_pos, self.walls, np.int8(0), moves[m]) == False
+                    search(self.p1_pos, self.walls, np.int8(16), actions[m]) == False
+                    or search(self.p2_pos, self.walls, np.int8(0), actions[m]) == False
                 ):
-                    moves[m] = [-1, -1, -1]
-        return moves
+                    # Set move as invalid if one or more of pathfinding fails
+                    actions[m] = [-1, -1, -1]
+
+        # Add the actions in actions to available_actions
+        for h in range(0, 128):
+            if actions[h][0] != -1 and actions[h][1] != -1 and actions[h][2] != -1:
+                available_actions[
+                    actions[h][0] * 8 + actions[h][1] + actions[h][2] * 64
+                ] = True
+        for i in range(128, 133):
+            if actions[i][0] != -1 and actions[i][1] != -1 and actions[i][2] != -1:
+                player_in_turn_pos = np.array(np.where(in_turn_pos), dtype=np.int8).T[0]
+                rel_move = (actions[i, 0:2] - player_in_turn_pos) >> 1
+                if np.array_equal(rel_move, [1, 0]):  # N
+                    available_actions[128] = True
+                elif np.array_equal(rel_move, [0, 1]):  # E
+                    available_actions[129] = True
+                elif np.array_equal(rel_move, [-1, 0]):  # S
+                    available_actions[130] = True
+                elif np.array_equal(rel_move, [0, -1]):  # W
+                    available_actions[131] = True
+                elif np.array_equal(rel_move, [2, 0]):  # NN
+                    available_actions[132] = True
+                elif np.array_equal(rel_move, [1, 1]):  # NE
+                    available_actions[133] = True
+                elif np.array_equal(rel_move, [0, 2]):  # EE
+                    available_actions[134] = True
+                elif np.array_equal(rel_move, [-1, 1]):  # SE
+                    available_actions[135] = True
+                elif np.array_equal(rel_move, [-2, 0]):  # SS
+                    available_actions[136] = True
+                elif np.array_equal(rel_move, [-1, -1]):  # SW
+                    available_actions[137] = True
+                elif np.array_equal(rel_move, [0, -2]):  # WW
+                    available_actions[138] = True
+                elif np.array_equal(rel_move, [1, -1]):  # NW
+                    available_actions[139] = True
+
+        return available_actions
 
     def take_action(self, action):
-        if action[2] == 2:  # player move
-            if self.turn == np.int8(1):  # player 1's turn
+        """
+        For the player in turn, perform the action inputed
+
+        Actions 0~63 represent horizontal wall placements
+        where 0 represents a1h, 1 represents b1h, ..., 63 represents i8h
+
+        Actions 64~127 represent vertical wall placements
+        where 0 represents a1v, 1 represents b1v, ..., 63 represents i8v
+
+        Actions 128~139 represent the moves from the player's position
+        -  N, E, S, W, NN, NE, EE, SE, SS, SW, WW, NW
+        """
+
+        rel_move = np.array(
+            [
+                [1, 0],
+                [0, 1],
+                [-1, 0],
+                [0, -1],
+                [2, 0],
+                [1, 1],
+                [0, 2],
+                [-1, 1],
+                [-2, 0],
+                [-1, -1],
+                [0, -2],
+                [1, -1],
+            ],
+            dtype=np.int8,
+        )
+        # Action is a movement
+        if action >= 128:
+            if self.turn == 1:
+                in_turn_pos = np.array(np.where(self.p1_pos), dtype=np.int8).T[0]
                 self.p1_pos = np.zeros((17, 17), dtype=np.bool8)
-                self.p1_pos[action[0]][action[1]] = True
-                if action[0] == 16:
+                self.p1_pos[in_turn_pos[0] + rel_move[action - 128, 0] * 2][
+                    in_turn_pos[1] + rel_move[action - 128, 1] * 2
+                ] = True
+                if in_turn_pos[0] + rel_move[action - 128, 0] * 2 == 16:
                     self.over = True
                 else:
                     self.turn = np.int8(2)
-            else:  # player 2's turn
+            elif self.turn == 2:  # player 2's turn
+                in_turn_pos = np.array(np.where(self.p2_pos), dtype=np.int8).T[0]
                 self.p2_pos = np.zeros((17, 17), dtype=np.bool8)
-                self.p2_pos[action[0]][action[1]] = True
-                if action[0] == 0:
+                self.p2_pos[in_turn_pos[0] + rel_move[action - 128, 0] * 2][
+                    in_turn_pos[1] + rel_move[action - 128, 1] * 2
+                ] = True
+                if in_turn_pos[0] + rel_move[action - 128, 0] * 2 == 0:
                     self.over = True
                 else:
                     self.turn = np.int8(1)
 
+        # Action is a wall placement
         else:
-            if action[2] == 0:  # horizontal wall
-                self.walls[action[0] * 2 + 1, action[1] * 2 : action[1] * 2 + 3] = True
-            elif action[2] == 1:  # vertical wall
-                self.walls[action[0] * 2 : action[0] * 2 + 3, action[1] * 2 + 1] = True
-            if self.turn == np.int8(1):
+            # Horizontal wall
+            if action < 64:
+                self.walls[
+                    action // 8 * 2 + 1, action % 8 * 2 : action % 8 * 2 + 3
+                ] = True
+            # Vertical wall
+            else:  # vertical wall
+                self.walls[
+                    (action - 64) // 8 * 2 : (action - 64) // 8 * 2 + 3,
+                    action % 8 * 2 + 1,
+                ] = True
+
+            # Increment the number of walls placed for the relevant player
+            # Set the turn to the other player
+            if self.turn == 1:
                 self.p1_walls_placed += 1
-                self.turn = np.int8(2)
-            elif self.turn == np.int8(2):
+                self.turn = 2
+            elif self.turn == 2:
                 self.p2_walls_placed += 1
-                self.turn = np.int8(1)
+                self.turn = 1
 
     def display_beautiful(self):
         for row in range(8, -1, -1):
@@ -443,5 +590,12 @@ class QuoridorBitBoard:
 
 
 if __name__ == "__main__":
+    # board = QuoridorBitBoard()
+    # board.display_beautiful()
+    # board.take_action(0)
+    # board.display_beautiful()
+    # print(board.get_available_actions())
+    # print(board.walls * 1)
+    # board.display_beautiful()
     print("not supposed to be run")
     raise ImportError

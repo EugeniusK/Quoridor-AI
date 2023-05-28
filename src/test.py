@@ -1,4 +1,4 @@
-from Quoridor.game import Game
+from src.Quoridor.game import Game
 from datetime import datetime
 import json
 import os
@@ -29,15 +29,14 @@ def simulate(
         )
         while g.is_over() == False:
             g.take_action(g.select(g.available_actions()))
-            # g.display()
         rounds.append(g.log())
-        print(g.log()["Total time"])
-    with open(
-        f'{os.path.join(os.path.dirname(__file__), "Logs/")}{datetime.strftime(datetime.today(), "%Y-%m-%d_%H%M%S")}_{player_one_mode}_vs_{player_two_mode}_as_{board_representation}.json',
-        mode="w",
-        encoding="ascii",
-    ) as f:
-        json.dump(rounds, f)
+        print(sum(g.generate_times))
+    # with open(
+    #     f'{os.path.join(os.path.dirname(__file__), "Logs/")}{datetime.strftime(datetime.today(), "%Y-%m-%d_%H%M%S")}_{player_one_mode}_vs_{player_two_mode}_as_{board_representation}.json',
+    #     mode="w",
+    #     encoding="ascii",
+    # ) as f:
+    #     json.dump(rounds, f)
 
 
 def compare_moves(args):
@@ -126,7 +125,7 @@ def compare_moves(args):
     one_round = {
         "Round": i,
         "Valid": " ".join(valid),
-        "Number moves": g_two.number_moves,
+        "Number moves": len(g_two.actions),
         "Moves": " ".join(g_two.actions),
         "Different available moves": difference_available,
     }
@@ -166,20 +165,21 @@ def compare_moves_threaded(
 
 
 if __name__ == "__main__":
-    # compare_moves_threaded(10, "graph_optim_more", "graph", "BFS", "BFS")
-    # compare_moves_threaded(10, "graph_optim_more", "graph", "DFS", "BFS")
-    # compare_moves_threaded(10, "graph_optim_more", "graph", "GBFS", "BFS")
-    # compare_moves_threaded(10, "graph_optim_more", "graph", "UCT", "BFS")
-
-    # simulate(10, "random", "random", "graph_optim_more", "BFS")
-    # simulate(10, "random", "random", "graph_optim_more", "DFS")
-    # simulate(10, "random", "random", "graph_optim_more", "GBFS")
-    # simulate(10, "random", "random", "graph_optim_more", "UCT")
+    compare_moves_threaded(10, "graph_optim_more", "bitboard", "BFS", "BFS")
+    compare_moves_threaded(10, "graph_optim_more", "bitboard", "DFS", "BFS")
+    compare_moves_threaded(10, "graph_optim_more", "bitboard", "GBFS", "BFS")
+    compare_moves_threaded(10, "graph_optim_more", "bitboard", "Astar", "BFS")
+    simulate(10, "random", "random", "graph_optim_more", "BFS")
+    simulate(10, "random", "random", "graph_optim_more", "DFS")
+    simulate(10, "random", "random", "graph_optim_more", "GBFS")
+    simulate(10, "random", "random", "graph_optim_more", "UCT")
+    simulate(10, "random", "random", "b", "Astar")
     simulate(10, "random", "random", "graph_optim_more", "Astar")
-    board = Game(False, 1, "random", "random", "BFS", "graph")
-    board.take_action("a5h")
-    board.take_action("c5h")
 
-    board.take_action("e5h")
-    # board.take_action("g5h")
-    board.display()
+    # board = Game(False, 1, "random", "random", "BFS", "graph")
+    # board.take_action("a5h")
+    # board.take_action("c5h")
+
+    # board.take_action("e5h")
+    # # board.take_action("g5h")
+    # board.display()

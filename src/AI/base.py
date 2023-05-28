@@ -7,6 +7,9 @@ rng_base = np.random.default_rng(0)
 
 
 def random_select(moves):
+    # print(moves)
+    if len(moves) == 144:
+        return random.choice([x for x in range(144) if moves[x] == True])
     if type(moves) == list:
         return random.choice(moves)
     elif type(moves) == np.ndarray:

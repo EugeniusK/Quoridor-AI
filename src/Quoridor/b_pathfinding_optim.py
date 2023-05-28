@@ -96,8 +96,6 @@ def BreadthFirstSearch_Bitboard(
             ((wall_number % 64) // 8 + 1) * 34 - 19 - 2 * ((wall_number % 64) % 8) + 17,
             ((wall_number % 64) // 8 + 1) * 34 - 19 - 2 * ((wall_number % 64) % 8) + 34,
         )
-    else:
-        raise IndexError
 
     for idx in idx_wall:
         if 0 <= idx <= 32:
@@ -166,17 +164,6 @@ def BreadthFirstSearch_Bitboard(
 def DepthFirstSearch_Bitboard(
     bitboard_player, player_number, bitboard_walls, wall_number
 ):
-    blank = np.zeros(5, dtype=np.uint64)
-    full = np.array(
-        [
-            18446744073709551615,
-            18446744073709551615,
-            18446744073709551615,
-            18446744073709551615,
-            18446744073709551615,
-        ],
-        dtype=np.uint64,
-    )
     bitboard = np.copy(bitboard_walls)
     if wall_number < 64:
         idx_wall = (
@@ -192,6 +179,7 @@ def DepthFirstSearch_Bitboard(
         )
     else:
         raise IndexError
+
     for idx in idx_wall:
         if 0 <= idx <= 32:
             bitboard[4] += 2 ** (idx + 31)
@@ -291,8 +279,8 @@ def GreedyBestFirstSearch_Bitboard(
     frontier[0] = start_pos
     frontier_length = 1
 
-    frontier_manhatten_distance = np.full(81, 127, dtpye=np.int8)
-    frontier_manhatten_distance[0] = manhatten_distance[frontier[0]]
+    frontier_manhatten_distance = np.full((81), 127, dtype=np.int8)
+    frontier_manhatten_distance[0] = manhatten_distance(frontier[0], player_number)
     explored = np.zeros(5, dtype=np.uint64)
     while True:
         if frontier_length == 0:
@@ -335,6 +323,9 @@ def GreedyBestFirstSearch_Bitboard(
                         return True
                     max_idx = np.argmax(frontier_manhatten_distance)
                     frontier[max_idx] = shifted_bitboard
+                    frontier_manhatten_distance[max_idx] = manhatten_distance(
+                        shifted_bitboard, player_number
+                    )
                     frontier_length += 1
         frontier[min_idx] = full
         frontier_manhatten_distance[min_idx] = 127
@@ -377,7 +368,7 @@ def UniformCostSearch_Bitboard(
     frontier[0] = start_pos
     frontier_length = 1
 
-    frontier_path_cost = np.full(81, 127, dtpye=np.int8)
+    frontier_path_cost = np.full((81), 127, dtype=np.int8)
     frontier_path_cost[0] = 0
     explored = np.zeros(5, dtype=np.uint64)
     while True:
@@ -470,21 +461,20 @@ def AStarSearch_Bitboard(bitboard_player, player_number, bitboard_walls, wall_nu
     frontier[0] = start_pos
     frontier_length = 1
 
-    # records path cost from start to current,
-    # estimated path cost from current to destination and sum
-    frontier_estimate_cost = np.full((81, 3), 127, dtype=np.int8)
+    # records path cost, estimated remaining cost, sum
+    frontier_costs = np.full((81, 3), 127, dtype=np.int8)
 
-    frontier_estimate_cost[0] = [
+    frontier_costs[0] = [
         0,
         manhatten_distance(bitboard_player, player_number),
         manhatten_distance(bitboard_player, player_number),
     ]
     explored = np.zeros(5, dtype=np.uint64)
+
     while True:
         if frontier_length == 0:
             return False
-
-        min_idx = np.argmin(frontier_estimate_cost[:, 2])
+        min_idx = np.argmin(frontier_costs[:, 2])
         node = np.copy(frontier[min_idx])
         frontier_length -= 1
 
@@ -502,8 +492,8 @@ def AStarSearch_Bitboard(bitboard_player, player_number, bitboard_walls, wall_nu
 
             if np.array_equal(shift_bitboard(node, shift) & bitboard_walls, blank):
                 shifted_bitboard = shift_bitboard(node, shift * 2)
+
                 in_frontier = False
-                frontier_idx = 255
                 for idx in range(81):
                     if np.array_equal(frontier[idx], shifted_bitboard):
                         in_frontier = True
@@ -521,76 +511,24 @@ def AStarSearch_Bitboard(bitboard_player, player_number, bitboard_walls, wall_nu
                         and shifted_bitboard[4] <= 140737488355328  # 2^47
                     ):
                         return True
-                    max_idx = np.argmax(frontier_estimate_cost)
+                    max_idx = np.argmax(frontier_costs[:, 2])
                     frontier[max_idx] = shifted_bitboard
-                    frontier_estimate_cost[max_idx] = np.array(
-                        [
-                            frontier_estimate_cost[min_idx] + 1,
-                            manhatten_distance(shifted_bitboard, player_number),
-                            frontier_estimate_cost[min_idx]
-                            + 1
-                            + manhatten_distance(shifted_bitboard, player_number),
-                        ],
-                        dtype=np.int8,
+                    frontier_costs[max_idx, 0] = frontier_costs[min_idx, 0] + 1
+                    frontier_costs[max_idx, 1] = manhatten_distance(
+                        shifted_bitboard, player_number
                     )
+                    frontier_costs[max_idx, 2] = np.sum(frontier_costs[max_idx, 0:2])
                     frontier_length += 1
-                elif (
-                    in_frontier
-                    and frontier_estimate_cost[frontier_idx, 2]
-                    > frontier_estimate_cost[min_idx] + 1,
-                    manhatten_distance(shifted_bitboard, player_number),
-                ):
-                    frontier_estimate_cost[frontier_idx] = [
-                        frontier_estimate_cost[min_idx] + 1,
-                        manhatten_distance(shifted_bitboard, player_number),
-                        frontier_estimate_cost[min_idx]
-                        + 1
-                        + manhatten_distance(shifted_bitboard, player_number),
-                    ]
+                elif in_frontier:
+                    if frontier_costs[frontier_idx, 2] > frontier_costs[
+                        min_idx, 0
+                    ] + 1 + manhatten_distance(shifted_bitboard, player_number):
+                        frontier_costs[frontier_idx, 0] = frontier_costs[min_idx, 0] + 1
+                        frontier_costs[frontier_idx, 1] = manhatten_distance(
+                            shifted_bitboard, player_number
+                        )
+                        frontier_costs[frontier_idx, 2] = np.sum(
+                            frontier_costs[max_idx, 0:2]
+                        )
         frontier[min_idx] = full
-        frontier_estimate_cost[min_idx] = 127
-
-
-board = np.array([0, 0, 0, 0, 2**39], dtype=np.uint64)
-
-
-testing = '''
-
-import timeit
-
-print(
-    timeit.timeit(
-        """shift_bitboard(np.array(
-            [
-                0b0000000000000000011111111111111111000000000000000000000000000000,
-                0,
-                0,
-                0,
-                0,
-            ],
-            dtype=np.uint64,
-        ), 5)""",
-        globals=globals(),
-        number=10_000_000,
-    )
-    / 1e7
-)
-print(
-    timeit.timeit(
-        """shift_bitboard_original(np.array(
-            [
-                0b0000000000000000011111111111111111000000000000000000000000000000,
-                0,
-                0,
-                0,
-                0,
-            ],
-            dtype=np.uint64,
-        ), 5)""",
-        globals=globals(),
-        number=10_000_000,
-    )
-    / 1e7
-)
-
-'''
+        frontier_costs[min_idx] = 127
