@@ -474,15 +474,15 @@ class QuoridorBitboardOptim:
         # Otherwise, only focus on the possible movements
         if walls_left:
             # Set the pathfinding mode based on parameter during initialisation of board
-            if self.path_finding_mode == 'BFS':
+            if self.path_finding_mode == "BFS":
                 search = BreadthFirstSearch_Bitboard
-            elif self.path_finding_mode == 'DFS':
+            elif self.path_finding_mode == "DFS":
                 search = DepthFirstSearch_Bitboard
-            elif self.path_finding_mode == 'GBFS':
+            elif self.path_finding_mode == "GBFS":
                 search = GreedyBestFirstSearch_Bitboard
-            elif self.path_finding_mode == 'UCT':
+            elif self.path_finding_mode == "UCT":
                 search = UniformCostSearch_Bitboard
-            elif self.path_finding_mode == 'Astar':
+            elif self.path_finding_mode == "Astar":
                 search = AStarSearch_Bitboard
             else:
                 print(self.path_finding_mode)
