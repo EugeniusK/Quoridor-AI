@@ -88,11 +88,13 @@ def shift_bitboard(bitboard, shift):
     Shift the bitboard by shift
     while ensuring that bits outside of the 17x17 are not set
     """
-    if shift > 0 and shift < 64:
+    if shift < 128 and shift > 64:
+        copy_bitboard = shift_bitboard(np.roll(bitboard, 1), shift - 64)
+    if shift < 64 and shift > 0:
         rshift = np.uint64(shift)
         lshift = np.uint64(64 - shift)
         copy_bitboard = (bitboard >> rshift) + (np.roll(bitboard, 1) << lshift)
-        # copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
+        copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
         if bitboard[0] == 0:
             copy_bitboard[0] = 0
     elif shift < 0 and shift > -64:
@@ -101,6 +103,9 @@ def shift_bitboard(bitboard, shift):
         copy_bitboard = (bitboard << lshift) + (np.roll(bitboard, -1) >> rshift)
         if bitboard[4] == 0:
             copy_bitboard[4] = 0
+    elif shift < -64 and shift > -128:
+        copy_bitboard = shift_bitboard(np.roll(bitboard, -1), shift + 64)
+
     return copy_bitboard
 
 
@@ -112,31 +117,48 @@ def shift_bitboard_check_wall(player_bitboard, wall_bitboard, shift, mask):
     to ensure that the player doesn't go through a wal
     Then AND with full bitboard to ensure the player is on the board
     """
-    if shift > 0 and shift < 64:
+    if shift < 128 and shift > 64:
+        copy_bitboard = shift_bitboard(np.roll(player_bitboard, 1), shift - 64)
+    if shift < 64 and shift > 0:
         rshift = np.uint64(shift)
         lshift = np.uint64(64 - shift)
         copy_bitboard = (player_bitboard >> rshift) + (
             np.roll(player_bitboard, 1) << lshift
         )
         copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
-        # if player_bitboard[0] == 0:
-        #     copy_bitboard[0] = 0
+        if player_bitboard[0] == 0:
+            copy_bitboard[0] = 0
     elif shift < 0 and shift > -64:
         rshift = np.uint64(64 + shift)
         lshift = np.uint64(-shift)
         copy_bitboard = (player_bitboard << lshift) + (
             np.roll(player_bitboard, -1) >> rshift
         )
-        # if player_bitboard[4] == 0:
-        #     copy_bitboard[4] = 0
+        if player_bitboard[4] == 0:
+            copy_bitboard[4] = 0
+    elif shift < -64 and shift > -128:
+        copy_bitboard = shift_bitboard(np.roll(player_bitboard, -1), shift + 64)
     return np.array_equal(copy_bitboard & wall_bitboard, blank) and ~np.array_equal(
         copy_bitboard & mask, blank
     )
 
 
 @njit(cache=True)
-def bitboard_get_index(bitboard, row, col):
+def bitboard_get_row_col(bitboard, row, col):
     idx = row * 17 + col
+    if 0 <= idx <= 32:
+        return bitboard[4] & np.uint64(2 ** (idx + 31)) != 0
+    elif 33 <= idx <= 96:
+        return bitboard[3] & np.uint64(2 ** (idx - 33)) != 0
+    elif 97 <= idx <= 160:
+        return bitboard[2] & np.uint64(2 ** (idx - 97)) != 0
+    elif 161 <= idx <= 224:
+        return bitboard[1] & np.uint64(2 ** (idx - 161)) != 0
+    elif 225 <= idx <= 288:
+        return bitboard[0] & np.uint64(2 ** (idx - 225)) != 0
+
+
+def bitboard_get_idx(bitboard, idx):
     if 0 <= idx <= 32:
         return bitboard[4] & np.uint64(2 ** (idx + 31)) != 0
     elif 33 <= idx <= 96:
@@ -222,20 +244,21 @@ class QuoridorBitboardOptim:
                 - 2 * ((wall_number % 64) % 8)
                 + 34,
             )
-
+        # print(wall_number, idx_wall)
         # Depending on the index, it is in different uint64 so correct one
         # has to be found
         for idx in idx_wall:
+            init = np.copy(self.walls)
             if 0 <= idx <= 32:
-                self.walls[4] += 2 ** (idx + 31)
+                self.walls[4] = self.walls[4] + np.uint64(2 ** (idx + 31))
             elif 33 <= idx <= 96:
-                self.walls[3] += 2 ** (idx - 33)
+                self.walls[3] = self.walls[3] + np.uint64(2 ** (idx - 33))
             elif 97 <= idx <= 160:
-                self.walls[2] += 2 ** (idx - 97)
+                self.walls[2] = self.walls[2] + np.uint64(2 ** (idx - 97))
             elif 161 <= idx <= 224:
-                self.walls[1] += 2 ** (idx - 161)
+                self.walls[1] = self.walls[1] + np.uint64(2 ** (idx - 161))
             elif 225 <= idx <= 288:
-                self.walls[0] += 2 ** (idx - 225)
+                self.walls[0] = self.walls[0] + np.uint64(2 ** (idx - 225))
 
     def take_action(self, action_number):
         """
@@ -270,7 +293,10 @@ class QuoridorBitboardOptim:
                     rel_move[action_number - 128, 0] * -34
                     + rel_move[action_number - 128, 1] * 2,
                 )
-            self.turn = 2
+            if self.p1[0] >= np.uint64(140737488355328):
+                self.over = True
+            else:
+                self.turn = 2
 
         elif self.turn == 2:
             if 0 <= action_number < 128:
@@ -282,9 +308,10 @@ class QuoridorBitboardOptim:
                     rel_move[action_number - 128, 0] * -34
                     + rel_move[action_number - 128, 1] * 2,
                 )
-            self.turn = 1
-        if self.is_over():
-            self.over = True
+            if np.uint64(2147483648) <= self.p2[4] <= np.uint64(140737488355328):
+                self.over = True
+            else:
+                self.turn = 1
 
     def get_available_actions(self):
         """
@@ -364,6 +391,7 @@ class QuoridorBitboardOptim:
                 shift_bitboard(bitboard_in_turn, -34),
                 bitboard_out_turn & cardinal_moves,
             ):
+                available_actions[128] = False
                 # If the player in turn can jump over the player out of turn
                 # without going over a wall, set the move NN as possible
                 if shift_bitboard_check_wall(
@@ -383,6 +411,7 @@ class QuoridorBitboardOptim:
             elif np.array_equal(
                 shift_bitboard(bitboard_in_turn, 2), bitboard_out_turn & cardinal_moves
             ):
+                available_actions[129] = False
                 # If the player in turn can jump over the player out of turn
                 # without going over a wall, set the move EE as possible
                 if shift_bitboard_check_wall(
@@ -402,6 +431,7 @@ class QuoridorBitboardOptim:
             elif np.array_equal(
                 shift_bitboard(bitboard_in_turn, 34), bitboard_out_turn & cardinal_moves
             ):
+                available_actions[130] = False
                 # If the player in turn can jump over the player out of turn
                 # without going over a wall, set the move SS as possible
                 if shift_bitboard_check_wall(
@@ -421,6 +451,7 @@ class QuoridorBitboardOptim:
             elif np.array_equal(
                 shift_bitboard(bitboard_in_turn, -2), bitboard_out_turn & cardinal_moves
             ):
+                available_actions[131] = False
                 # If the player in turn can jump over the player out of turn
                 # without going over a wall, set the move WW as possible
                 if shift_bitboard_check_wall(
@@ -482,44 +513,27 @@ class QuoridorBitboardOptim:
                 # Verify that the indexes aren't occupied by a wall
                 valid = True
                 for idx in idx_wall:
-                    if 0 <= idx <= 32:
-                        if self.walls[4] & np.uint64(2 ** (idx + 31)) != 0:
-                            valid = False
-                    elif 33 <= idx <= 96:
-                        if self.walls[3] & np.uint64(2 ** (idx - 33)) != 0:
-                            valid = False
-                    elif 97 <= idx <= 160:
-                        if self.walls[2] & np.uint64(2 ** (idx - 97)) != 0:
-                            valid = False
-                    elif 161 <= idx <= 224:
-                        if self.walls[1] & np.uint64(2 ** (idx - 161)) != 0:
-                            valid = False
-                    elif 225 <= idx <= 288:
-                        if self.walls[0] & np.uint64(2 ** (idx - 225)) != 0:
-                            valid = False
+                    if bitboard_get_idx(self.walls, idx):
+                        valid = False
 
                 # If the space isn't occupied by a wall and it doesn't prevent
                 # either player from reaching tehir destination,
                 # set action to True
-                if (
-                    valid
-                    and search(bitboard_in_turn, self.turn, self.walls, wall_number)
-                    # and search(
-                    #     bitboard_out_turn, 3 - self.turn, self.walls, wall_number
-                ):
-                    available_actions[wall_number] = True
 
+                if valid:
+                    in_turn_valid = search(
+                        bitboard_in_turn, self.turn, self.walls, wall_number
+                    )
+                    out_turn_valid = search(
+                        bitboard_out_turn, 3 - self.turn, self.walls, wall_number
+                    )
+                    if in_turn_valid and out_turn_valid:
+                        available_actions[wall_number] = True
+        # print(available_actions[128:])
         return available_actions
 
     def is_over(self):
-        try:
-            if self.p1[0] >= 140737488355328 or 140737488355328 <= self.p2[4]:
-                return True
-            else:
-                return False
-        except:
-            print(self.p1, self.p2)
-            raise KeyError
+        return self.over
 
     def display(self, bitboard):
         line = "".join([np.binary_repr(x, 64) for x in bitboard])
@@ -532,32 +546,40 @@ class QuoridorBitboardOptim:
             line = []
             line_below = []
             for column in range(9):
-                if bitboard_get_index(self.p1, row * 2, column * 2):
+                if bitboard_get_row_col(self.p1, row * 2, column * 2):
                     line.append(" 1 ")
-                elif bitboard_get_index(self.p2, row * 2, column * 2):
+                elif bitboard_get_row_col(self.p2, row * 2, column * 2):
                     line.append(" 2 ")
                 else:
                     line.append("   ")
 
                 if column != 8:
-                    if bitboard_get_index(self.walls, row * 2, column * 2 + 1) == False:
+                    if (
+                        bitboard_get_row_col(self.walls, row * 2, column * 2 + 1)
+                        == False
+                    ):
                         line.append("\u2502")
                     else:
                         line.append("\u2503")
                 if row != 8:
-                    if bitboard_get_index(self.walls, row * 2 + 1, column * 2) == False:
+                    if (
+                        bitboard_get_row_col(self.walls, row * 2 + 1, column * 2)
+                        == False
+                    ):
                         line_below.append("\u2500\u2500\u2500")
                     else:
                         line_below.append("\u2501\u2501\u2501")
                     if column != 8:
-                        south = bitboard_get_index(self.walls, row * 2, column * 2 + 1)
-                        west = bitboard_get_index(
+                        south = bitboard_get_row_col(
+                            self.walls, row * 2, column * 2 + 1
+                        )
+                        west = bitboard_get_row_col(
                             self.walls, row * 2 + 1, column * 2 + 2
                         )
-                        north = bitboard_get_index(
+                        north = bitboard_get_row_col(
                             self.walls, row * 2 + 2, column * 2 + 1
                         )
-                        east = bitboard_get_index(self.walls, row * 2 + 1, column * 2)
+                        east = bitboard_get_row_col(self.walls, row * 2 + 1, column * 2)
                         if (
                             north == False
                             and east == False
