@@ -87,7 +87,7 @@ def test(
 
 
 def test_suite(representation, path_finding_mode):
-    print(representation)
+    print(representation, path_finding_mode)
     test(
         representation,
         path_finding_mode,
@@ -452,13 +452,104 @@ def test_suite(representation, path_finding_mode):
         "Wall block only path",
     )
 
+    test(
+        representation,
+        path_finding_mode,
+        [5, 12, 15, 16, 27, 30, 54, 61, 68, 74, 78, 83, 100, 107, 109, 123, 120],
+        "walls",
+        [
+            "a1h",
+            "b1h",
+            "c1h",
+            "d1h",
+            "h1h",
+            "a2h",
+            "b2h",
+            "e3h",
+            "f3h",
+            "g3h",
+            "h3h",
+            "a4h",
+            "b4h",
+            "a5h",
+            "b5h",
+            "c5h",
+            "f5h",
+            "g5h",
+            "h5h",
+            "a6h",
+            "b6h",
+            "c6h",
+            "g6h",
+            "h6h",
+            "a7h",
+            "b7h",
+            "c7h",
+            "d7h",
+            "e7h",
+            "b8h",
+            "c8h",
+            "h8h",
+            "a1v",
+            "b1v",
+            "h1v",
+            "a2v",
+            "b2v",
+            "f2v",
+            "b3v",
+            "e3v",
+            "f3v",
+            "h3v",
+            "a4v",
+            "b4v",
+            "c4v",
+            "f4v",
+            "h4v",
+            "a5v",
+            "b5v",
+            "c5v",
+            "g5v",
+            "h5v",
+            "a6v",
+            "b6v",
+            "c6v",
+            "g6v",
+            "h6v",
+            "b7v",
+            "c7v",
+            "e7v",
+            "h7v",
+            "b8v",
+            "c8v",
+            "e8v",
+            "g8v",
+            "h8v",
+        ],
+        "Complex",
+        # True,
+    )
 
+
+test_suite("bitboard", "BFS")
+test_suite("bitboard", "DFS")
+test_suite("bitboard", "GBFS")
+test_suite("bitboard", "UCT")
+test_suite("bitboard", "Astar")
+test_suite("graph", "BFS")
+test_suite("graph", "DFS")
+test_suite("graph", "GBFS")
+test_suite("graph", "UCT")
+test_suite("graph", "Astar")
 test_suite("bitboard_optim", "BFS")
 test_suite("bitboard_optim", "DFS")
 test_suite("bitboard_optim", "GBFS")
 test_suite("bitboard_optim", "UCT")
 test_suite("bitboard_optim", "Astar")
-
+test_suite("graph_optim", "BFS")
+test_suite("graph_optim", "DFS")
+test_suite("graph_optim", "GBFS")
+test_suite("graph_optim", "UCT")
+test_suite("graph_optim", "Astar")
 # test_suite("graph")
 # test_suite("bitboard")
 # test_suite("graph_optim")
