@@ -585,8 +585,6 @@ def UniformCostSearch_Bitboard(
                         in_frontier = True
                         frontier_idx = idx
                         break
-                    elif np.array_equal(frontier[idx], full):
-                        break
                 if not in_frontier and np.array_equal(
                     shifted_bitboard & explored, blank
                 ):
@@ -708,8 +706,6 @@ def AStarSearch_Bitboard(bitboard_player, player_number, bitboard_walls, wall_nu
                     if np.array_equal(frontier[idx], shifted_bitboard):
                         in_frontier = True
                         frontier_idx = idx
-                        break
-                    elif np.array_equal(frontier[idx], full):
                         break
                 if not in_frontier and np.array_equal(
                     shifted_bitboard & explored, blank
