@@ -113,6 +113,14 @@ def backpropagate(path, reward):
         reward = 1 - reward
 
 
+def roll_out(root):
+    path = select(root)
+    leaf = path[-1]
+    child = expand(leaf)
+    reward = simulate(child.state, child.state.turn)
+    backpropagate(path + [child], reward)
+
+
 class MCTS_NODE:
     def __init__(self, state):
         self.state = state

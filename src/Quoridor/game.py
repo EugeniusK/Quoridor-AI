@@ -6,6 +6,7 @@ from Quoridor.b_optim import QuoridorBitboardOptim
 
 # Import AI algorithms
 from AI.base import random_select
+from AI.mcts import MCTS_NODE, select, expand, simulate, backpropagate
 
 # Import rest
 import time
@@ -74,7 +75,7 @@ class Game:
         )
         return generated_actions
 
-    def select(self, moves):
+    def select(self, moves=None, rollout=100):
         """
         Selects a move based on method defined in __init__
 
@@ -99,7 +100,12 @@ class Game:
             choose_end = time.perf_counter()
             self.choose_times.append(round(choose_end - choose_start, 8))
         elif mode == "mcts_pure":
-            raise NotImplementedError
+            root = MCTS_NODE(self.board)
+            for r in range(rollout):
+                rollout(root)
+            self.board = [
+                c for c in sorted(root.children, key=lambda x: x.games_played)
+            ][-1]
         elif mode == "human":
             move = input("Action number")
 
