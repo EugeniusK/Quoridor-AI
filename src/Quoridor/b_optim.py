@@ -1,6 +1,7 @@
 import numpy as np
 from numba import njit, int32, uint32, int64, uint64, int8, boolean
 from numba.experimental import jitclass
+import copy
 
 try:
     from Quoridor.b_pathfinding_optim import (
@@ -213,6 +214,7 @@ class QuoridorBitboardOptim:
 
         # Search mode to be used when verifying if a wall is allowed
         self.path_finding_mode = path_finding_mode
+        self.available_states = []
 
     def _place_wall(self, wall_number):
         """
@@ -472,17 +474,18 @@ class QuoridorBitboardOptim:
         # Otherwise, only focus on the possible movements
         if walls_left:
             # Set the pathfinding mode based on parameter during initialisation of board
-            if self.path_finding_mode == 1:
+            if self.path_finding_mode == 'BFS':
                 search = BreadthFirstSearch_Bitboard
-            elif self.path_finding_mode == 2:
+            elif self.path_finding_mode == 'DFS':
                 search = DepthFirstSearch_Bitboard
-            elif self.path_finding_mode == 3:
+            elif self.path_finding_mode == 'GBFS':
                 search = GreedyBestFirstSearch_Bitboard
-            elif self.path_finding_mode == 4:
+            elif self.path_finding_mode == 'UCT':
                 search = UniformCostSearch_Bitboard
-            elif self.path_finding_mode == 5:
+            elif self.path_finding_mode == 'Astar':
                 search = AStarSearch_Bitboard
             else:
+                print(self.path_finding_mode)
                 raise KeyError
             # For each possible wall,
             # verify the space isn't occupied by a wall
@@ -532,14 +535,210 @@ class QuoridorBitboardOptim:
         # print(available_actions[128:])
         return available_actions
 
-    def is_over(self):
-        return self.over
+    def is_action_available(self, action):
+        # Boolean array where index X records if action X is possible
+        available_actions = np.zeros(140, dtype=np.bool8)
 
-    def display(self, bitboard):
-        line = "".join([np.binary_repr(x, 64) for x in bitboard])
-        for i in range(0, 17):
-            print(line[i * 17 : i * 17 + 17])
-        print()
+        # If the player in turn has no walls left (placed all 10),
+        # there is no need to find all the available walls.
+        walls_left = True
+
+        # Depending on the player whose turn it is,
+        # in_turn_pos, out_turn_pos are temporarily used to reference
+        # the corrent bitboard (according to their name)
+        if self.turn == 1:
+            bitboard_in_turn = self.p1
+            bitboard_out_turn = self.p2
+
+            if self.p1_walls_placed == 10:
+                walls_left = False
+        elif self.turn == 2:
+            bitboard_in_turn = self.p2
+            bitboard_out_turn = self.p1
+
+            if self.p2_walls_placed == 10:
+                walls_left = False
+        if action >= 128:
+            # Move the player in each cardinal direction (N, E, S, W) by 1
+            # If the player lands on a wall (check through bitwise AND with wall bitboard)
+            # the movement in that direction isn't possible as it is blocked by a wall
+            # Otherwise, add the move in that direction to cardinal_moves, a bitboard
+            # that stores the possible moves of one square
+            #
+            # Masks are required because sometimes, the method used to get available moves
+            # in each direction can lead to the player going off the board
+            cardinal_moves = np.zeros(5, dtype=np.uint64)
+            if shift_bitboard_check_wall(
+                bitboard_in_turn, self.walls, -17, short_north_mask
+            ):  # North
+                cardinal_moves += shift_bitboard(bitboard_in_turn, -34)
+                available_actions[128] = True
+            if shift_bitboard_check_wall(
+                bitboard_in_turn, self.walls, 1, short_east_mask
+            ):  # East
+                cardinal_moves += shift_bitboard(bitboard_in_turn, 2)
+                available_actions[129] = True
+            if shift_bitboard_check_wall(
+                bitboard_in_turn, self.walls, 17, short_south_mask
+            ):  # South
+                cardinal_moves += shift_bitboard(bitboard_in_turn, 34)
+                available_actions[130] = True
+            if shift_bitboard_check_wall(
+                bitboard_in_turn, self.walls, -1, short_west_mask
+            ):  # West
+                cardinal_moves += shift_bitboard(bitboard_in_turn, -2)
+                available_actions[131] = True
+
+            # If the 2 players are adjacent,
+            # determine if the player in turn can jump over the other player
+            # or if there are moves available to the side
+            if not np.array_equal(cardinal_moves & bitboard_out_turn, blank):
+                # Player in turn is North of player out of turn
+                if np.array_equal(
+                    shift_bitboard(bitboard_in_turn, -34),
+                    bitboard_out_turn & cardinal_moves,
+                ):
+                    available_actions[128] = False
+                    # If the player in turn can jump over the player out of turn
+                    # without going over a wall, set the move NN as possible
+                    if shift_bitboard_check_wall(
+                        bitboard_out_turn, self.walls, -17, short_north_mask
+                    ):  # NN
+                        available_actions[132] = True
+                    else:
+                        if shift_bitboard_check_wall(
+                            bitboard_out_turn, self.walls, -1, short_west_mask
+                        ):  # NW
+                            available_actions[139] = True
+                        if shift_bitboard_check_wall(
+                            bitboard_out_turn, self.walls, 1, short_east_mask
+                        ):  # NE
+                            available_actions[133] = True
+                # Player in turn is East of player out of turn
+                elif np.array_equal(
+                    shift_bitboard(bitboard_in_turn, 2),
+                    bitboard_out_turn & cardinal_moves,
+                ):
+                    available_actions[129] = False
+                    # If the player in turn can jump over the player out of turn
+                    # without going over a wall, set the move EE as possible
+                    if shift_bitboard_check_wall(
+                        bitboard_out_turn, self.walls, 1, short_east_mask
+                    ):  # EE
+                        available_actions[134] = True
+                    else:
+                        if shift_bitboard_check_wall(
+                            bitboard_out_turn, self.walls, -17, short_north_mask
+                        ):  # NE
+                            available_actions[133] = True
+                        if shift_bitboard_check_wall(
+                            bitboard_out_turn, self.walls, 17, short_south_mask
+                        ):  # SE
+                            available_actions[135] = True
+                # Player in turn is South of player out of turn
+                elif np.array_equal(
+                    shift_bitboard(bitboard_in_turn, 34),
+                    bitboard_out_turn & cardinal_moves,
+                ):
+                    available_actions[130] = False
+                    # If the player in turn can jump over the player out of turn
+                    # without going over a wall, set the move SS as possible
+                    if shift_bitboard_check_wall(
+                        bitboard_out_turn, self.walls, 17, short_south_mask
+                    ):  # SS
+                        available_actions[136] = True
+                    else:
+                        if shift_bitboard_check_wall(
+                            bitboard_out_turn, self.walls, 1, short_east_mask
+                        ):  # SE
+                            available_actions[135] = True
+                        if shift_bitboard_check_wall(
+                            bitboard_out_turn, self.walls, -1, short_west_mask
+                        ):  # SW
+                            available_actions[137] = True
+                # Player in turn is West of player out of turn
+                elif np.array_equal(
+                    shift_bitboard(bitboard_in_turn, -2),
+                    bitboard_out_turn & cardinal_moves,
+                ):
+                    available_actions[131] = False
+                    # If the player in turn can jump over the player out of turn
+                    # without going over a wall, set the move WW as possible
+                    if shift_bitboard_check_wall(
+                        bitboard_out_turn, self.walls, -1, short_west_mask
+                    ):  # WW
+                        available_actions[138] = True
+                    else:
+                        if shift_bitboard_check_wall(
+                            bitboard_out_turn, self.walls, 17, short_south_mask
+                        ):  # SW
+                            available_actions[137] = True
+                        if shift_bitboard_check_wall(
+                            bitboard_out_turn, self.walls, -17, short_north_mask
+                        ):  # NW
+                            available_actions[139] = True
+            return available_actions[action]
+        elif action < 128:
+            if walls_left:
+                # Set the pathfinding mode based on parameter during initialisation of board
+                if self.path_finding_mode == "BFS":
+                    search = BreadthFirstSearch_Bitboard
+                elif self.path_finding_mode == "DFS":
+                    search = DepthFirstSearch_Bitboard
+                elif self.path_finding_mode == "GBFS":
+                    search = GreedyBestFirstSearch_Bitboard
+                elif self.path_finding_mode == "UCT":
+                    search = UniformCostSearch_Bitboard
+                elif self.path_finding_mode == "Astar":
+                    search = AStarSearch_Bitboard
+                else:
+                    raise KeyError
+                # Get indexes where the wall would go
+                if action < 64:
+                    # horizontal wall placed
+                    idx_wall = (
+                        (action // 8 + 1) * 34 - 1 - 2 * (action % 8),
+                        (action // 8 + 1) * 34 - 2 - 2 * (action % 8),
+                        (action // 8 + 1) * 34 - 3 - 2 * (action % 8),
+                    )
+                elif action < 128:
+                    # vertical wall placed
+                    idx_wall = (
+                        ((action % 64) // 8 + 1) * 34 - 19 - 2 * (action % 8),
+                        ((action % 64) // 8 + 1) * 34 - 19 - 2 * (action % 8) + 17,
+                        ((action % 64) // 8 + 1) * 34 - 19 - 2 * (action % 8) + 34,
+                    )
+
+                # Verify that the indexes aren't occupied by a wall
+                valid = True
+                for idx in idx_wall:
+                    if bitboard_get_idx(self.walls, idx):
+                        valid = False
+                # If the space isn't occupied by a wall and it doesn't prevent
+                # either player from reaching tehir destination,
+                # set action to True
+                if valid:
+                    in_turn_valid = search(
+                        bitboard_in_turn, self.turn, self.walls, action
+                    )
+                    out_turn_valid = search(
+                        bitboard_out_turn, 3 - self.turn, self.walls, action
+                    )
+                    if in_turn_valid and out_turn_valid:
+                        return True
+                    else:
+                        return False
+
+    def get_available_states(self):
+        if self.available_states == []:
+            tmp_available_state = []
+            available_actions = self.get_available_actions()
+            for action in [x for x in range(140) if available_actions[x]]:
+                tmp_state = copy.deepcopy(self)
+                tmp_state.take_action(action)
+                tmp_available_state.append(tmp_state)
+            self.available_states = tmp_available_state
+        return self.available_states
 
     def display_beautiful(self):
         for row in range(8, -1, -1):
@@ -696,3 +895,9 @@ class QuoridorBitboardOptim:
             print(" " + "".join(reversed(line_below)))
             print(str(row + 1) + "".join(reversed(line)))
         print("  a   b   c   d   e   f   g   h   i ")
+
+    def is_over(self):
+        return self.over
+
+    def winner(self):
+        return self.turn

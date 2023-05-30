@@ -1,6 +1,7 @@
 .DS_Store
 docs/
 src/Logs
+src/Results
 # Visual Studio Code files
 .vscode
 

@@ -5,7 +5,7 @@ from Quoridor.g_optim import QuoridorGraphicalBoardOptim
 from Quoridor.b_optim import QuoridorBitboardOptim
 
 # Import AI algorithms
-from _AI.base import random_select
+from AI.base import random_select
 
 # Import rest
 import time
@@ -44,18 +44,9 @@ class Game:
         elif self.representation == "graph_optim":
             self.board = QuoridorGraphicalBoardOptim(path_finding_mode)
         elif self.representation == "bitboard_optim":
-            if self.path_finding_mode == "BFS":
-                int_path_finding_mode = np.int8(1)
-            elif self.path_finding_mode == "DFS":
-                int_path_finding_mode = np.int8(2)
-            elif self.path_finding_mode == "GBFS":
-                int_path_finding_mode = np.int8(3)
-            elif self.path_finding_mode == "UCT":
-                int_path_finding_mode = np.int8(4)
-            elif self.path_finding_mode == "Astar":
-                int_path_finding_mode = np.int8(5)
-            self.board = QuoridorBitboardOptim(int_path_finding_mode)
+            self.board = QuoridorBitboardOptim(path_finding_mode)
         else:
+            print(self.representation, self.path_finding_mode)
             raise NotImplementedError
 
         # All moves made until game over
@@ -103,7 +94,8 @@ class Game:
             try:
                 move = random_select(moves)
             except:
-                print(self.board.p1)
+                pass
+                self.display()
             choose_end = time.perf_counter()
             self.choose_times.append(round(choose_end - choose_start, 8))
         elif mode == "mcts_pure":
@@ -115,6 +107,7 @@ class Game:
 
     def take_action(self, action):
         self.board.take_action(action)
+        self.actions.append(str(action))
 
     def display(self):
         self.board.display_beautiful()
@@ -123,7 +116,7 @@ class Game:
         return self.board.is_over()
 
     def log(self):
-        self.result = int(self.board.turn) + 1
+        self.result = self.board.turn
         self.total_time = round(sum(self.generate_times) + sum(self.choose_times), 8)
         return {
             "Date": datetime.strftime(self.date, "%Y-%m-%d %H:%M:%S+%z"),
@@ -133,7 +126,7 @@ class Game:
             "Path finding mode": self.path_finding_mode,
             "Representation": self.representation,
             "Result": self.result,
-            "Moves": " ".join(self.actions),
+            "Actions": " ".join(self.actions),
             "Generate times": " ".join([str(x) for x in self.generate_times]),
             "Walls placed": " ".join([str(x) for x in self.walls_placed]),
             "Choose times": " ".join([str(x) for x in self.choose_times]),

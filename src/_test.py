@@ -5,6 +5,10 @@ from multiprocessing import Pool
 import numpy as np
 import time
 import sys
+import os
+import json
+import csv
+from datetime import datetime, timezone
 
 # ensure that a move made in one implementation is also valid in other
 random.seed(0)
@@ -40,17 +44,16 @@ def simulate(
             path_finding_mode=path_finding_mode,
         )
         while g.is_over() == False:
-            # time.sleep(0.5)
             g.take_action(g.select(g.available_actions()))
 
         rounds.append(g.log())
         print(sum(g.generate_times))
-    # with open(
-    #     f'{os.path.join(os.path.dirname(__file__), "Logs/")}{datetime.strftime(datetime.today(), "%Y-%m-%d_%H%M%S")}_{player_one_mode}_vs_{player_two_mode}_as_{board_representation}.json',
-    #     mode="w",
-    #     encoding="ascii",
-    # ) as f:
-    #     json.dump(rounds, f)
+    with open(
+        f'{os.path.join(os.path.dirname(__file__), "Logs/")}{datetime.strftime(datetime.today(), "%Y-%m-%d_%H%M%S")}_{player_one_mode}_vs_{player_two_mode}_as_{board_representation}.json',
+        mode="w",
+        encoding="ascii",
+    ) as f:
+        json.dump(rounds, f)
 
 
 def compare_moves(repeats, repr_1, repr_2, search_1, search_2):
@@ -114,11 +117,89 @@ def compare_moves(repeats, repr_1, repr_2, search_1, search_2):
         # g_one.display()
 
 
+def load_test(file_name, repeats=1):
+    error_count = 0
+    f = open(f'{os.path.join(os.path.dirname(__file__), "Logs/")}{file_name}')
+    data = json.load(f)
+    bitboard_times = []
+    graph_board_times = []
+    for round, simulation in enumerate(data[0:1]):
+        print("Round: ", round + 1)
+        for path_finding_mode in ["BFS", "DFS", "GBFS", "UCT", "Astar"]:
+            bitboard_time = []
+            graph_board_time = []
+            for r in range(repeats):
+                bitboard = Game(
+                    representation="bitboard_optim", path_finding_mode=path_finding_mode
+                )
+                graph_board = Game(
+                    representation="graph_optim", path_finding_mode=path_finding_mode
+                )
+                print("Length:", len(simulation["Actions"].split(" ")))
+                for idx, move in enumerate(simulation["Actions"].split(" ")):
+                    start_bitboard = time.perf_counter()
+                    bitboard_available = bitboard.available_actions()
+                    end_bitboard = time.perf_counter()
+
+                    start_graph_board = time.perf_counter()
+                    graph_board_available = graph_board.available_actions()
+                    end_graph_board = time.perf_counter()
+                    if (
+                        not bitboard_available[int(move)]
+                        or not graph_board_available[int(move)]
+                    ):
+                        error_count += 1
+                    if r == 0:
+                        bitboard_time.append(
+                            [bitboard.walls_placed[-1], end_bitboard - start_bitboard]
+                        )
+                        graph_board_time.append(
+                            [
+                                graph_board.walls_placed[-1],
+                                end_graph_board - start_graph_board,
+                            ]
+                        )
+                    else:
+                        bitboard_time[idx, 1] += end_bitboard - start_bitboard
+                        graph_board_time[idx, 1] += end_graph_board - start_graph_board
+
+                    bitboard.take_action(int(move))
+                    graph_board.take_action(int(move))
+            for i in range(len(bitboard_time)):
+                bitboard_time[i][1] /= 10
+
+            for b_time in bitboard_time:
+                bitboard_times.append(["b", path_finding_mode, b_time[0], b_time[1]])
+            for g_time in graph_board_time:
+                graph_board_times.append(["g", path_finding_mode, g_time[0], g_time[1]])
+
+    results_file = open(
+        f'{os.path.join(os.path.dirname(__file__), "Results/")}bg_optim {repeats} {datetime.now(tz=timezone.utc)}.csv',
+        "w",
+    )
+
+    # using csv.writer method from CSV package
+    write = csv.writer(results_file)
+
+    fields = [
+        "Representation",
+        "Path finding mode",
+        "Walls placed",
+        "Time taken to generate actions available",
+    ]
+    write.writerow(fields)
+    write.writerows(bitboard_times)
+    write.writerows(graph_board_times)
+
+    results_file.close()
+    f.close()
+
+
 if __name__ == "__main__":
-    compare_moves(10, "graph_optim", "bitboard_optim", "BFS", "BFS")
-    compare_moves(10, "graph_optim", "bitboard_optim", "BFS", "DFS")
-    compare_moves(10, "graph_optim", "bitboard_optim", "BFS", "GBFS")
-    compare_moves(10, "graph_optim", "bitboard_optim", "BFS", "UCT")
+    # compare_moves(10, "graph_optim", "bitboard_optim", "BFS", "BFS")
+    # compare_moves(10, "graph_optim", "bitboard_optim", "BFS", "DFS")
+    # compare_moves(100, "graph_optim", "bitboard_optim", "GBFS", "BFS")
+    # compare_moves(10, "graph_optim", "bitboard_optim", "BFS", "UCT")
     compare_moves(10, "graph_optim", "bitboard_optim", "BFS", "Astar")
 
     # simulate(10, "random", "random", "graph_optim", "BFS")
@@ -141,3 +222,7 @@ if __name__ == "__main__":
     # simulate(10, "random", "random", "bitboard_optim", "GBFS")
     # simulate(10, "random", "random", "bitboard_optim", "UCT")
     # simulate(10, "random", "random", "bitboard_optim", "Astar")
+
+    # simulate(10000, "random", "random", "graph_optim", "GBFS")
+
+    # load_test("2023-05-30_161034_random_vs_random_as_graph_optim.json")
