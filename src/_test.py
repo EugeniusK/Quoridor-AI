@@ -113,21 +113,34 @@ def compare_moves(repeats, repr_1, repr_2, search_1, search_2):
                 # raise KeyError
             g_one.take_action(shared_action)
             g_two.take_action(shared_action)
-        print(repeat + 1, "over", g_one.is_over(), g_two.is_over())
+        # print(repeat + 1, "over", g_one.is_over(), g_two.is_over())
         # g_one.display()
 
 
-def load_test(file_name, repeats=1):
+def load_test(file_name, repeats=1, games=100):
     error_count = 0
     f = open(f'{os.path.join(os.path.dirname(__file__), "Logs/")}{file_name}')
     data = json.load(f)
-    bitboard_times = []
-    graph_board_times = []
-    for round, simulation in enumerate(data[0:1]):
+
+    times = []
+
+    for round, simulation in enumerate(data[0:games]):
         print("Round: ", round + 1)
+
+        # Stores [walls placed, BFS1, DFS1, ..., Astar2]
+        tmp_bitboard = []
+        tmp_graph = []
+
+        # Array for times taken by all 5 path finding for ONE round
         for path_finding_mode in ["BFS", "DFS", "GBFS", "UCT", "Astar"]:
-            bitboard_time = []
-            graph_board_time = []
+            # Arrays for times taken for ONE path finding
+            # records
+            # -----------------------
+            # walls placed, mean time
+            # walls placed, mean time
+            # -----------------------
+            bitboard_time_path_finding = []
+            graph_board_time_path_finding = []
             for r in range(repeats):
                 bitboard = Game(
                     representation="bitboard_optim", path_finding_mode=path_finding_mode
@@ -135,7 +148,6 @@ def load_test(file_name, repeats=1):
                 graph_board = Game(
                     representation="graph_optim", path_finding_mode=path_finding_mode
                 )
-                print("Length:", len(simulation["Actions"].split(" ")))
                 for idx, move in enumerate(simulation["Actions"].split(" ")):
                     start_bitboard = time.perf_counter()
                     bitboard_available = bitboard.available_actions()
@@ -150,28 +162,38 @@ def load_test(file_name, repeats=1):
                     ):
                         error_count += 1
                     if r == 0:
-                        bitboard_time.append(
+                        bitboard_time_path_finding.append(
                             [bitboard.walls_placed[-1], end_bitboard - start_bitboard]
                         )
-                        graph_board_time.append(
+                        graph_board_time_path_finding.append(
                             [
                                 graph_board.walls_placed[-1],
                                 end_graph_board - start_graph_board,
                             ]
                         )
                     else:
-                        bitboard_time[idx, 1] += end_bitboard - start_bitboard
-                        graph_board_time[idx, 1] += end_graph_board - start_graph_board
+                        bitboard_time_path_finding[idx][1] += (
+                            end_bitboard - start_bitboard
+                        )
+                        graph_board_time_path_finding[idx][1] += (
+                            end_graph_board - start_graph_board
+                        )
 
                     bitboard.take_action(int(move))
                     graph_board.take_action(int(move))
-            for i in range(len(bitboard_time)):
-                bitboard_time[i][1] /= 10
+            for i in range(len(bitboard_time_path_finding)):
+                bitboard_time_path_finding[i][1] /= repeats
+            for i in range(len(graph_board_time_path_finding)):
+                graph_board_time_path_finding[i][1] /= repeats
 
-            for b_time in bitboard_time:
-                bitboard_times.append(["b", path_finding_mode, b_time[0], b_time[1]])
-            for g_time in graph_board_time:
-                graph_board_times.append(["g", path_finding_mode, g_time[0], g_time[1]])
+            tmp_bitboard.append(bitboard_time_path_finding)
+            tmp_graph.append(graph_board_time_path_finding)
+
+        for row in range(len(tmp_bitboard[0])):
+            tmp_row = [tmp_bitboard[0][row][0]]
+            tmp_row.extend([tmp_bitboard[x][row][1] for x in range(5)])
+            tmp_row.extend([tmp_graph[x][row][1] for x in range(5)])
+            times.append(tmp_row)
 
     results_file = open(
         f'{os.path.join(os.path.dirname(__file__), "Results/")}bg_optim {repeats} {datetime.now(tz=timezone.utc)}.csv',
@@ -182,24 +204,30 @@ def load_test(file_name, repeats=1):
     write = csv.writer(results_file)
 
     fields = [
-        "Representation",
-        "Path finding mode",
-        "Walls placed",
-        "Time taken to generate actions available",
+        "Walls",
+        "bBFS",
+        "bDFS",
+        "bGBFS",
+        "bUCT",
+        "bA*",
+        "gBFS",
+        "gDFS",
+        "gGBFS",
+        "gUCT",
+        "gA*",
     ]
     write.writerow(fields)
-    write.writerows(bitboard_times)
-    write.writerows(graph_board_times)
+    write.writerows(times)
 
     results_file.close()
     f.close()
 
 
 if __name__ == "__main__":
-    # compare_moves(10, "graph_optim", "bitboard_optim", "BFS", "BFS")
-    # compare_moves(10, "graph_optim", "bitboard_optim", "BFS", "DFS")
-    # compare_moves(100, "graph_optim", "bitboard_optim", "GBFS", "BFS")
-    # compare_moves(10, "graph_optim", "bitboard_optim", "BFS", "UCT")
+    compare_moves(10, "graph_optim", "bitboard_optim", "BFS", "BFS")
+    compare_moves(10, "graph_optim", "bitboard_optim", "BFS", "DFS")
+    compare_moves(10, "graph_optim", "bitboard_optim", "GBFS", "BFS")
+    compare_moves(10, "graph_optim", "bitboard_optim", "BFS", "UCT")
     compare_moves(10, "graph_optim", "bitboard_optim", "BFS", "Astar")
 
     # simulate(10, "random", "random", "graph_optim", "BFS")
@@ -225,4 +253,6 @@ if __name__ == "__main__":
 
     # simulate(10000, "random", "random", "graph_optim", "GBFS")
 
-    # load_test("2023-05-30_161034_random_vs_random_as_graph_optim.json")
+    # load_test(
+    #     "2023-05-30_161034_random_vs_random_as_graph_optim.json", repeats=1, games=5
+    # )
