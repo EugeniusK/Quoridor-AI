@@ -93,14 +93,28 @@ def display(bitboard):
 
 @njit(cache=True)
 def manhatten_distance(bitboard_player, player_number):
+    found_idx = 0
+    for idx in range(289):
+        if 0 <= idx <= 32:
+            if bitboard_player[4] == np.uint64(2 ** (idx + 31)):
+                found_idx = idx
+        elif 33 <= idx <= 96:
+            if bitboard_player[3] == np.uint64(2 ** (idx - 33)):
+                found_idx = idx
+        elif 97 <= idx <= 160:
+            if bitboard_player[2] == np.uint64(2 ** (idx - 97)):
+                found_idx = idx
+        elif 161 <= idx <= 224:
+            if bitboard_player[1] == np.uint64(2 ** (idx - 161)):
+                found_idx = idx
+        elif 225 <= idx <= 288:
+            if bitboard_player[0] == np.uint64(2 ** (idx - 225)):
+                found_idx = idx
+
     if player_number == 1:
-        shift = -34
-    elif player_number == 2:
-        shift = 34
-    for i in range(8):
-        bitboard_player = shift_bitboard(bitboard_player, shift)
-        if np.array_equal(shift_bitboard(bitboard_player, shift), blank):
-            return np.int8(i + 1)
+        return 8 - found_idx // 17
+    else:
+        return found_idx // 17
 
 
 short_north_mask = np.array(
@@ -566,7 +580,6 @@ def UniformCostSearch_Bitboard(
             if shift_bitboard_check_wall(node, bitboard_walls_placed, shift, mask):
                 shifted_bitboard = shift_bitboard(node, shift * 2)
                 in_frontier = False
-                frontier_idx = 255
                 for idx in range(81):
                     if np.array_equal(frontier[idx], shifted_bitboard):
                         in_frontier = True
@@ -590,12 +603,14 @@ def UniformCostSearch_Bitboard(
                     frontier[max_idx] = shifted_bitboard
                     frontier_path_cost[max_idx] = frontier_path_cost[min_idx] + 1
                     frontier_length += 1
-                elif (
-                    in_frontier
-                    and frontier_path_cost[frontier_idx]
-                    > frontier_path_cost[min_idx] + 1
-                ):
-                    frontier_path_cost[frontier_idx] = frontier_path_cost[min_idx] + 1
+                elif in_frontier:
+                    if (
+                        frontier_path_cost[frontier_idx]
+                        > frontier_path_cost[min_idx] + 1
+                    ):
+                        frontier_path_cost[frontier_idx] = (
+                            frontier_path_cost[min_idx] + 1
+                        )
         frontier[min_idx] = full
         frontier_path_cost[min_idx] = 127
 
@@ -609,7 +624,7 @@ def AStarSearch_Bitboard(bitboard_player, player_number, bitboard_walls, wall_nu
             (wall_number // 8 + 1) * 34 - 1 - 2 * (wall_number % 8) - 1,
             (wall_number // 8 + 1) * 34 - 1 - 2 * (wall_number % 8) - 2,
         )
-    elif wall_number < 128:
+    else:
         idx_wall = (
             ((wall_number % 64) // 8 + 1) * 34 - 19 - 2 * ((wall_number % 64) % 8),
             ((wall_number % 64) // 8 + 1) * 34 - 19 - 2 * ((wall_number % 64) % 8) + 17,
@@ -728,4 +743,4 @@ def AStarSearch_Bitboard(bitboard_player, player_number, bitboard_walls, wall_nu
                             frontier_costs[max_idx, 0:2]
                         )
         frontier[min_idx] = full
-        frontier_costs[min_idx] = [127,127,127]
+        frontier_costs[min_idx] = [127, 127, 127]
