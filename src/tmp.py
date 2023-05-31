@@ -46,34 +46,58 @@
 # display(a)
 
 
-from _AI.mcts import MCTS_NODE, select, expand, simulate, backpropagate
-from Quoridor.b_optim import QuoridorBitboardOptim
-from Quoridor.g_optim import QuoridorGraphicalBoardOptim
-import time
+# from _AI.mcts import MCTS_NODE, select, expand, simulate, backpropagate
+# from Quoridor.b_optim import QuoridorBitboardOptim
+# from Quoridor.g_optim import QuoridorGraphicalBoardOptim
+# import time
 
-board = QuoridorGraphicalBoardOptim("GBFS")
-root = MCTS_NODE(board)
-import sys
-
-
-def roll_out(root):
-    path = select(root)
-    leaf = path[-1]
-    child = expand(leaf)
-    reward = simulate(child.state, child.state.turn)
-    backpropagate(path + [child], reward)
+# board = QuoridorGraphicalBoardOptim("GBFS")
+# root = MCTS_NODE(board)
+# import sys
 
 
-import timeit
+# def roll_out(root):
+#     path = select(root)
+#     leaf = path[-1]
+#     child = expand(leaf)
+#     reward = simulate(child.state, child.state.turn)
+#     backpropagate(path + [child], reward)
 
-start = time.perf_counter()
-for i in range(500):
-    roll_out(root)
-print(time.perf_counter() - start)
-print(
-    [
-        (c.games_won, c.games_played)
-        for c in sorted(root.children, key=lambda x: x.games_played)
-    ]
-)
+
+# import timeit
+
+# start = time.perf_counter()
+# for i in range(500):
+#     roll_out(root)
+# print(time.perf_counter() - start)
+# print(
+#     [
+#         (c.games_won, c.games_played)
+#         for c in sorted(root.children, key=lambda x: x.games_played)
+#     ]
+# )
 # print(timeit.timeit(code, globals=globals(), number=1))
+
+
+from Quoridor.b_optim import QuoridorBitboardOptim
+
+# for i in range(128, 140):
+#     print(i)
+
+#     board = QuoridorBitboardOptim("BFS")
+#     if board.get_available_actions()[i]:
+#         board.take_action(i)
+#         board.display_beautiful()
+import numpy as np
+
+board = QuoridorBitboardOptim("BFS")
+board.take_action(53)
+board.take_action(121)
+board.take_action(18)
+board.take_action(58)
+board.take_action(39)
+board.take_action(129)
+board.display_beautiful()
+
+print(board.get_available_actions())
+board.display_beautiful()

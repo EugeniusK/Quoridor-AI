@@ -286,10 +286,10 @@ class QuoridorBitboardOptim:
         )
 
         if self.turn == 1:
-            if 0 <= action_number < 128:
+            if 0 <= action_number and action_number < 128:
                 self._place_wall(action_number)
                 self.p1_walls_placed += 1
-            elif 128 <= action_number < 144:
+            else:
                 self.p1 = shift_bitboard(
                     self.p1,
                     rel_move[action_number - 128, 0] * -34
@@ -301,10 +301,10 @@ class QuoridorBitboardOptim:
                 self.turn = 2
 
         elif self.turn == 2:
-            if 0 <= action_number < 128:
+            if 0 <= action_number and action_number < 128:
                 self._place_wall(action_number)
                 self.p2_walls_placed += 1
-            elif 128 <= action_number < 144:
+            else:
                 self.p2 = shift_bitboard(
                     self.p2,
                     rel_move[action_number - 128, 0] * -34
@@ -484,9 +484,6 @@ class QuoridorBitboardOptim:
                 search = UniformCostSearch_Bitboard
             elif self.path_finding_mode == "Astar":
                 search = AStarSearch_Bitboard
-            else:
-                print(self.path_finding_mode)
-                raise KeyError
             # For each possible wall,
             # verify the space isn't occupied by a wall
             # and that it doens't prevent either player from reaching their destination
@@ -691,8 +688,6 @@ class QuoridorBitboardOptim:
                     search = UniformCostSearch_Bitboard
                 elif self.path_finding_mode == "Astar":
                     search = AStarSearch_Bitboard
-                else:
-                    raise KeyError
                 # Get indexes where the wall would go
                 if action < 64:
                     # horizontal wall placed

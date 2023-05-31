@@ -714,50 +714,56 @@ class QuoridorGraphicalBoardOptim:
             dtype=np.int8,
         )
 
-        # Action is a movement
-        if action >= 128:
-            if self.turn == 1:
-                # Move player 1 according to the relative motion defined in rel_move
-                self.p1_pos += rel_move[action - 128]
-                # If the new position of player 1 is on the winning row, the game is over
-                # Otherwise, set the turn to player 2
-                if self.p1_pos[0] == 8:
-                    self.over = True
+        if self.turn == 1:
+            if 0 <= action and action < 128:
+                # Horizontal wall
+                if action < 64:
+                    self.nodes[action // 8, action % 8, 0] = False
+                    self.nodes[action // 8 + 1, action % 8, 2] = False
+                    self.nodes[action // 8, action % 8 + 1, 0] = False
+                    self.nodes[action // 8 + 1, action % 8 + 1, 2] = False
+                # Vertical wall
                 else:
-                    self.turn = 2
-
-            elif self.turn == 2:
-                # Move player 2 according to the relative motion defined in rel_move
-                self.p2_pos += rel_move[action - 128]
-                # If the new position of player 2 is on the winning row, the game is over
-                # Otherwise, set the turn to player 1
-                if self.p2_pos[0] == 0:
-                    self.over = True
-                else:
-                    self.turn = 1
-
-        # Action is a wall placement
-        else:
-            # Horizontal wall
-            if action < 64:
-                self.nodes[action // 8, action % 8, 0] = False
-                self.nodes[action // 8 + 1, action % 8, 2] = False
-                self.nodes[action // 8, action % 8 + 1, 0] = False
-                self.nodes[action // 8 + 1, action % 8 + 1, 2] = False
-            # Vertical wall
-            else:
-                self.nodes[(action % 64) // 8, (action % 64) % 8, 1] = False
-                self.nodes[(action % 64) // 8, (action % 64) % 8 + 1, 3] = False
-                self.nodes[(action % 64) // 8 + 1, (action % 64) % 8, 1] = False
-                self.nodes[(action % 64) // 8 + 1, (action % 64) % 8 + 1, 3] = False
-
-            # Increment the number of walls placed for the relevant player
-            # Set the turn to the other player
-            if self.turn == 1:
+                    self.nodes[(action % 64) // 8, (action % 64) % 8, 1] = False
+                    self.nodes[(action % 64) // 8, (action % 64) % 8 + 1, 3] = False
+                    self.nodes[(action % 64) // 8 + 1, (action % 64) % 8, 1] = False
+                    self.nodes[(action % 64) // 8 + 1, (action % 64) % 8 + 1, 3] = False
                 self.p1_walls_placed += 1
-                self.turn = 2
             else:
+                print("p1", action)
+                # Move player 1 according to the relative motion defined in rel_move
+                self.p1_pos = self.p1_pos + rel_move[action - 128]
+            # If the new position of player 1 is on the winning row, the game is over
+            # Otherwise, set the turn to player 2
+            if self.p1_pos[0] == 8:
+                self.over = True
+            else:
+                self.turn = 2
+        elif self.turn == 2:
+            if 0 <= action and action < 128:
+                # Horizontal wall
+                if action < 64:
+                    self.nodes[action // 8, action % 8, 0] = False
+                    self.nodes[action // 8 + 1, action % 8, 2] = False
+                    self.nodes[action // 8, action % 8 + 1, 0] = False
+                    self.nodes[action // 8 + 1, action % 8 + 1, 2] = False
+                # Vertical wall
+                else:
+                    self.nodes[(action % 64) // 8, (action % 64) % 8, 1] = False
+                    self.nodes[(action % 64) // 8, (action % 64) % 8 + 1, 3] = False
+                    self.nodes[(action % 64) // 8 + 1, (action % 64) % 8, 1] = False
+                    self.nodes[(action % 64) // 8 + 1, (action % 64) % 8 + 1, 3] = False
                 self.p2_walls_placed += 1
+            else:
+                print("p2", action)
+
+                # Move player 2 according to the relative motion defined in rel_move
+                self.p2_pos = self.p2_pos + rel_move[action - 128]
+            # If the new position of player 2 is on the winning row, the game is over
+            # Otherwise, set the turn to player 1
+            if self.p2_pos[0] == 0:
+                self.over = True
+            else:
                 self.turn = 1
 
     def get_available_states(self):

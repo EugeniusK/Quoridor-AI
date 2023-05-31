@@ -526,7 +526,7 @@ def test_suite(representation, path_finding_mode):
             "h8v",
         ],
         "Complex",
-        # True,
+        True,
     )
 
 
