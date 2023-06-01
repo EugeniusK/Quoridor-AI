@@ -157,6 +157,9 @@ class QuoridorGraphicalBoardOptim:
 
         self.available_states = []
 
+        # Debug
+        self.actions_taken = []
+
     def get_available_actions(self):
         """
         For the player in turn, return available actions with a boolean array
@@ -695,7 +698,7 @@ class QuoridorGraphicalBoardOptim:
         Actions 128~139 represent the moves from the player's position
         -  N, E, S, W, NN, NE, EE, SE, SS, SW, WW, NW
         """
-
+        self.actions_taken.append(action)
         rel_move = np.array(
             [
                 [1, 0],

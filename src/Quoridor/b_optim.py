@@ -277,7 +277,6 @@ class QuoridorBitboardOptim:
         # Depending on the index, it is in different uint64 so correct one
         # has to be found
         for idx in idx_wall:
-            init = np.copy(self.walls)
             if 0 <= idx <= 32:
                 self.walls[4] = self.walls[4] + np.uint64(2 ** (idx + 31))
             elif 33 <= idx <= 96:

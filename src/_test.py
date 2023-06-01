@@ -59,6 +59,7 @@ def compare_moves(repeats, repr_1, repr_2, search_1, search_2):
     total_moves = 0
     valid_moves = 0
     for repeat in range(repeats):
+        # print(repeat)
         two_error = 0
         one_error = 0
 
@@ -82,33 +83,33 @@ def compare_moves(repeats, repr_1, repr_2, search_1, search_2):
             # print(one_available_moves, two_available_moves)
 
             if not np.array_equal(one_available_moves, two_available_moves):
-                pass
-                # one_algebraic = [
-                #     action_to_algebra(move)
-                #     for move in range(140)
-                #     if one_available_moves[move]
-                # ]
-                # two_algebraic = [
-                #     action_to_algebra(move)
-                #     for move in range(140)
-                #     if two_available_moves[move]
-                # ]
-                # print("Turn: ", g_one.board.turn)
-                # print(repr_1)
-                # g_one.display()
-                # print(
-                #     "One unique: ", [x for x in one_algebraic if x not in two_algebraic]
-                # )
-                # print("One: ", [x for x in one_algebraic])
-                # print("One actions taken", g_one.board.actions_taken)
-                # print(repr_2)
-                # g_two.display()
-                # print(
-                #     "Two unique: ", [x for x in two_algebraic if x not in one_algebraic]
-                # )
-                # print("Two: ", [x for x in two_algebraic if x])
-                # print("Two actions taken", g_two.board.actions_taken)
-                # print(not np.array_equal(one_available_moves, two_available_moves))
+                one_algebraic = [
+                    action_to_algebra(move)
+                    for move in range(140)
+                    if one_available_moves[move]
+                ]
+                two_algebraic = [
+                    action_to_algebra(move)
+                    for move in range(140)
+                    if two_available_moves[move]
+                ]
+                print("Turn: ", g_one.board.turn)
+                print(repr_1)
+                g_one.display()
+                print(
+                    "One unique: ", [x for x in one_algebraic if x not in two_algebraic]
+                )
+                print("One: ", [x for x in one_algebraic])
+                print("One actions taken", g_one.board.actions_taken)
+                print(repr_2)
+                g_two.display()
+                print(
+                    "Two unique: ", [x for x in two_algebraic if x not in one_algebraic]
+                )
+                print("Two: ", [x for x in two_algebraic if x])
+                print("Two actions taken", g_two.board.actions_taken)
+                print(not np.array_equal(one_available_moves, two_available_moves))
+                raise IndexError
             else:
                 valid_moves += 1
             g_one.take_action(int(shared_action))
@@ -119,116 +120,156 @@ def compare_moves(repeats, repr_1, repr_2, search_1, search_2):
     print(f"Valid moves {valid_moves}/{total_moves}")
 
 
-def load_test(file_name, repeats=1, games=100):
-    error_count = 0
+def load_test(args):
+    print(args[1]["Round"])
+    # Times taken for each wall count in current repetition
+    times_repeat = []
+    for repeat in range(args[2]):
+        start = time.time()
+        bitboard_BFS = Game(representation="bitboard_optim", path_finding_mode="BFS")
+        bitboard_DFS = Game(representation="bitboard_optim", path_finding_mode="DFS")
+        bitboard_GBFS = Game(representation="bitboard_optim", path_finding_mode="GBFS")
+        bitboard_UCT = Game(representation="bitboard_optim", path_finding_mode="UCT")
+        bitboard_Astar = Game(
+            representation="bitboard_optim", path_finding_mode="Astar"
+        )
+
+        graph_BFS = Game(representation="graph_optim", path_finding_mode="BFS")
+        graph_DFS = Game(representation="graph_optim", path_finding_mode="DFS")
+        graph_GBFS = Game(representation="graph_optim", path_finding_mode="GBFS")
+        graph_UCT = Game(representation="graph_optim", path_finding_mode="UCT")
+        graph_Astar = Game(representation="graph_optim", path_finding_mode="Astar")
+        for idx, action in enumerate(args[1]["Actions"].split(" ")):
+            b_start_BFS = time.perf_counter()
+            bitboard_BFS.available_actions()
+            b_end_BFS = time.perf_counter()
+            b_start_DFS = time.perf_counter()
+            bitboard_DFS.available_actions()
+            b_end_DFS = time.perf_counter()
+            b_start_GBFS = time.perf_counter()
+            bitboard_GBFS.available_actions()
+            b_end_GBFS = time.perf_counter()
+            b_start_UCT = time.perf_counter()
+            bitboard_UCT.available_actions()
+            b_end_UCT = time.perf_counter()
+            b_start_Astar = time.perf_counter()
+            bitboard_Astar.available_actions()
+            b_end_Astar = time.perf_counter()
+
+            g_start_BFS = time.perf_counter()
+            graph_BFS.available_actions()
+            g_end_BFS = time.perf_counter()
+            g_start_DFS = time.perf_counter()
+            graph_DFS.available_actions()
+            g_end_DFS = time.perf_counter()
+            g_start_GBFS = time.perf_counter()
+            graph_GBFS.available_actions()
+            g_end_GBFS = time.perf_counter()
+            g_start_UCT = time.perf_counter()
+            graph_UCT.available_actions()
+            g_end_UCT = time.perf_counter()
+            g_start_Astar = time.perf_counter()
+            graph_Astar.available_actions()
+            g_end_Astar = time.perf_counter()
+            times_repeat.append(
+                [
+                    args[0],
+                    args[1]["Walls placed"].split(" ")[idx],
+                    round(b_end_BFS - b_start_BFS, 8),
+                    round(b_end_DFS - b_start_DFS, 8),
+                    round(b_end_GBFS - b_start_GBFS, 8),
+                    round(b_end_UCT - b_start_UCT, 8),
+                    round(b_end_Astar - b_start_Astar, 8),
+                    round(g_end_BFS - g_start_BFS, 8),
+                    round(g_end_DFS - g_start_DFS, 8),
+                    round(g_end_GBFS - g_start_GBFS, 8),
+                    round(g_end_UCT - g_start_UCT, 8),
+                    round(g_end_Astar - g_start_Astar, 8),
+                ]
+            )
+            graph_BFS.take_action(int(action))
+            graph_DFS.take_action(int(action))
+            graph_GBFS.take_action(int(action))
+            graph_UCT.take_action(int(action))
+            graph_Astar.take_action(int(action))
+            bitboard_BFS.take_action(int(action))
+            bitboard_DFS.take_action(int(action))
+            bitboard_GBFS.take_action(int(action))
+            bitboard_UCT.take_action(int(action))
+            bitboard_Astar.take_action(int(action))
+        print(time.time() - start, args[1]["Round"], repeat)
+    return times_repeat
+
+
+def load_test_threaded(file_name, repeats, games):
     f = open(f'{os.path.join(os.path.dirname(__file__), "Logs/")}{file_name}')
     data = json.load(f)
+    args = [(x + 1, data[x], repeats) for x in range(games)]
+    with Pool() as pool:
+        times = pool.imap_unordered(load_test, args)
+        results_file = open(
+            os.path.join(
+                os.path.dirname(__file__),
+                "Results",
+                f"performance test {repeats}-{games}-{datetime.strftime(datetime.today(), '%Y-%m-%d_%H%M%S')}.csv",
+            ),
+            "w",
+            newline="",
+        )
 
-    times = []
+        # using csv.writer method from CSV package
+        write = csv.writer(results_file)
 
-    for round, simulation in enumerate(data[0:games]):
-        print("Game ", round + 1)
-
-        # Stores [walls placed, BFS1, DFS1, ..., Astar2]
-        tmp_bitboard = []
-        tmp_graph = []
-
-        # Array for times taken by all 5 path finding for ONE round
-        for path_finding_mode in ["BFS", "DFS", "GBFS", "UCT", "Astar"]:
-            # Arrays for times taken for ONE path finding
-            # records
-            # -----------------------
-            # walls placed, mean time
-            # walls placed, mean time
-            # -----------------------
-            bitboard_time_path_finding = []
-            graph_board_time_path_finding = []
-            for r in range(repeats):
-                bitboard = Game(
-                    representation="bitboard_optim", path_finding_mode=path_finding_mode
-                )
-                graph_board = Game(
-                    representation="graph_optim", path_finding_mode=path_finding_mode
-                )
-                for idx, move in enumerate(simulation["Actions"].split(" ")):
-                    start_bitboard = time.perf_counter()
-                    bitboard_available = bitboard.available_actions()
-                    end_bitboard = time.perf_counter()
-
-                    start_graph_board = time.perf_counter()
-                    graph_board_available = graph_board.available_actions()
-                    end_graph_board = time.perf_counter()
-                    if (
-                        not bitboard_available[int(move)]
-                        or not graph_board_available[int(move)]
-                    ):
-                        error_count += 1
-                    if r == 0:
-                        bitboard_time_path_finding.append(
-                            [bitboard.walls_placed[-1], end_bitboard - start_bitboard]
-                        )
-                        graph_board_time_path_finding.append(
-                            [
-                                graph_board.walls_placed[-1],
-                                end_graph_board - start_graph_board,
-                            ]
-                        )
-                    else:
-                        bitboard_time_path_finding[idx][1] += (
-                            end_bitboard - start_bitboard
-                        )
-                        graph_board_time_path_finding[idx][1] += (
-                            end_graph_board - start_graph_board
-                        )
-
-                    bitboard.take_action(int(move))
-                    graph_board.take_action(int(move))
-            for i in range(len(bitboard_time_path_finding)):
-                bitboard_time_path_finding[i][1] /= repeats
-            for i in range(len(graph_board_time_path_finding)):
-                graph_board_time_path_finding[i][1] /= repeats
-
-            tmp_bitboard.append(bitboard_time_path_finding)
-            tmp_graph.append(graph_board_time_path_finding)
-
-        for row in range(len(tmp_bitboard[0])):
-            tmp_row = [tmp_bitboard[0][row][0]]
-            tmp_row.extend([tmp_bitboard[x][row][1] for x in range(5)])
-            tmp_row.extend([tmp_graph[x][row][1] for x in range(5)])
-            times.append(tmp_row)
-
-    results_file = open(
-        f'{os.path.join(os.path.dirname(__file__), "Results", f"bg_optim {repeats}-{games}.csv")}',
-        "w",
-    )
-
-    # using csv.writer method from CSV package
-    write = csv.writer(results_file)
-
-    fields = [
-        "Walls",
-        "bBFS",
-        "bDFS",
-        "bGBFS",
-        "bUCT",
-        "bA*",
-        "gBFS",
-        "gDFS",
-        "gGBFS",
-        "gUCT",
-        "gA*",
-    ]
-    write.writerow(fields)
-    write.writerows(times)
-
-    results_file.close()
-    f.close()
+        fields = [
+            "Game",
+            "Walls",
+            "bBFS",
+            "bDFS",
+            "bGBFS",
+            "bUCT",
+            "bA*",
+            "gBFS",
+            "gDFS",
+            "gGBFS",
+            "gUCT",
+            "gA*",
+        ]
+        write.writerow(fields)
+        for one_game_data in times:
+            for one_action_data in one_game_data:
+                write.writerow(one_action_data)
+        results_file.close()
+        f.close()
 
 
 if __name__ == "__main__":
     # compare_moves(100, "graph_optim", "bitboard_optim", "BFS", "BFS")
     # compare_moves(100, "graph_optim", "bitboard_optim", "BFS", "DFS")
-    # compare_moves(100, "graph_optim", "bitboard_optim", "GBFS", "BFS")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "BFS", "BFS")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "BFS", "DFS")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "BFS", "GBFS")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "BFS", "UCT")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "BFS", "Astar")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "DFS", "BFS")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "DFS", "DFS")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "DFS", "GBFS")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "DFS", "UCT")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "DFS", "Astar")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "GBFS", "BFS")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "GBFS", "DFS")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "GBFS", "GBFS")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "GBFS", "UCT")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "GBFS", "Astar")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "UCT", "BFS")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "UCT", "DFS")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "UCT", "GBFS")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "UCT", "UCT")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "UCT", "Astar")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "Astar", "BFS")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "Astar", "DFS")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "Astar", "GBFS")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "Astar", "UCT")
+    compare_moves(1000, "graph_optim", "bitboard_optim", "Astar", "Astar")
     # compare_moves(100, "graph_optim", "bitboard_optim", "BFS", "UCT")
     # compare_moves(100, "graph_optim", "bitboard_optim", "BFS", "Astar")
     # compare_moves(100, "graph", "bitboard_optim", "BFS", "BFS")
@@ -259,6 +300,8 @@ if __name__ == "__main__":
 
     # simulate(10000, "random", "random", "graph_optim", "GBFS")
 
-    load_test(
-        "2023-05-30_161034_random_vs_random_as_graph_optim.json", repeats=100, games=5
-    )
+    # load_test_threaded(
+    #     "2023-05-30_161034_random_vs_random_as_graph_optim.json",
+    #     repeats=10,
+    #     games=8,
+    # )
