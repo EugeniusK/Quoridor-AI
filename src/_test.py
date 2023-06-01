@@ -56,11 +56,9 @@ def simulate(
 
 
 def compare_moves(repeats, repr_1, repr_2, search_1, search_2):
+    total_moves = 0
+    valid_moves = 0
     for repeat in range(repeats):
-        print("start", repeat + 1)
-
-        total_moves = 0
-        valid_moves = 0
         two_error = 0
         one_error = 0
 
@@ -75,50 +73,50 @@ def compare_moves(repeats, repr_1, repr_2, search_1, search_2):
         )
         over = False
         while not over:
-            if g_two.is_over() or g_one.is_over():
+            if g_two.is_over() and g_one.is_over():
                 over = True
-                print("OVER")
-                raise KeyError
+                break
             one_available_moves = np.array(g_one.available_actions())
             two_available_moves = np.array(g_two.available_actions())
             shared_action = g_one.select(one_available_moves & two_available_moves)
-            print(shared_action)
             # print(one_available_moves, two_available_moves)
 
             if not np.array_equal(one_available_moves, two_available_moves):
-                print("DIFFERENT")
-                one_algebraic = [
-                    action_to_algebra(move)
-                    for move in range(140)
-                    if one_available_moves[move]
-                ]
-                two_algebraic = [
-                    action_to_algebra(move)
-                    for move in range(140)
-                    if two_available_moves[move]
-                ]
-                print("Turn: ", g_one.board.turn)
-                print(repr_1)
-                g_one.display()
-                print(
-                    "One unique: ", [x for x in one_algebraic if x not in two_algebraic]
-                )
-                print("One: ", [x for x in one_algebraic])
-                print(repr_2)
-                g_two.display()
-                print(
-                    "Two unique: ", [x for x in two_algebraic if x not in one_algebraic]
-                )
-                print("Two: ", [x for x in two_algebraic if x])
-                print(not np.array_equal(one_available_moves, two_available_moves))
+                pass
+                # one_algebraic = [
+                #     action_to_algebra(move)
+                #     for move in range(140)
+                #     if one_available_moves[move]
+                # ]
+                # two_algebraic = [
+                #     action_to_algebra(move)
+                #     for move in range(140)
+                #     if two_available_moves[move]
+                # ]
+                # print("Turn: ", g_one.board.turn)
+                # print(repr_1)
+                # g_one.display()
+                # print(
+                #     "One unique: ", [x for x in one_algebraic if x not in two_algebraic]
+                # )
+                # print("One: ", [x for x in one_algebraic])
+                # print("One actions taken", g_one.board.actions_taken)
+                # print(repr_2)
+                # g_two.display()
+                # print(
+                #     "Two unique: ", [x for x in two_algebraic if x not in one_algebraic]
+                # )
+                # print("Two: ", [x for x in two_algebraic if x])
+                # print("Two actions taken", g_two.board.actions_taken)
+                # print(not np.array_equal(one_available_moves, two_available_moves))
+            else:
+                valid_moves += 1
             g_one.take_action(int(shared_action))
-            print(repr_1)
-            g_one.display()
             g_two.take_action(int(shared_action))
-            print(repr_2)
-            g_two.display()
+            total_moves += 1
 
-        print(repeat + 1, "over", g_one.is_over(), g_two.is_over())
+    print("Repeat", repeats, repr_1, repr_2, search_1, search_2)
+    print(f"Valid moves {valid_moves}/{total_moves}")
 
 
 def load_test(file_name, repeats=1, games=100):
@@ -129,7 +127,7 @@ def load_test(file_name, repeats=1, games=100):
     times = []
 
     for round, simulation in enumerate(data[0:games]):
-        print("Round: ", round + 1)
+        print("Game ", round + 1)
 
         # Stores [walls placed, BFS1, DFS1, ..., Astar2]
         tmp_bitboard = []
@@ -200,7 +198,7 @@ def load_test(file_name, repeats=1, games=100):
             times.append(tmp_row)
 
     results_file = open(
-        f'{os.path.join(os.path.dirname(__file__), "Results/")}bg_optim {repeats} {datetime.now(tz=timezone.utc)}.csv',
+        f'{os.path.join(os.path.dirname(__file__), "Results", f"bg_optim {repeats}-{games}.csv")}',
         "w",
     )
 
@@ -228,12 +226,16 @@ def load_test(file_name, repeats=1, games=100):
 
 
 if __name__ == "__main__":
-    compare_moves(1, "graph_optim", "bitboard_optim", "BFS", "BFS")
+    # compare_moves(100, "graph_optim", "bitboard_optim", "BFS", "BFS")
     # compare_moves(100, "graph_optim", "bitboard_optim", "BFS", "DFS")
     # compare_moves(100, "graph_optim", "bitboard_optim", "GBFS", "BFS")
     # compare_moves(100, "graph_optim", "bitboard_optim", "BFS", "UCT")
     # compare_moves(100, "graph_optim", "bitboard_optim", "BFS", "Astar")
-
+    # compare_moves(100, "graph", "bitboard_optim", "BFS", "BFS")
+    # compare_moves(100, "graph", "bitboard_optim", "BFS", "DFS")
+    # compare_moves(100, "graph", "bitboard_optim", "GBFS", "BFS")
+    # compare_moves(100, "graph", "bitboard_optim", "BFS", "UCT")
+    # compare_moves(100, "graph", "bitboard_optim", "BFS", "Astar")
     # simulate(10, "random", "random", "graph_optim", "BFS")
     # simulate(10, "random", "random", "graph_optim", "DFS")
     # simulate(10, "random", "random", "graph_optim", "GBFS")
@@ -257,6 +259,6 @@ if __name__ == "__main__":
 
     # simulate(10000, "random", "random", "graph_optim", "GBFS")
 
-    # load_test(
-    #     "2023-05-30_161034_random_vs_random_as_graph_optim.json", repeats=1, games=5
-    # )
+    load_test(
+        "2023-05-30_161034_random_vs_random_as_graph_optim.json", repeats=100, games=5
+    )

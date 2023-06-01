@@ -82,16 +82,40 @@ short_west_mask = np.array(
 )
 
 
+def display(bitboard):
+    line = "".join([np.binary_repr(x, 64) for x in bitboard])
+    for i in range(0, 17):
+        print(line[i * 17 : i * 17 + 17])
+    print()
+
+
 @njit(cache=True)
-def shift_bitboard(bitboard, shift):
+def shift_bitboard(init_bitboard, shift):
     # right is positive shift EAST
     """
     Shift the bitboard by shift
     while ensuring that bits outside of the 17x17 are not set
     """
+    bitboard = np.copy(init_bitboard)
     if shift < 128 and shift > 64:
-        copy_bitboard = shift_bitboard(np.roll(bitboard, 1), shift - 64)
-    if shift < 64 and shift > 0:
+        copy_bitboard = np.roll(bitboard, 1)
+        copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
+        if bitboard[0] == 0:
+            copy_bitboard[0] = 0
+        rshift = np.uint64(shift - 64)
+        lshift = np.uint64(128 - shift)
+        copy_bitboard = (copy_bitboard >> rshift) + (
+            np.roll(copy_bitboard, 1) << lshift
+        )
+        copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
+        # if bitboard[1] == 0:
+        #     copy_bitboard[1] = 0
+    elif shift == 64:
+        copy_bitboard = np.roll(bitboard, 1)
+        copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
+        if bitboard[0] == 0:
+            copy_bitboard[0] = 0
+    elif shift < 64 and shift > 0:
         rshift = np.uint64(shift)
         lshift = np.uint64(64 - shift)
         copy_bitboard = (bitboard >> rshift) + (np.roll(bitboard, 1) << lshift)
@@ -104,8 +128,21 @@ def shift_bitboard(bitboard, shift):
         copy_bitboard = (bitboard << lshift) + (np.roll(bitboard, -1) >> rshift)
         if bitboard[4] == 0:
             copy_bitboard[4] = 0
+    elif shift == -64:
+        copy_bitboard = np.roll(bitboard, -1)
+        if bitboard[4] == 0:
+            copy_bitboard[4] = 0
     elif shift < -64 and shift > -128:
-        copy_bitboard = shift_bitboard(np.roll(bitboard, -1), shift + 64)
+        copy_bitboard = np.roll(bitboard, -1)
+        if bitboard[4] == 0:
+            copy_bitboard[4] = 0
+        rshift = np.uint64(64 + shift)
+        lshift = np.uint64(-shift)
+        copy_bitboard = (copy_bitboard << lshift) + (
+            np.roll(copy_bitboard, -1) >> rshift
+        )
+        # if bitboard[4] == 0:
+        #     copy_bitboard[4] = 0
 
     return copy_bitboard
 
@@ -118,29 +155,13 @@ def shift_bitboard_check_wall(player_bitboard, wall_bitboard, shift, mask):
     to ensure that the player doesn't go through a wal
     Then AND with full bitboard to ensure the player is on the board
     """
-    if shift < 128 and shift > 64:
-        copy_bitboard = shift_bitboard(np.roll(player_bitboard, 1), shift - 64)
-    if shift < 64 and shift > 0:
-        rshift = np.uint64(shift)
-        lshift = np.uint64(64 - shift)
-        copy_bitboard = (player_bitboard >> rshift) + (
-            np.roll(player_bitboard, 1) << lshift
-        )
-        copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
-        if player_bitboard[0] == 0:
-            copy_bitboard[0] = 0
-    elif shift < 0 and shift > -64:
-        rshift = np.uint64(64 + shift)
-        lshift = np.uint64(-shift)
-        copy_bitboard = (player_bitboard << lshift) + (
-            np.roll(player_bitboard, -1) >> rshift
-        )
-        if player_bitboard[4] == 0:
-            copy_bitboard[4] = 0
-    elif shift < -64 and shift > -128:
-        copy_bitboard = shift_bitboard(np.roll(player_bitboard, -1), shift + 64)
-    return np.array_equal(copy_bitboard & wall_bitboard, blank) and ~np.array_equal(
-        copy_bitboard & mask, blank
+
+    copy_bitboard = shift_bitboard(player_bitboard, shift)
+    # print(shift, copy_bitboard, np.array_equal(copy_bitboard, blank))
+    return (
+        np.array_equal(copy_bitboard & wall_bitboard, blank)
+        and not np.array_equal(copy_bitboard & mask, blank)
+        # and not np.array_equal(copy_bitboard, blank)
     )
 
 
@@ -183,6 +204,9 @@ spec = [
     ("path_finding_mode", int8),
 ]
 
+# display(np.array([2251799813685248, 0, 0, 0, 0], dtype=np.uint64))
+# display(shift_bitboard(np.array([0, 0, 0, 0, 2**31], dtype=np.uint64), 96))
+
 
 # @jitclass(spec)
 class QuoridorBitboardOptim:
@@ -215,6 +239,9 @@ class QuoridorBitboardOptim:
         # Search mode to be used when verifying if a wall is allowed
         self.path_finding_mode = path_finding_mode
         self.available_states = []
+
+        # Debug
+        self.actions_taken = []
 
     def _place_wall(self, wall_number):
         """
@@ -263,6 +290,7 @@ class QuoridorBitboardOptim:
                 self.walls[0] = self.walls[0] + np.uint64(2 ** (idx - 225))
 
     def take_action(self, action_number):
+        self.actions_taken.append(action_number)
         """
         Depending on the action_number, call the function
         _place_wall() or _move_player()
@@ -740,7 +768,11 @@ class QuoridorBitboardOptim:
             line = []
             line_below = []
             for column in range(9):
-                if bitboard_get_row_col(self.p1, row * 2, column * 2):
+                if bitboard_get_row_col(
+                    self.p1, row * 2, column * 2
+                ) and bitboard_get_row_col(self.p2, row * 2, column * 2):
+                    line.append(" 3 ")
+                elif bitboard_get_row_col(self.p1, row * 2, column * 2):
                     line.append(" 1 ")
                 elif bitboard_get_row_col(self.p2, row * 2, column * 2):
                     line.append(" 2 ")

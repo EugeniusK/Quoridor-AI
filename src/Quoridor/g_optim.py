@@ -730,7 +730,6 @@ class QuoridorGraphicalBoardOptim:
                     self.nodes[(action % 64) // 8 + 1, (action % 64) % 8 + 1, 3] = False
                 self.p1_walls_placed += 1
             else:
-                print("p1", action)
                 # Move player 1 according to the relative motion defined in rel_move
                 self.p1_pos = self.p1_pos + rel_move[action - 128]
             # If the new position of player 1 is on the winning row, the game is over
@@ -755,8 +754,6 @@ class QuoridorGraphicalBoardOptim:
                     self.nodes[(action % 64) // 8 + 1, (action % 64) % 8 + 1, 3] = False
                 self.p2_walls_placed += 1
             else:
-                print("p2", action)
-
                 # Move player 2 according to the relative motion defined in rel_move
                 self.p2_pos = self.p2_pos + rel_move[action - 128]
             # If the new position of player 2 is on the winning row, the game is over
