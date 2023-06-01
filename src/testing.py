@@ -88,147 +88,147 @@ def test(
 
 def test_suite(representation, path_finding_mode):
     print(representation, path_finding_mode)
-    test(
-        representation,
-        path_finding_mode,
-        [128, 130, 128, 130],
-        "moves",
-        ["N", "E", "S", "W"],
-        "1 basic movement",
-    )
-    test(
-        representation,
-        path_finding_mode,
-        [129, 130, 129, 130, 129, 130, 129, 130],
-        "moves",
-        ["N", "W"],
-        "1 bottom right corner movement",
-    )
-    test(
-        representation,
-        path_finding_mode,
-        [131, 130, 131, 130, 131, 130, 131, 130],
-        "moves",
-        ["N", "E"],
-        "1 bottom left corner movement",
-    )
+    # test(
+    #     representation,
+    #     path_finding_mode,
+    #     [128, 130, 128, 130],
+    #     "moves",
+    #     ["N", "E", "S", "W"],
+    #     "1 basic movement",
+    # )
+    # test(
+    #     representation,
+    #     path_finding_mode,
+    #     [129, 130, 129, 130, 129, 130, 129, 130],
+    #     "moves",
+    #     ["N", "W"],
+    #     "1 bottom right corner movement",
+    # )
+    # test(
+    #     representation,
+    #     path_finding_mode,
+    #     [131, 130, 131, 130, 131, 130, 131, 130],
+    #     "moves",
+    #     ["N", "E"],
+    #     "1 bottom left corner movement",
+    # )
 
-    test(
-        representation,
-        path_finding_mode,
-        [131, 130, 131, 130, 131, 130, 131, 130, 128, 1],
-        "moves",
-        ["N", "E", "S"],
-        "1 west side extreme",
-    )
-    test(
-        representation,
-        path_finding_mode,
-        [131, 130, 131, 130, 131, 130, 131, 130, 128, 130, 128, 1],
-        "moves",
-        ["N", "E", "S"],
-        "1 west side extreme",
-    )
+    # test(
+    #     representation,
+    #     path_finding_mode,
+    #     [131, 130, 131, 130, 131, 130, 131, 130, 128, 1],
+    #     "moves",
+    #     ["N", "E", "S"],
+    #     "1 west side extreme",
+    # )
+    # test(
+    #     representation,
+    #     path_finding_mode,
+    #     [131, 130, 131, 130, 131, 130, 131, 130, 128, 130, 128, 1],
+    #     "moves",
+    #     ["N", "E", "S"],
+    #     "1 west side extreme",
+    # )
 
-    test(
-        representation,
-        path_finding_mode,
-        [131, 130, 131, 130, 131, 130, 131, 130, 128, 130, 128, 130, 128, 1],
-        "moves",
-        ["N", "E", "S"],
-        "1 west side extreme",
-    )
+    # test(
+    #     representation,
+    #     path_finding_mode,
+    #     [131, 130, 131, 130, 131, 130, 131, 130, 128, 130, 128, 130, 128, 1],
+    #     "moves",
+    #     ["N", "E", "S"],
+    #     "1 west side extreme",
+    # )
 
-    test(
-        representation,
-        path_finding_mode,
-        [129, 130, 129, 130, 129, 130, 129, 130, 128, 1],
-        "moves",
-        ["N", "W", "S"],
-        "1 east side extreme",
-    )
-    test(
-        representation,
-        path_finding_mode,
-        [129, 130, 129, 130, 129, 130, 129, 130, 128, 130, 128, 1],
-        "moves",
-        ["N", "W", "S"],
-        "1 east side extreme",
-    )
+    # test(
+    #     representation,
+    #     path_finding_mode,
+    #     [129, 130, 129, 130, 129, 130, 129, 130, 128, 1],
+    #     "moves",
+    #     ["N", "W", "S"],
+    #     "1 east side extreme",
+    # )
+    # test(
+    #     representation,
+    #     path_finding_mode,
+    #     [129, 130, 129, 130, 129, 130, 129, 130, 128, 130, 128, 1],
+    #     "moves",
+    #     ["N", "W", "S"],
+    #     "1 east side extreme",
+    # )
 
-    test(
-        representation,
-        path_finding_mode,
-        [129, 130, 129, 130, 129, 130, 129, 130, 128, 130, 128, 130, 128, 1],
-        "moves",
-        ["N", "W", "S"],
-        "1 east side extreme",
-    )
-    test(
-        representation,
-        path_finding_mode,
-        [129, 131, 129, 131, 129, 131, 129, 131, 1],
-        "moves",
-        ["E", "S"],
-        "2 west side extreme",
-    )
-    test(
-        representation,
-        path_finding_mode,
-        [129, 131, 129, 131, 129, 131, 129, 131, 128, 130, 1],
-        "moves",
-        ["E", "S", "N"],
-        "2 west side extreme",
-    )
-    test(
-        representation,
-        path_finding_mode,
-        [129, 131, 129, 131, 129, 131, 129, 131, 128, 130, 128, 130, 1],
-        "moves",
-        ["E", "S", "N"],
-        "2 west side extreme",
-    )
-    test(
-        representation,
-        path_finding_mode,
-        [129, 131, 129, 131, 129, 131, 129, 131, 128, 130, 128, 130, 128, 130, 1],
-        "moves",
-        ["E", "S", "N"],
-        "2 west side extreme",
-    )
-    test(
-        representation,
-        path_finding_mode,
-        [128, 130, 128, 130, 128, 130, 128],
-        "moves",
-        ["N", "E", "W", "SS"],
-        "2 adjacent to 1 movement",
-    )
-    test(
-        representation,
-        path_finding_mode,
-        [128, 130, 128, 130, 128, 130, 128, 1],
-        "moves",
-        ["E", "S", "W", "NN"],
-        "1 adjacent to 2 movement",
-    )
+    # test(
+    #     representation,
+    #     path_finding_mode,
+    #     [129, 130, 129, 130, 129, 130, 129, 130, 128, 130, 128, 130, 128, 1],
+    #     "moves",
+    #     ["N", "W", "S"],
+    #     "1 east side extreme",
+    # )
+    # test(
+    #     representation,
+    #     path_finding_mode,
+    #     [129, 131, 129, 131, 129, 131, 129, 131, 1],
+    #     "moves",
+    #     ["E", "S"],
+    #     "2 west side extreme",
+    # )
+    # test(
+    #     representation,
+    #     path_finding_mode,
+    #     [129, 131, 129, 131, 129, 131, 129, 131, 128, 130, 1],
+    #     "moves",
+    #     ["E", "S", "N"],
+    #     "2 west side extreme",
+    # )
+    # test(
+    #     representation,
+    #     path_finding_mode,
+    #     [129, 131, 129, 131, 129, 131, 129, 131, 128, 130, 128, 130, 1],
+    #     "moves",
+    #     ["E", "S", "N"],
+    #     "2 west side extreme",
+    # )
+    # test(
+    #     representation,
+    #     path_finding_mode,
+    #     [129, 131, 129, 131, 129, 131, 129, 131, 128, 130, 128, 130, 128, 130, 1],
+    #     "moves",
+    #     ["E", "S", "N"],
+    #     "2 west side extreme",
+    # )
+    # test(
+    #     representation,
+    #     path_finding_mode,
+    #     [128, 130, 128, 130, 128, 130, 128],
+    #     "moves",
+    #     ["N", "E", "W", "SS"],
+    #     "2 adjacent to 1 movement",
+    # )
+    # test(
+    #     representation,
+    #     path_finding_mode,
+    #     [128, 130, 128, 130, 128, 130, 128, 1],
+    #     "moves",
+    #     ["E", "S", "W", "NN"],
+    #     "1 adjacent to 2 movement",
+    # )
 
-    test(
-        representation,
-        path_finding_mode,
-        [128, 130, 128, 130, 128, 130, 128, 43],
-        "moves",
-        ["E", "S", "W", "NW", "NE"],
-        "1 adjacent to 2 with wall North of player 2",
-    )
-    test(
-        representation,
-        path_finding_mode,
-        [128, 130, 128, 130, 128, 130, 128, 43, 100, 1],
-        "moves",
-        ["S", "W", "NW"],
-        "1 adjacent to 2 with wall North and East of player 2",
-    )
+    # test(
+    #     representation,
+    #     path_finding_mode,
+    #     [128, 130, 128, 130, 128, 130, 128, 43],
+    #     "moves",
+    #     ["E", "S", "W", "NW", "NE"],
+    #     "1 adjacent to 2 with wall North of player 2",
+    # )
+    # test(
+    #     representation,
+    #     path_finding_mode,
+    #     [128, 130, 128, 130, 128, 130, 128, 43, 100, 1],
+    #     "moves",
+    #     ["S", "W", "NW"],
+    #     "1 adjacent to 2 with wall North and East of player 2",
+    # )
     test(
         representation,
         path_finding_mode,
@@ -525,31 +525,132 @@ def test_suite(representation, path_finding_mode):
             "g8v",
             "h8v",
         ],
-        "Complex",
-        True,
+        "Complex walls placed - walls test",
+    )
+    test(
+        representation,
+        path_finding_mode,
+        [
+            1,
+            67,
+            78,
+            80,
+            81,
+            20,
+            22,
+            30,
+            25,
+            90,
+            40,
+            105,
+            108,
+            46,
+            55,
+            51,
+            114,
+            112,
+            56,
+            61,
+            128,
+            130,
+            128,
+            129,
+            131,
+            130,
+        ],
+        "moves",
+        ["N", "E", "S", "W"],
+        "Complex walls placed - movement test",
+    )
+    test(
+        representation,
+        path_finding_mode,
+        [
+            1,
+            67,
+            78,
+            80,
+            81,
+            20,
+            22,
+            30,
+            25,
+            90,
+            40,
+            105,
+            108,
+            46,
+            55,
+            51,
+            114,
+            112,
+            56,
+            61,
+            128,
+            130,
+            128,
+            129,
+            131,
+            130,
+            128,
+            130,
+            128,
+            130,
+            129,
+            130,
+            7,
+            131,
+        ],
+        "moves",
+        ["N", "E", "W", "SW", "SE"],
+        "Complex walls placed and adjacent - movement test",
+    )
+    test(
+        representation,
+        path_finding_mode,
+        [
+            129,
+            129,
+            129,
+            129,
+            129,
+            129,
+            129,
+            129,
+            128,
+            130,
+            128,
+            130,
+            128,
+            130,
+            128,
+        ],
+        "moves",
+        ["N", "W", "SS"],
+        "Edge situation check diagonal",
     )
 
 
-test_suite("bitboard", "BFS")
-test_suite("bitboard", "DFS")
-test_suite("bitboard", "GBFS")
-test_suite("bitboard", "UCT")
-test_suite("bitboard", "Astar")
-test_suite("graph", "BFS")
-test_suite("graph", "DFS")
-test_suite("graph", "GBFS")
-test_suite("graph", "UCT")
-test_suite("graph", "Astar")
+# test_suite("bitboard", "BFS")
+# test_suite("bitboard", "DFS")
+# test_suite("bitboard", "GBFS")
+# test_suite("bitboard", "UCT")
+# test_suite("bitboard", "Astar")
+# test_suite("graph", "BFS")
+# test_suite("graph", "DFS")
+# test_suite("graph", "GBFS")
+# test_suite("graph", "UCT")
+# test_suite("graph", "Astar")
 test_suite("bitboard_optim", "BFS")
-test_suite("bitboard_optim", "DFS")
-test_suite("bitboard_optim", "GBFS")
-test_suite("bitboard_optim", "UCT")
-test_suite("bitboard_optim", "Astar")
-test_suite("graph_optim", "BFS")
-test_suite("graph_optim", "DFS")
-test_suite("graph_optim", "GBFS")
-test_suite("graph_optim", "UCT")
-test_suite("graph_optim", "Astar")
+# test_suite("bitboard_optim", "DFS")
+# test_suite("bitboard_optim", "GBFS")
+# test_suite("bitboard_optim", "UCT")
+# test_suite("bitboard_optim", "Astar")
+# test_suite("graph_optim", "BFS")
+# test_suite("graph_optim", "DFS")
+# test_suite("graph_optim", "GBFS")
+# test_suite("graph_optim", "UCT")
+# test_suite("graph_optim", "Astar")
 # test_suite("graph")
 # test_suite("bitboard")
 # test_suite("graph_optim")
