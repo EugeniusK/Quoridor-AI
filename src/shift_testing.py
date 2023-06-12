@@ -87,47 +87,181 @@ def board_shift_bitboard(init_bitboard, shift):
     return copy_bitboard
 
 
-# @profile
+shift_bitboard_mask = np.uint64(18446744071562067968)
+shift_bitboard_mask_arr = np.array(
+    [
+        18446744073709551615,
+        18446744073709551615,
+        18446744073709551615,
+        18446744073709551615,
+        18446744071562067968,
+    ],
+    dtype=np.uint64,
+)
+
+
+@profile
 def shift_bitboard(init_bitboard, shift):
     bitboard = np.copy(init_bitboard)
-    copy_bitboard = np.zeros(5, dtype=np.uint64)
     rolled_bitboard = np.zeros(5, dtype=np.uint64)
-    rolled_again_bitboard = np.zeros(5, dtype=np.uint64)
 
     if shift > 64:
         rolled_bitboard[1:5] = bitboard[0:4]
+        rolled_again_bitboard = np.zeros(5, dtype=np.uint64)
+        rolled_again_bitboard[1:5] = rolled_bitboard[0:4]
+        return (rolled_bitboard >> np.uint64(shift - 64)) + (
+            rolled_again_bitboard << np.uint64(128 - shift)
+        ) & shift_bitboard_mask_arr
+    elif shift == 64:
+        rolled_bitboard[1:5] = bitboard[0:4]
+        return rolled_bitboard & shift_bitboard_mask_arr
+    elif shift > 0:
+        rolled_bitboard[1:5] = bitboard[0:4]
+        return (bitboard >> np.uint64(shift)) + (
+            rolled_bitboard << np.uint64(64 - shift)
+        ) & shift_bitboard_mask_arr
+    elif shift > -64:
+        rolled_bitboard[0:4] = bitboard[1:5]
+        return (bitboard << np.uint64(-shift)) + (
+            rolled_bitboard >> np.uint64(64 + shift)
+        )
+    elif shift == -64:
+        rolled_bitboard[0:4] = bitboard[1:5]
+        return rolled_bitboard
+    elif shift > -128:
+        rolled_bitboard[0:4] = bitboard[1:5]
+        rolled_again_bitboard = np.zeros(5, dtype=np.uint64)
+        rolled_again_bitboard[0:4] = rolled_bitboard[1:5]
+        return (rolled_bitboard << np.uint64(-64 - shift)) + (
+            rolled_again_bitboard >> np.uint64(128 + shift)
+        )
+
+
+@njit(cache=True, fastmath=True)
+def njit_shift_bitboard(init_bitboard, shift):
+    bitboard = np.copy(init_bitboard)
+    rolled_bitboard = np.zeros(5, dtype=np.uint64)
+
+    if shift > 64:
+        rolled_bitboard[1:5] = bitboard[0:4]
+        rolled_again_bitboard = np.zeros(5, dtype=np.uint64)
+        rolled_again_bitboard[1:5] = rolled_bitboard[0:4]
+        return (rolled_bitboard >> np.uint64(shift - 64)) + (
+            rolled_again_bitboard << np.uint64(128 - shift)
+        ) & shift_bitboard_mask_arr
+    elif shift == 64:
+        rolled_bitboard[1:5] = bitboard[0:4]
+        return rolled_bitboard & shift_bitboard_mask_arr
+    elif shift > 0:
+        rolled_bitboard[1:5] = bitboard[0:4]
+        return (bitboard >> np.uint64(shift)) + (
+            rolled_bitboard << np.uint64(64 - shift)
+        ) & shift_bitboard_mask_arr
+    elif shift > -64:
+        rolled_bitboard[0:4] = bitboard[1:5]
+        return (bitboard << np.uint64(-shift)) + (
+            rolled_bitboard >> np.uint64(64 + shift)
+        )
+    elif shift == -64:
+        rolled_bitboard[0:4] = bitboard[1:5]
+        return rolled_bitboard
+    elif shift > -128:
+        rolled_bitboard[0:4] = bitboard[1:5]
+        rolled_again_bitboard = np.zeros(5, dtype=np.uint64)
+        rolled_again_bitboard[0:4] = rolled_bitboard[1:5]
+        return (rolled_bitboard << np.uint64(-64 - shift)) + (
+            rolled_again_bitboard >> np.uint64(128 + shift)
+        )
+
+
+def old_shift_bitboard(init_bitboard, shift):
+    bitboard = np.copy(init_bitboard)
+    copy_bitboard = np.zeros(5, dtype=np.uint64)
+    if shift > 64:
+        rolled_bitboard = np.roll(bitboard, 1)
+        rolled_bitboard[0] = 0
         rshift = np.uint64(shift - 64)
         lshift = np.uint64(128 - shift)
-        rolled_again_bitboard[1:5] = rolled_bitboard[0:4]
-        copy_bitboard = (rolled_bitboard >> rshift) + (rolled_again_bitboard << lshift)
+        copy_bitboard = (rolled_bitboard >> rshift) + (
+            np.roll(rolled_bitboard, 1) << lshift
+        )
         copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
         if init_bitboard[0] == 0:
             copy_bitboard[0] == 0
     elif shift == 64:
-        copy_bitboard[1:5] = bitboard[0:4]
+        copy_bitboard = np.roll(bitboard, 1)
+        copy_bitboard[0] = 0
     elif shift < 64 and shift > 0:
-        rolled_bitboard[1:5] = bitboard[0:4]
         rshift = np.uint64(shift)
         lshift = np.uint64(64 - shift)
-        copy_bitboard = (bitboard >> rshift) + (rolled_bitboard << lshift)
+        copy_bitboard = (bitboard >> rshift) + (np.roll(bitboard, 1) << lshift)
         copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
         if bitboard[0] == 0:
             copy_bitboard[0] = 0
     elif shift < 0 and shift > -64:
-        rolled_bitboard[0:4] = bitboard[1:5]
         rshift = np.uint64(64 + shift)
         lshift = np.uint64(-shift)
-        copy_bitboard = (bitboard << lshift) + (rolled_bitboard >> rshift)
+        copy_bitboard = (bitboard << lshift) + (np.roll(bitboard, -1) >> rshift)
         if init_bitboard[4] == 0:
             copy_bitboard[4] = 0
-    elif shift == -64:
-        copy_bitboard[0:4] = bitboard[1:5]
+    elif shift == -64:  # optimised as much as possible
+        copy_bitboard = np.roll(bitboard, -1)
+        copy_bitboard[4] = 0
     elif shift < -64:
-        rolled_bitboard[0:4] = bitboard[1:5]
+        rolled_bitboard = np.roll(bitboard, -1)
+        rolled_bitboard[4] = 0
         rshift = np.uint64(128 + shift)
         lshift = np.uint64(-64 - shift)
-        rolled_again_bitboard[0:4] = rolled_bitboard[1:5]
-        copy_bitboard = (rolled_bitboard << lshift) + (rolled_again_bitboard >> rshift)
+        copy_bitboard = (rolled_bitboard << lshift) + (
+            np.roll(rolled_bitboard, -1) >> rshift
+        )
+        if init_bitboard[4] == 0:
+            copy_bitboard[4] = 0
+    return copy_bitboard
+
+
+@njit(cache=True, fastmath=True)
+def njit_old_shift_bitboard(init_bitboard, shift):
+    bitboard = np.copy(init_bitboard)
+    copy_bitboard = np.zeros(5, dtype=np.uint64)
+    if shift > 64:
+        rolled_bitboard = np.roll(bitboard, 1)
+        rolled_bitboard[0] = 0
+        rshift = np.uint64(shift - 64)
+        lshift = np.uint64(128 - shift)
+        copy_bitboard = (rolled_bitboard >> rshift) + (
+            np.roll(rolled_bitboard, 1) << lshift
+        )
+        copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
+        if init_bitboard[0] == 0:
+            copy_bitboard[0] == 0
+    elif shift == 64:
+        copy_bitboard = np.roll(bitboard, 1)
+        copy_bitboard[0] = 0
+    elif shift < 64 and shift > 0:
+        rshift = np.uint64(shift)
+        lshift = np.uint64(64 - shift)
+        copy_bitboard = (bitboard >> rshift) + (np.roll(bitboard, 1) << lshift)
+        copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
+        if bitboard[0] == 0:
+            copy_bitboard[0] = 0
+    elif shift < 0 and shift > -64:
+        rshift = np.uint64(64 + shift)
+        lshift = np.uint64(-shift)
+        copy_bitboard = (bitboard << lshift) + (np.roll(bitboard, -1) >> rshift)
+        if init_bitboard[4] == 0:
+            copy_bitboard[4] = 0
+    elif shift == -64:  # optimised as much as possible
+        copy_bitboard = np.roll(bitboard, -1)
+        copy_bitboard[4] = 0
+    elif shift < -64:
+        rolled_bitboard = np.roll(bitboard, -1)
+        rolled_bitboard[4] = 0
+        rshift = np.uint64(128 + shift)
+        lshift = np.uint64(-64 - shift)
+        copy_bitboard = (rolled_bitboard << lshift) + (
+            np.roll(rolled_bitboard, -1) >> rshift
+        )
         if init_bitboard[4] == 0:
             copy_bitboard[4] = 0
     return copy_bitboard
@@ -244,7 +378,7 @@ def test_suite(func):
         68,
         127,
     ]
-    shift_bitboard(inputs[0], shifts[0])
+    func(inputs[0], shifts[0])
     fail = False
 
     for io in zip(inputs, shifts, outputs):
@@ -282,10 +416,13 @@ def test_suite(func):
     else:
         print(func.__name__, True)
     for key, value in times_taken.items():
-        print(str(key).rjust(5), str(round(value, 4)).ljust(9))
+        print(str(key).rjust(5), str(round(value, 5)).ljust(9))
 
 
 test_suite(shift_bitboard)
+# test_suite(njit_shift_bitboard)
+# test_suite(old_shift_bitboard)
+# test_suite(njit_old_shift_bitboard)
 
 
 arr = np.array([1, 2, 3], dtype=np.uint64)
