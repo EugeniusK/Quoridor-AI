@@ -89,6 +89,18 @@ def display(bitboard):
     print()
 
 
+shift_bitboard_mask_arr = np.array(
+    [
+        18446744073709551615,
+        18446744073709551615,
+        18446744073709551615,
+        18446744073709551615,
+        18446744071562067968,
+    ],
+    dtype=np.uint64,
+)
+
+
 @njit(cache=True)
 def shift_bitboard(init_bitboard, shift):
     # right is positive shift EAST
@@ -97,54 +109,38 @@ def shift_bitboard(init_bitboard, shift):
     while ensuring that bits outside of the 17x17 are not set
     """
     bitboard = np.copy(init_bitboard)
-    if shift < 128 and shift > 64:
-        copy_bitboard = np.roll(bitboard, 1)
-        copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
-        if bitboard[0] == 0:
-            copy_bitboard[0] = 0
-        rshift = np.uint64(shift - 64)
-        lshift = np.uint64(128 - shift)
-        copy_bitboard = (copy_bitboard >> rshift) + (
-            np.roll(copy_bitboard, 1) << lshift
-        )
-        copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
-        # if bitboard[1] == 0:
-        #     copy_bitboard[1] = 0
-    elif shift == 64:
-        copy_bitboard = np.roll(bitboard, 1)
-        copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
-        if bitboard[0] == 0:
-            copy_bitboard[0] = 0
-    elif shift < 64 and shift > 0:
-        rshift = np.uint64(shift)
-        lshift = np.uint64(64 - shift)
-        copy_bitboard = (bitboard >> rshift) + (np.roll(bitboard, 1) << lshift)
-        copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
-        if bitboard[0] == 0:
-            copy_bitboard[0] = 0
-    elif shift < 0 and shift > -64:
-        rshift = np.uint64(64 + shift)
-        lshift = np.uint64(-shift)
-        copy_bitboard = (bitboard << lshift) + (np.roll(bitboard, -1) >> rshift)
-        if bitboard[4] == 0:
-            copy_bitboard[4] = 0
-    elif shift == -64:
-        copy_bitboard = np.roll(bitboard, -1)
-        if bitboard[4] == 0:
-            copy_bitboard[4] = 0
-    elif shift < -64 and shift > -128:
-        copy_bitboard = np.roll(bitboard, -1)
-        if bitboard[4] == 0:
-            copy_bitboard[4] = 0
-        rshift = np.uint64(64 + shift)
-        lshift = np.uint64(-shift)
-        copy_bitboard = (copy_bitboard << lshift) + (
-            np.roll(copy_bitboard, -1) >> rshift
-        )
-        # if bitboard[4] == 0:
-        #     copy_bitboard[4] = 0
+    rolled_bitboard = np.zeros(5, dtype=np.uint64)
 
-    return copy_bitboard
+    if shift > 64:
+        rolled_bitboard[1:5] = bitboard[0:4]
+        rolled_again_bitboard = np.zeros(5, dtype=np.uint64)
+        rolled_again_bitboard[1:5] = rolled_bitboard[0:4]
+        return (rolled_bitboard >> np.uint64(shift - 64)) + (
+            rolled_again_bitboard << np.uint64(128 - shift)
+        ) & shift_bitboard_mask_arr
+    elif shift == 64:
+        rolled_bitboard[1:5] = bitboard[0:4]
+        return rolled_bitboard & shift_bitboard_mask_arr
+    elif shift > 0:
+        rolled_bitboard[1:5] = bitboard[0:4]
+        return (bitboard >> np.uint64(shift)) + (
+            rolled_bitboard << np.uint64(64 - shift)
+        ) & shift_bitboard_mask_arr
+    elif shift > -64:
+        rolled_bitboard[0:4] = bitboard[1:5]
+        return (bitboard << np.uint64(-shift)) + (
+            rolled_bitboard >> np.uint64(64 + shift)
+        )
+    elif shift == -64:
+        rolled_bitboard[0:4] = bitboard[1:5]
+        return rolled_bitboard
+    elif shift > -128:
+        rolled_bitboard[0:4] = bitboard[1:5]
+        rolled_again_bitboard = np.zeros(5, dtype=np.uint64)
+        rolled_again_bitboard[0:4] = rolled_bitboard[1:5]
+        return (rolled_bitboard << np.uint64(-64 - shift)) + (
+            rolled_again_bitboard >> np.uint64(128 + shift)
+        )
 
 
 @njit(cache=True)
@@ -332,11 +328,16 @@ class QuoridorBitboardOptim:
                 self._place_wall(action_number)
                 self.p2_walls_placed += 1
             else:
+                print(
+                    rel_move[action_number - 128, 0] * -34
+                    + rel_move[action_number - 128, 1] * 2
+                )
                 self.p2 = shift_bitboard(
                     self.p2,
                     rel_move[action_number - 128, 0] * -34
                     + rel_move[action_number - 128, 1] * 2,
                 )
+                display(self.p2)
             if np.uint64(2147483648) <= self.p2[4] <= np.uint64(140737488355328):
                 self.over = True
             else:
