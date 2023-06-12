@@ -1,5 +1,5 @@
 import numpy as np
-from numba import njit
+from numba import njit, uint64, int8
 
 blank = np.zeros(5, dtype=np.uint64)
 full = np.array(
@@ -31,27 +31,38 @@ def roll_numba(
     return result
 
 
-@njit(cache=True)
+shift_bitboard_mask_arr = np.array(
+    [
+        18446744073709551615,
+        18446744073709551615,
+        18446744073709551615,
+        18446744073709551615,
+        18446744071562067968,
+    ],
+    dtype=np.uint64,
+)
+
+
+@njit(uint64[:](uint64[:], int8), cache=True)
 def shift_bitboard(bitboard, shift):
     # right is positive shift EAST
     """
     Shift the bitboard by shift
     while ensuring that bits outside of the 17x17 are not set
     """
+    arr = np.zeros(5, dtype=np.uint64)
+    rolled_bitboard = np.zeros(5, dtype=np.uint64)
     if shift < 64 and shift > 0:
-        rshift = np.uint64(shift)
-        lshift = np.uint64(64 - shift)
-        copy_bitboard = (bitboard >> rshift) + (np.roll(bitboard, 1) << lshift)
-        copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
-        if bitboard[0] == 0:
-            copy_bitboard[0] = 0
+        rolled_bitboard[1:5] = bitboard[0:4]
+        arr = (bitboard >> np.uint64(shift)) + (
+            rolled_bitboard << np.uint64(64 - shift)
+        ) & shift_bitboard_mask_arr
     elif shift < 0 and shift > -64:
-        rshift = np.uint64(64 + shift)
-        lshift = np.uint64(-shift)
-        copy_bitboard = (bitboard << lshift) + (np.roll(bitboard, -1) >> rshift)
-        if bitboard[4] == 0:
-            copy_bitboard[4] = 0
-    return copy_bitboard
+        rolled_bitboard[0:4] = bitboard[1:5]
+        arr = (bitboard << np.uint64(-shift)) + (
+            rolled_bitboard >> np.uint64(64 + shift)
+        )
+    return arr
 
 
 @njit(cache=True)
@@ -62,25 +73,19 @@ def shift_bitboard_check_wall(player_bitboard, wall_bitboard, shift, mask):
     to ensure that the player doesn't go through a wal
     Then AND with full bitboard to ensure the player is on the board
     """
+    rolled_bitboard = np.zeros(5, dtype=np.uint64)
     if shift > 0 and shift < 64:
-        rshift = np.uint64(shift)
-        lshift = np.uint64(64 - shift)
-        copy_bitboard = (player_bitboard >> rshift) + (
-            np.roll(player_bitboard, 1) << lshift
-        )
-        copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
-        if player_bitboard[0] == 0:
-            copy_bitboard[0] = 0
+        rolled_bitboard[1:5] = player_bitboard[0:4]
+        rolled_bitboard = (player_bitboard >> np.uint64(shift)) + (
+            rolled_bitboard << np.uint64(64 - shift)
+        ) & shift_bitboard_mask_arr
     elif shift < 0 and shift > -64:
-        rshift = np.uint64(64 + shift)
-        lshift = np.uint64(-shift)
-        copy_bitboard = (player_bitboard << lshift) + (
-            np.roll(player_bitboard, -1) >> rshift
+        rolled_bitboard[0:4] = player_bitboard[1:5]
+        rolled_bitboard = (player_bitboard << np.uint64(-shift)) + (
+            rolled_bitboard >> np.uint64(64 + shift)
         )
-        if player_bitboard[4] == 0:
-            copy_bitboard[4] = 0
-    return np.array_equal(copy_bitboard & wall_bitboard, blank) and ~np.array_equal(
-        copy_bitboard & mask, blank
+    return np.array_equal(rolled_bitboard & wall_bitboard, blank) and ~np.array_equal(
+        rolled_bitboard & mask, blank
     )
 
 

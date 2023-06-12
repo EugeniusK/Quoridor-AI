@@ -100,9 +100,8 @@ shift_bitboard_mask_arr = np.array(
 )
 
 
-@profile
-def shift_bitboard(init_bitboard, shift):
-    bitboard = np.copy(init_bitboard)
+# @profile
+def shift_bitboard(bitboard, shift):
     rolled_bitboard = np.zeros(5, dtype=np.uint64)
 
     if shift > 64:
@@ -138,8 +137,7 @@ def shift_bitboard(init_bitboard, shift):
 
 
 @njit(cache=True, fastmath=True)
-def njit_shift_bitboard(init_bitboard, shift):
-    bitboard = np.copy(init_bitboard)
+def njit_shift_bitboard(bitboard, shift):
     rolled_bitboard = np.zeros(5, dtype=np.uint64)
 
     if shift > 64:
@@ -385,7 +383,7 @@ def test_suite(func):
         time_taken = timeit(
             "test(func, io[0], io[1], io[2])",
             globals=globals() | locals(),
-            number=10000,
+            number=100000,
         )
         result = test(func, io[0], io[1], io[2])
         if times_taken.get(io[1]) == None:
@@ -419,10 +417,35 @@ def test_suite(func):
         print(str(key).rjust(5), str(round(value, 5)).ljust(9))
 
 
-test_suite(shift_bitboard)
+# test_suite(shift_bitboard)
 # test_suite(njit_shift_bitboard)
 # test_suite(old_shift_bitboard)
 # test_suite(njit_old_shift_bitboard)
 
 
-arr = np.array([1, 2, 3], dtype=np.uint64)
+arr = np.array([1, 2, 3, 4, 5], dtype=np.uint64)
+
+
+@njit(cache=True)
+def shift_bitboard(bitboard, shift):
+    # right is positive shift EAST
+    """
+    Shift the bitboard by shift
+    while ensuring that bits outside of the 17x17 are not set
+    """
+    rolled_bitboard = np.zeros(5, dtype=np.uint64)
+    if shift < 64 and shift > 0:
+        rolled_bitboard[1:5] = bitboard[0:4]
+        return (bitboard >> np.uint64(shift)) + (
+            rolled_bitboard << np.uint64(64 - shift)
+        ) & shift_bitboard_mask_arr
+    elif shift < 0 and shift > -64:
+        rolled_bitboard[0:4] = bitboard[1:5]
+        return (bitboard << np.uint64(-shift)) + (
+            rolled_bitboard >> np.uint64(64 + shift)
+        )
+
+
+print(arr)
+b = shift_bitboard(arr, 32)
+print(arr, b)
