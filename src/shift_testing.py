@@ -91,44 +91,43 @@ def board_shift_bitboard(init_bitboard, shift):
 def shift_bitboard(init_bitboard, shift):
     bitboard = np.copy(init_bitboard)
     copy_bitboard = np.zeros(5, dtype=np.uint64)
+    rolled_bitboard = np.zeros(5, dtype=np.uint64)
+    rolled_again_bitboard = np.zeros(5, dtype=np.uint64)
+
     if shift > 64:
-        rolled_bitboard = np.roll(bitboard, 1)
-        rolled_bitboard[0] = 0
+        rolled_bitboard[1:5] = bitboard[0:4]
         rshift = np.uint64(shift - 64)
         lshift = np.uint64(128 - shift)
-        copy_bitboard = (rolled_bitboard >> rshift) + (
-            np.roll(rolled_bitboard, 1) << lshift
-        )
+        rolled_again_bitboard[1:5] = rolled_bitboard[0:4]
+        copy_bitboard = (rolled_bitboard >> rshift) + (rolled_again_bitboard << lshift)
         copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
         if init_bitboard[0] == 0:
             copy_bitboard[0] == 0
     elif shift == 64:
-        copy_bitboard = np.roll(bitboard, 1)
-        copy_bitboard[0] = 0
+        copy_bitboard[1:5] = bitboard[0:4]
     elif shift < 64 and shift > 0:
+        rolled_bitboard[1:5] = bitboard[0:4]
         rshift = np.uint64(shift)
         lshift = np.uint64(64 - shift)
-        copy_bitboard = (bitboard >> rshift) + (np.roll(bitboard, 1) << lshift)
+        copy_bitboard = (bitboard >> rshift) + (rolled_bitboard << lshift)
         copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
         if bitboard[0] == 0:
             copy_bitboard[0] = 0
     elif shift < 0 and shift > -64:
+        rolled_bitboard[0:4] = bitboard[1:5]
         rshift = np.uint64(64 + shift)
         lshift = np.uint64(-shift)
-        copy_bitboard = (bitboard << lshift) + (np.roll(bitboard, -1) >> rshift)
+        copy_bitboard = (bitboard << lshift) + (rolled_bitboard >> rshift)
         if init_bitboard[4] == 0:
             copy_bitboard[4] = 0
-    elif shift == -64:  # optimised as much as possible
-        copy_bitboard = np.roll(bitboard, -1)
-        copy_bitboard[4] = 0
+    elif shift == -64:
+        copy_bitboard[0:4] = bitboard[1:5]
     elif shift < -64:
-        rolled_bitboard = np.roll(bitboard, -1)
-        rolled_bitboard[4] = 0
+        rolled_bitboard[0:4] = bitboard[1:5]
         rshift = np.uint64(128 + shift)
         lshift = np.uint64(-64 - shift)
-        copy_bitboard = (rolled_bitboard << lshift) + (
-            np.roll(rolled_bitboard, -1) >> rshift
-        )
+        rolled_again_bitboard[0:4] = rolled_bitboard[1:5]
+        copy_bitboard = (rolled_bitboard << lshift) + (rolled_again_bitboard >> rshift)
         if init_bitboard[4] == 0:
             copy_bitboard[4] = 0
     return copy_bitboard
@@ -144,24 +143,30 @@ def test(func, input, shift, output):
 def test_suite(func):
     times_taken = dict()
     inputs = [
-        np.array([2**63, 0, 0, 0, 0], dtype=np.uint64),
-        np.array([2**63, 0, 0, 0, 0], dtype=np.uint64),
-        np.array([2**63, 0, 0, 0, 0], dtype=np.uint64),
-        np.array([2**63, 0, 0, 0, 0], dtype=np.uint64),
-        np.array([2**63, 0, 0, 0, 0], dtype=np.uint64),
-        np.array([0, 2**0, 0, 0, 0], dtype=np.uint64),
+        np.array([0, 0, 0, 0, 2**31], dtype=np.uint64),
+        np.array([0, 0, 0, 0, 2**31], dtype=np.uint64),
+        np.array([0, 0, 0, 0, 2**31], dtype=np.uint64),
+        np.array([0, 0, 0, 0, 2**31], dtype=np.uint64),
+        np.array([0, 0, 0, 0, 2**31], dtype=np.uint64),
+        np.array([0, 0, 0, 0, 2**31], dtype=np.uint64),
+        np.array([0, 0, 0, 0, 2**31], dtype=np.uint64),
+        np.array([0, 0, 0, 0, 2**31], dtype=np.uint64),
         np.array([0, 2**0, 0, 0, 0], dtype=np.uint64),
         np.array([0, 2**0, 0, 0, 0], dtype=np.uint64),
         np.array([0, 2**59, 0, 0, 0], dtype=np.uint64),
         np.array([0, 2**0, 0, 0, 0], dtype=np.uint64),
-        np.array([0, 0, 0, 0, 2**31], dtype=np.uint64),
-        np.array([0, 0, 0, 0, 2**31], dtype=np.uint64),
-        np.array([0, 0, 0, 0, 2**31], dtype=np.uint64),
-        np.array([0, 0, 0, 0, 2**31], dtype=np.uint64),
-        np.array([0, 0, 0, 0, 2**31], dtype=np.uint64),
-        np.array([0, 0, 0, 0, 2**31], dtype=np.uint64),
-        np.array([0, 0, 0, 0, 2**31], dtype=np.uint64),
-        np.array([0, 0, 0, 0, 2**31], dtype=np.uint64),
+        np.array([0, 2**0, 0, 0, 0], dtype=np.uint64),
+        np.array([0, 2**0, 0, 0, 0], dtype=np.uint64),
+        np.array([0, 2**0, 0, 0, 0], dtype=np.uint64),
+        np.array([0, 2**0, 0, 0, 0], dtype=np.uint64),
+        np.array([0, 0, 2**0, 0, 0], dtype=np.uint64),
+        np.array([0, 0, 2**0, 0, 0], dtype=np.uint64),
+        np.array([0, 0, 2**59, 0, 0], dtype=np.uint64),
+        np.array([0, 0, 2**0, 0, 0], dtype=np.uint64),
+        np.array([0, 0, 2**0, 0, 0], dtype=np.uint64),
+        np.array([0, 0, 2**0, 0, 0], dtype=np.uint64),
+        np.array([0, 0, 2**0, 0, 0], dtype=np.uint64),
+        np.array([0, 0, 2**0, 0, 0], dtype=np.uint64),
         np.array([2**63, 0, 0, 0, 0], dtype=np.uint64),
         np.array([2**63, 0, 0, 0, 0], dtype=np.uint64),
         np.array([2**63, 0, 0, 0, 0], dtype=np.uint64),
@@ -172,41 +177,49 @@ def test_suite(func):
         np.array([2**63, 0, 0, 0, 0], dtype=np.uint64),
     ]
     outputs = [
-        np.array([2**62, 0, 0, 0, 0], dtype=np.uint64),  # 1
-        np.array([2**0, 0, 0, 0, 0], dtype=np.uint64),  # 63
-        np.array([0, 2**63, 0, 0, 0], dtype=np.uint64),  # 64
-        np.array([0, 2**59, 0, 0, 0], dtype=np.uint64),  # 68
-        np.array([0, 2**0, 0, 0, 0], dtype=np.uint64),  # 127
-        np.array([0, 2**1, 0, 0, 0], dtype=np.uint64),  # -1
-        np.array([0, 2**63, 0, 0, 0], dtype=np.uint64),  # -63
-        np.array([2**0, 0, 0, 0, 0], dtype=np.uint64),  # -64
-        np.array([2**63, 0, 0, 0, 0], dtype=np.uint64),  # -68
-        np.array([2**63, 0, 0, 0, 0], dtype=np.uint64),  # -127
-        np.array([0, 0, 0, 0, 0], dtype=np.uint64),  # 1 extreme left
-        np.array([0, 0, 0, 0, 0], dtype=np.uint64),  # 64 extreme left
-        np.array([0, 0, 0, 0, 0], dtype=np.uint64),  # 68 extreme left
-        np.array([0, 0, 0, 0, 0], dtype=np.uint64),  # 127 extreme left
-        np.array([0, 0, 0, 0, 2**32], dtype=np.uint64),  # -1 extreme left
-        np.array([0, 0, 0, 2**31, 0], dtype=np.uint64),  # -64 extreme left
-        np.array([0, 0, 0, 2**35, 0], dtype=np.uint64),  # -68 extreme left
-        np.array([0, 0, 2**30, 0, 0], dtype=np.uint64),  # -127 extreme left
-        np.array([0, 0, 0, 0, 0], dtype=np.uint64),  # -1 extreme right
-        np.array([0, 0, 0, 0, 0], dtype=np.uint64),  # -64 extreme right
-        np.array([0, 0, 0, 0, 0], dtype=np.uint64),  # -68 extreme right
-        np.array([0, 0, 0, 0, 0], dtype=np.uint64),  # -127 extreme right
-        np.array([2**62, 0, 0, 0, 0], dtype=np.uint64),  # 1 extreme right
-        np.array([0, 2**63, 0, 0, 0], dtype=np.uint64),  # 64 extreme right
-        np.array([0, 2**59, 0, 0, 0], dtype=np.uint64),  # 68 extreme right
-        np.array([0, 2**0, 0, 0, 0], dtype=np.uint64),  # 127 extreme right
+        np.array([0, 0, 0, 0, 0], dtype=np.uint64),  # 1 extreme right
+        np.array([0, 0, 0, 0, 0], dtype=np.uint64),  # 64 extreme right
+        np.array([0, 0, 0, 0, 0], dtype=np.uint64),  # 68 extreme right
+        np.array([0, 0, 0, 0, 0], dtype=np.uint64),  # 127 extreme right
+        np.array([0, 0, 0, 0, 2**32], dtype=np.uint64),  # -1 extreme right
+        np.array([0, 0, 0, 2**31, 0], dtype=np.uint64),  # -64 extreme right
+        np.array([0, 0, 0, 2**35, 0], dtype=np.uint64),  # -68 extreme right
+        np.array([0, 0, 2**30, 0, 0], dtype=np.uint64),  # -127 extreme right
+        np.array([0, 2**1, 0, 0, 0], dtype=np.uint64),  # -1 from 2nd
+        np.array([2**0, 0, 0, 0, 0], dtype=np.uint64),  # -64 from 2nd
+        np.array([2**63, 0, 0, 0, 0], dtype=np.uint64),  # -68 from 2nd
+        np.array([2**63, 0, 0, 0, 0], dtype=np.uint64),  # -127 from 2nd
+        np.array([0, 0, 2**63, 0, 0], dtype=np.uint64),  # 1 from 2nd
+        np.array([0, 0, 2**0, 0, 0], dtype=np.uint64),  # 64 from 2nd
+        np.array([0, 0, 0, 2**60, 0], dtype=np.uint64),  # 68 from 2nd
+        np.array([0, 0, 0, 2**1, 0], dtype=np.uint64),  # 127 from 2nd
+        np.array([0, 0, 2**1, 0, 0], dtype=np.uint64),  # -1 from 3rd
+        np.array([0, 2**0, 0, 0, 0], dtype=np.uint64),  # -64 from 3rd
+        np.array([0, 2**63, 0, 0, 0], dtype=np.uint64),  # -68 from 3rd
+        np.array([0, 2**63, 0, 0, 0], dtype=np.uint64),  # -127 from 3rd
+        np.array([0, 0, 0, 2**63, 0], dtype=np.uint64),  # 1 from 3rd
+        np.array([0, 0, 0, 2**0, 0], dtype=np.uint64),  # 64 from 3rd
+        np.array([0, 0, 0, 0, 2**60], dtype=np.uint64),  # 68 from 3rd
+        np.array([0, 0, 0, 0, 0], dtype=np.uint64),  # 127 from 3rd
+        np.array([0, 0, 0, 0, 0], dtype=np.uint64),  # -1 extreme left
+        np.array([0, 0, 0, 0, 0], dtype=np.uint64),  # -64 extreme left
+        np.array([0, 0, 0, 0, 0], dtype=np.uint64),  # -68 extreme left
+        np.array([0, 0, 0, 0, 0], dtype=np.uint64),  # -127 extreme left
+        np.array([2**62, 0, 0, 0, 0], dtype=np.uint64),  # 1 extreme left
+        np.array([0, 2**63, 0, 0, 0], dtype=np.uint64),  # 64 extreme left
+        np.array([0, 2**59, 0, 0, 0], dtype=np.uint64),  # 68 extreme left
+        np.array([0, 2**0, 0, 0, 0], dtype=np.uint64),  # 127 extreme left
     ]
     shifts = [
         1,
-        63,
         64,
         68,
         127,
         -1,
-        -63,
+        -64,
+        -68,
+        -127,
+        -1,
         -64,
         -68,
         -127,
@@ -218,6 +231,10 @@ def test_suite(func):
         -64,
         -68,
         -127,
+        1,
+        64,
+        68,
+        127,
         -1,
         -64,
         -68,
@@ -243,16 +260,16 @@ def test_suite(func):
             times_taken[io[1]] += time_taken
         if result[0] == False:
             fail = True
-            # print(
-            #     func.__name__,
-            #     False,
-            #     "shift:",
-            #     io[1],
-            #     "result:",
-            #     result[1],
-            #     "time:",
-            #     time_taken,
-            # )
+            print(
+                func.__name__,
+                False,
+                "shift:",
+                io[1],
+                "result:",
+                result[1],
+                "time:",
+                time_taken,
+            )
         else:
             pass
             # print(func.__name__, True, "shift:", io[1], "time:", time_taken)
