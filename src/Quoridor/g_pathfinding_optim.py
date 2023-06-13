@@ -697,9 +697,14 @@ def A_Star_Search_Graph_More_Optim(og_nodes, pos, destination_row, move):
     frontier[0] = node
     frontier_length = 1
 
-    # frontier_estimate_cost ← array that holds the estimated cost of corresponding positions in frontier
-    frontier_estimate_cost = np.full((81), 127, dtype=np.int8)
-    frontier_estimate_cost[0] = 0 + np.abs(destination_row - node[0])
+    # records path cost, estimated remaining cost, sum
+    frontier_costs = np.full((81, 3), 127, dtype=np.int8)
+
+    frontier_costs[0] = [
+        0,
+        np.abs(destination_row - node[0]),
+        np.abs(destination_row - node[0]),
+    ]
 
     # explored ← an empty 9x9 array of boolean
     explored = np.zeros((9, 9), dtype=np.bool8)
@@ -709,7 +714,7 @@ def A_Star_Search_Graph_More_Optim(og_nodes, pos, destination_row, move):
             return False
 
         # min_idx ← index of the lowest estimate cost
-        min_idx = np.argmin(frontier_estimate_cost)
+        min_idx = np.argmin(frontier_costs[:, 2])
 
         # node ← access corresponding index in frontier that has lowest estimate cost
         # (equivalent to popping from priortiy queue ordered by estimate cost)
@@ -754,31 +759,27 @@ def A_Star_Search_Graph_More_Optim(og_nodes, pos, destination_row, move):
                     if idx1 == destination_row:
                         return True
                     # Gets the unused index in frontier_path_cost (first index where 127 - default init state)
-                    max_idx = np.argmax(frontier_estimate_cost)
+                    max_idx = np.argmax(frontier_costs[:, 2])
                     # Add move to frontier and new path cost to frontier_path_cost
                     frontier[max_idx] = [idx1, idx2]
-                    frontier_estimate_cost[max_idx] = (
-                        frontier_estimate_cost[min_idx]
-                        - np.abs(destination_row - node[0])
-                        + 1
-                        + np.abs(destination_row - idx1)
+
+                    frontier_costs[max_idx, 0] = frontier_costs[min_idx, 0] + 1
+                    frontier_costs[max_idx, 1] = np.abs(destination_row - idx1)
+                    frontier_costs[max_idx, 2] = (
+                        frontier_costs[min_idx, 0] + 1 + np.abs(destination_row - idx1)
                     )
                     frontier_length += 1
                 # If in frontier but with higher estimated cost
                 elif (
                     in_frontier
-                    and frontier_estimate_cost[frontier_idx]
-                    > frontier_estimate_cost[min_idx]
-                    - np.abs(destination_row - node[0])
-                    + 1
-                    + np.abs(destination_row - idx1),
+                    and frontier_costs[frontier_idx, 2]
+                    > frontier_costs[min_idx, 0] + 1 + +np.abs(destination_row - idx1),
                 ):
                     # Update estimate cost to be lowest possible
-                    frontier_estimate_cost[frontier_idx] = (
-                        frontier_estimate_cost[min_idx]
-                        - np.abs(destination_row - node[0])
-                        + 1
-                        + np.abs(destination_row - idx1)
+                    frontier_costs[frontier_idx, 0] = frontier_costs[min_idx, 0] + 1
+                    frontier_costs[frontier_idx, 1] = np.abs(destination_row - idx1)
+                    frontier_costs[frontier_idx, 2] = (
+                        frontier_costs[min_idx, 0] + 1 + np.abs(destination_row - idx1)
                     )
         frontier[min_idx] = [127, 127]
-        frontier_estimate_cost[min_idx] = 127
+        frontier_costs[min_idx] = [127, 127, 127]
