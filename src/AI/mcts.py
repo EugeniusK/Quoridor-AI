@@ -119,6 +119,7 @@ def roll_out(root):
     child = expand(leaf)
     reward = simulate(child.state, child.state.turn)
     backpropagate(path + [child], reward)
+    print(sys.getsizeof(root) / 1e6, "MB")
 
 
 class MCTS_NODE:
@@ -140,56 +141,6 @@ class MCTS_NODE:
             + sum(sys.getsizeof(item) for item in self.children)
         )
 
-    # def __repr__(self):
-    #     return f"{self.games_won}/{self.games_played}"
-
-
-# for i in range(500):
-#     print(i + 1, "th rollout")
-#     roll_out(root)
-
-
-# def display_mcts(root, depth=1):
-#     if root.children == []:
-#         return
-#     print(f"{root.games_won}/{root.games_played}")
-#     children_games = [
-#         f"{c.games_won}/{c.games_played}" for c in root.children if c.games_played != 0
-#     ]
-#     if children_games == []:
-#         pass
-#     else:
-#         print(children_games)
-
-
-# print(display_mcts(root))
-
-
-# print(
-#     [
-#         (c.games_played, id(c))
-#         for c in sorted(root.children, key=lambda x: id(x))
-#         if c.games_played != 0
-#     ]
-# )
-
 
 if __name__ == "__main__":
-    import sys
-
-    def roll_out(root):
-        path = select(root)
-        leaf = path[-1]
-        child = expand(leaf)
-        reward = simulate(child.state, child.state.turn)
-        backpropagate(path + [child], reward)
-        print(sys.getsizeof(root) / 1e6, "MB")
-
-    for i in range(500):
-        roll_out(root)
-    print(
-        [
-            (c.games_won, c.games_played)
-            for c in sorted(root.children, key=lambda x: x.games_played)
-        ]
-    )
+    pass

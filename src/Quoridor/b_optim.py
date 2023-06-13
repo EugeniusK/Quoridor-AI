@@ -328,16 +328,11 @@ class QuoridorBitboardOptim:
                 self._place_wall(action_number)
                 self.p2_walls_placed += 1
             else:
-                print(
-                    rel_move[action_number - 128, 0] * -34
-                    + rel_move[action_number - 128, 1] * 2
-                )
                 self.p2 = shift_bitboard(
                     self.p2,
                     rel_move[action_number - 128, 0] * -34
                     + rel_move[action_number - 128, 1] * 2,
                 )
-                display(self.p2)
             if np.uint64(2147483648) <= self.p2[4] <= np.uint64(140737488355328):
                 self.over = True
             else:
