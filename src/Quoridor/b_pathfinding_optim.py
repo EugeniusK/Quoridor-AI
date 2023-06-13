@@ -602,7 +602,8 @@ def GreedyBestFirstSearch_Bitboard(
         min_idx = np.argmin(frontier_manhatten_distance)
         node = np.copy(frontier[min_idx])
         frontier_length -= 1
-
+        frontier[min_idx] = full
+        frontier_manhatten_distance[min_idx] = 127
         explored += node
 
         for direction in range(0, 4):
@@ -626,8 +627,6 @@ def GreedyBestFirstSearch_Bitboard(
                     if np.array_equal(frontier[idx], shifted_bitboard):
                         in_frontier = True
                         break
-                    elif np.array_equal(frontier[idx], full):
-                        break
                 if not in_frontier and np.array_equal(
                     shifted_bitboard & explored, blank
                 ):
@@ -646,8 +645,6 @@ def GreedyBestFirstSearch_Bitboard(
                         shifted_bitboard, player_number
                     )
                     frontier_length += 1
-        frontier[min_idx] = full
-        frontier_manhatten_distance[min_idx] = 127
 
 
 @njit(cache=True)
@@ -715,7 +712,8 @@ def UniformCostSearch_Bitboard(
         min_idx = np.argmin(frontier_path_cost)
         node = np.copy(frontier[min_idx])
         frontier_length -= 1
-
+        frontier[min_idx] = full
+        frontier_path_cost[min_idx] = 127
         explored += node
 
         for direction in range(0, 4):
@@ -764,8 +762,6 @@ def UniformCostSearch_Bitboard(
                         frontier_path_cost[frontier_idx] = (
                             frontier_path_cost[min_idx] + 1
                         )
-        frontier[min_idx] = full
-        frontier_path_cost[min_idx] = 127
 
 
 @njit(cache=True)
@@ -837,7 +833,8 @@ def AStarSearch_Bitboard(bitboard_player, player_number, bitboard_walls, wall_nu
         min_idx = np.argmin(frontier_costs[:, 2])
         node = np.copy(frontier[min_idx])
         frontier_length -= 1
-
+        frontier[min_idx] = full
+        frontier_costs[min_idx] = [127, 127, 127]
         explored += node
 
         for direction in range(0, 4):
@@ -893,5 +890,3 @@ def AStarSearch_Bitboard(bitboard_player, player_number, bitboard_walls, wall_nu
                         frontier_costs[frontier_idx, 2] = np.sum(
                             frontier_costs[max_idx, 0:2]
                         )
-        frontier[min_idx] = full
-        frontier_costs[min_idx] = [127, 127, 127]
