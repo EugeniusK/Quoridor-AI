@@ -155,6 +155,7 @@ class QuoridorGraphicalBoardOptim:
         # Search mode to be used when verifying if a wall is allowed
         self.path_finding_mode = path_finding_mode
 
+        # For MCTS
         self.available_states = []
 
         # Debug

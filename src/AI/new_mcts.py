@@ -4,6 +4,7 @@ import numpy as np
 from numba import njit
 from Quoridor.b_optim import QuoridorBitboardOptim
 import sys
+import copy
 
 UCT_CONST = 2
 """
@@ -44,6 +45,10 @@ def select(root):
     which no simulation (playout) has yet been initiated."""
 
     def uct(node, parent_node, exploration_const):
+        if node == float("-inf"):
+            return float("-inf")
+        elif node == float("inf"):
+            return float("inf")
         if (
             node.games_played == 0
         ):  # prevent division by zero errors when node hasn't been visited
@@ -55,25 +60,53 @@ def select(root):
     path = [root]
     last_node = path[-1]
     while True:
-        if len(last_node.children) == 0:
+        if last_node.children.count(float("-inf")) == 140:
             return path
         else:
-            last_node = max(
-                last_node.children, key=lambda child: uct(child, last_node, UCT_CONST)
+            last_node.update_children()
+            child_idx = last_node.children.index(
+                max(
+                    last_node.children,
+                    key=lambda child: uct(child, last_node, UCT_CONST),
+                )
             )
-            path.append(last_node)
+            if last_node.children[child_idx] == float("inf"):
+                child_state = copy.deepcopy(last_node.state)
+                try:
+                    child_state.take_action(child_idx)
+                except ValueError:
+                    child_state.display_beautiful()
+                    print(child_idx)
+                    print(last_node.children)
+                child_node = MCTS_NODE(child_state)
+                last_node.children[child_idx] = child_node
+                path.append(child_node)
+                return path
+            else:
+                path.append(last_node.children[child_idx])
+                last_node = last_node.children[child_idx]
 
 
 def expand(node):
     """Expansion: Unless L ends the game decisively (e.g. win/loss/draw) for either player, create one (or more)
     child nodes and choose node C from one of them. Child nodes are any valid moves from the game position defined by L.
     """
-    if node.children != []:
+    # print(node.children)
+    if node.children.count(float("-inf")) != 140:
         raise AttributeError(
             "This function should be called on a leaf node with no children"
         )
-    node.children = [MCTS_NODE(child) for child in node.state.get_available_states()]
-    return random.choice(node.children)
+    node.update_children()
+    random_action = np.random.choice(
+        np.arange(0, 140),
+        p=np.array(node.get_available_actions(), dtype=np.bool8)
+        * 1
+        / np.count_nonzero(np.array(node.get_available_actions(), dtype=np.bool8)),
+    )
+    child_node = copy.deepcopy(node)
+    child_node.take_action(random_action)
+    node.children[random_action] = child_node
+    return child_node
 
 
 def simulate(node, start):
@@ -89,7 +122,7 @@ def simulate(node, start):
         available = False
         while not available:
             action = random.randint(0, 139)
-            if node.is_action_available(action):
+            if node.is_action_available(action) == True:
                 node.take_action(action)
                 available = True
 
@@ -115,9 +148,11 @@ def choose(root):
         raise RuntimeError("Game is over already")
 
     def score(node):
-        if node.games_played == 0:
+        if type(node) == float:
             return float("-inf")
-        return node.games_won / node.games_played
+        if node.games_played == 0:
+            return float("-inf")  # avoid unseen moves
+        return node.games_won / node.games_played  # average reward
 
     return root.children.index(max(root.children, key=score))
 
@@ -127,7 +162,36 @@ class MCTS_NODE:
         self.state = state
         self.games_won = 0
         self.games_played = 0
-        self.children = []
+        self.available_actions = np.zeros(140, dtype=np.bool8)
+        self.actions_generated = False
+        # each index corresponds to the action possible
+        # -inf represents impossible actions
+        # inf represents possible actions not generated
+        # anything else is a possible action generated
+        self.children = [float("-inf")] * 140
+
+    def update_available_actions(self):
+        if self.actions_generated == False:
+            self.available_actions = self.state.get_available_actions()
+            self.actions_generated = True
+
+    def get_available_actions(self):
+        if self.actions_generated == False:
+            self.update_available_actions()
+        return self.available_actions
+
+    def take_action(self, action_number):
+        self.state.take_action(action_number)
+        self.actions_generated = False
+
+    def update_children(self):
+        available_actions = self.get_available_actions()
+
+        for idx, action in enumerate(available_actions):
+            if action == True:
+                self.children[idx] = float("inf")
+            else:
+                self.children[idx] = float("-inf")
 
     def __sizeof__(self):
         return (

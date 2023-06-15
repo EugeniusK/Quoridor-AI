@@ -234,11 +234,14 @@ class QuoridorBitboardOptim:
 
         # Search mode to be used when verifying if a wall is allowed
         self.path_finding_mode = path_finding_mode
+
+        # For MCTS
         self.available_states = []
 
         # Debug
         self.actions_taken = []
 
+    @np.errstate(over="raise")
     def _place_wall(self, wall_number):
         """
         Place the wall at wall_number where
@@ -273,18 +276,28 @@ class QuoridorBitboardOptim:
         # Depending on the index, it is in different uint64 so correct one
         # has to be found
         for idx in idx_wall:
-            if 0 <= idx <= 32:
-                self.walls[4] = self.walls[4] + np.uint64(2 ** (idx + 31))
-            elif 33 <= idx <= 96:
-                self.walls[3] = self.walls[3] + np.uint64(2 ** (idx - 33))
-            elif 97 <= idx <= 160:
-                self.walls[2] = self.walls[2] + np.uint64(2 ** (idx - 97))
-            elif 161 <= idx <= 224:
-                self.walls[1] = self.walls[1] + np.uint64(2 ** (idx - 161))
-            elif 225 <= idx <= 288:
-                self.walls[0] = self.walls[0] + np.uint64(2 ** (idx - 225))
+            try:
+                if 0 <= idx <= 32:
+                    self.walls[4] = self.walls[4] + np.uint64(2 ** (idx + 31))
+                elif 33 <= idx <= 96:
+                    self.walls[3] = self.walls[3] + np.uint64(2 ** (idx - 33))
+                elif 97 <= idx <= 160:
+                    self.walls[2] = self.walls[2] + np.uint64(2 ** (idx - 97))
+                elif 161 <= idx <= 224:
+                    self.walls[1] = self.walls[1] + np.uint64(2 ** (idx - 161))
+                elif 225 <= idx <= 288:
+                    self.walls[0] = self.walls[0] + np.uint64(2 ** (idx - 225))
+            except ArithmeticError as e:
+                print(f"caught {e}")
 
     def take_action(self, action_number):
+        if action_number < 128:
+            if self.turn == 1:
+                if self.p1_walls_placed == 10:
+                    raise ValueError("P1 has already placed 10 walls")
+            else:
+                if self.p2_walls_placed == 10:
+                    raise ValueError("P2 has already placed 10 walls")
         self.actions_taken.append(action_number)
         """
         Depending on the action_number, call the function
