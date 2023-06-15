@@ -71,14 +71,12 @@ def select(root):
                 )
             )
             if last_node.children[child_idx] == float("inf"):
-                child_state = copy.deepcopy(last_node.state)
+                child_node = copy.deepcopy(last_node)
                 try:
-                    child_state.take_action(child_idx)
+                    child_node.take_action(child_idx)
                 except ValueError:
-                    child_state.display_beautiful()
+                    child_node.state.display_beautiful()
                     print(child_idx)
-                    print(last_node.children)
-                child_node = MCTS_NODE(child_state)
                 last_node.children[child_idx] = child_node
                 path.append(child_node)
                 return path
@@ -164,10 +162,6 @@ class MCTS_NODE:
         self.games_played = 0
         self.available_actions = np.zeros(140, dtype=np.bool8)
         self.actions_generated = False
-        # each index corresponds to the action possible
-        # -inf represents impossible actions
-        # inf represents possible actions not generated
-        # anything else is a possible action generated
         self.children = [float("-inf")] * 140
 
     def update_available_actions(self):
@@ -183,6 +177,12 @@ class MCTS_NODE:
     def take_action(self, action_number):
         self.state.take_action(action_number)
         self.actions_generated = False
+        self.available_actions = np.zeros(140, dtype=np.bool8)
+        self.update_children()
+        self.clear_children()
+
+    def clear_children(self):
+        self.children = [float("-inf")] * 140
 
     def update_children(self):
         available_actions = self.get_available_actions()
