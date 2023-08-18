@@ -2,9 +2,10 @@ from Quoridor.g_optim import QuoridorGraphicalBoardOptim
 from Quoridor.b_optim import QuoridorBitboardOptim
 import csv, os, sys, time
 from datetime import datetime
+import AI.mcts as old_mcts
+import AI.new_mcts as new_mcts
 
-
-ROLLOUTS = 500
+ROLLOUTS = 1000
 
 
 f = open(
@@ -26,52 +27,108 @@ fields = [
     "memory (MB)",
 ]
 write.writerow(fields)
-for MODE in ["old", "new"]:
-    if MODE == "old":
-        from AI.mcts import roll_out, choose, MCTS_NODE
-    elif MODE == "new":
-        from AI.new_mcts import roll_out, choose, MCTS_NODE
 
-    # Graph
-    for mode in ["BFS", "DFS", "GBFS", "UCT", "Astar"]:
-        print("graph", mode)
-        root = MCTS_NODE(QuoridorGraphicalBoardOptim(mode))
-        start = time.perf_counter()
-        for i in range(ROLLOUTS + 1):
-            roll_out(root)
-            if i % 10 == 0 and i != 0:
-                write.writerow(
-                    [
-                        MODE,
-                        "g",
-                        mode,
-                        i,
-                        round(time.perf_counter() - start, 5),
-                        sys.getsizeof(root) / 1e6,
-                    ]
-                )
-            if i % 200 == 0:
-                print(i)
+all_data = []
 
-    # Bitboard
-    for mode in ["BFS", "DFS", "GBFS", "UCT", "Astar"]:
-        print("bitboard", mode)
-        root = MCTS_NODE(QuoridorBitboardOptim(mode))
-        start = time.perf_counter()
-        for i in range(ROLLOUTS + 1):
-            roll_out(root)
-            if i % 10 == 0 and i != 0:
-                write.writerow(
-                    [
-                        MODE,
-                        "b",
-                        mode,
-                        i,
-                        round(time.perf_counter() - start, 5),
-                        sys.getsizeof(root) / 1e6,
-                    ]
-                )
-            if i % 200 == 0:
-                print(i)
 
+# # Graph
+for mode in ["BFS", "DFS", "GBFS", "UCT", "Astar"]:
+    data = []
+    print("graph", mode)
+    root = old_mcts.MCTS_NODE(QuoridorGraphicalBoardOptim(mode))
+    start = time.perf_counter()
+    for i in range(ROLLOUTS + 1):
+        old_mcts.roll_out(root)
+        if i % 10 == 0 and i != 0:
+            data.append(
+                [
+                    "old",
+                    "g",
+                    mode,
+                    i,
+                    round(time.perf_counter() - start, 5),
+                    sys.getsizeof(root) / 1e6,
+                ]
+            )
+        if i % 200 == 0:
+            print(i)
+    all_data.extend(data)
+write.writerows(all_data)
+all_data = []
+
+# # Bitboard
+for mode in ["BFS", "DFS", "GBFS", "UCT", "Astar"]:
+    data = []
+    print("bitboard", mode)
+    root = old_mcts.MCTS_NODE(QuoridorBitboardOptim(mode))
+    start = time.perf_counter()
+    for i in range(ROLLOUTS + 1):
+        old_mcts.roll_out(root)
+        if i % 10 == 0 and i != 0:
+            data.append(
+                [
+                    "old",
+                    "b",
+                    mode,
+                    i,
+                    round(time.perf_counter() - start, 5),
+                    sys.getsizeof(root) / 1e6,
+                ]
+            )
+        if i % 200 == 0:
+            print(i)
+    all_data.extend(data)
+write.writerows(all_data)
+all_data = []
+
+
+# # Graph
+for mode in ["BFS", "DFS", "GBFS", "UCT", "Astar"]:
+    data = []
+    print("graph", mode)
+    root = new_mcts.MCTS_NODE(QuoridorGraphicalBoardOptim(mode))
+    start = time.perf_counter()
+    for i in range(ROLLOUTS + 1):
+        new_mcts.roll_out(root)
+        if i % 10 == 0 and i != 0:
+            data.append(
+                [
+                    "new",
+                    "g",
+                    mode,
+                    i,
+                    round(time.perf_counter() - start, 5),
+                    sys.getsizeof(root) / 1e6,
+                ]
+            )
+        if i % 200 == 0:
+            print(i)
+    all_data.extend(data)
+write.writerows(all_data)
+all_data = []
+
+# Bitboard
+for mode in ["BFS", "DFS", "GBFS", "UCT", "Astar"]:
+    data = []
+    print("bitboard", mode)
+    root = new_mcts.MCTS_NODE(QuoridorBitboardOptim(mode))
+    start = time.perf_counter()
+    for i in range(ROLLOUTS + 1):
+        new_mcts.roll_out(root)
+        if i % 10 == 0 and i != 0:
+            data.append(
+                [
+                    "new",
+                    "b",
+                    mode,
+                    i,
+                    round(time.perf_counter() - start, 5),
+                    sys.getsizeof(root) / 1e6,
+                ]
+            )
+        if i % 200 == 0:
+            print(i)
+    all_data.extend(data)
+
+write.writerows(all_data)
 f.close()

@@ -89,7 +89,6 @@ def expand(node):
     """Expansion: Unless L ends the game decisively (e.g. win/loss/draw) for either player, create one (or more)
     child nodes and choose node C from one of them. Child nodes are any valid moves from the game position defined by L.
     """
-    # print(node.children)
     if node.children.count(float("-inf")) != 140:
         raise AttributeError(
             "This function should be called on a leaf node with no children"
@@ -102,7 +101,7 @@ def expand(node):
         / np.count_nonzero(np.array(node.get_available_actions(), dtype=np.bool8)),
     )
     child_node = copy.deepcopy(node)
-    child_node.take_action(random_action)
+    child_node.take_action(int(random_action))
     node.children[random_action] = child_node
     return child_node
 
@@ -120,7 +119,7 @@ def simulate(node, start):
         available = False
         while not available:
             action = random.randint(0, 139)
-            if node.is_action_available(action) == True:
+            if node.is_action_available(action):
                 node.take_action(action)
                 available = True
 

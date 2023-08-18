@@ -80,24 +80,215 @@
 
 
 from Quoridor.b_optim import QuoridorBitboardOptim
+from Quoridor.g_optim import QuoridorGraphicalBoardOptim
 
-# for i in range(128, 140):
-#     print(i)
+# # for i in range(128, 140):
+# #     print(i)
 
-#     board = QuoridorBitboardOptim("BFS")
-#     if board.get_available_actions()[i]:
-#         board.take_action(i)
-#         board.display_beautiful()
-import numpy as np
+# #     board = QuoridorBitboardOptim("BFS")
+# #     if board.get_available_actions()[i]:
+# #         board.take_action(i)
+# #         board.display_beautiful()
+# import numpy as np
 
 board = QuoridorBitboardOptim("BFS")
-board.take_action(53)
-board.take_action(121)
-board.take_action(18)
-board.take_action(58)
-board.take_action(39)
-board.take_action(129)
-board.display_beautiful()
+for action in [
+    111,
+    90,
+    1,
+    29,
+    60,
+    70,
+    100,
+    121,
+    15,
+    96,
+    99,
+    63,
+    21,
+    7,
+    123,
+    45,
+    25,
+    112,
+    43,
+    97,
+    131,
+    129,
+    129,
+    129,
+    131,
+    129,
+    128,
+    131,
+    129,
+    131,
+    128,
+    129,
+    129,
+    130,
+    129,
+    128,
+    129,
+    130,
+    128,
+    131,
+    129,
+    129,
+    128,
+    128,
+    130,
+    129,
+    128,
+    129,
+    128,
+    131,
+    130,
+    129,
+    131,
+    131,
+    128,
+    131,
+    128,
+    129,
+    131,
+    131,
+    128,
+    136,
+]:
+    board.take_action(action)
+    print(action)
+    board.display_beautiful()
 
-print(board.get_available_actions())
-board.display_beautiful()
+# import numpy as np
+# from numba import njit
+
+# p1 = np.array([0, 0, 0, 0, 2**39], dtype=np.uint64)
+
+
+# def ashift_bitboard(init_bitboard, init_shift):
+#     # right is positive shift EAST
+#     """
+#     Shift the bitboard by shift
+#     while ensuring that bits outside of the 17x17 are not set
+#     """
+#     shift = np.int8(init_shift)
+#     bitboard = np.copy(init_bitboard)
+#     if shift < 128 and shift > 64:
+#         copy_bitboard = shift_bitboard(shift_bitboard(bitboard, 64), shift - 64)
+#     if shift < 64 and shift > 0:
+#         rshift = np.uint64(shift)
+#         lshift = np.uint64(64 - shift)
+#         copy_bitboard = (bitboard >> rshift) + (np.roll(bitboard, 1) << lshift)
+#         copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
+#         if bitboard[0] == 0:
+#             copy_bitboard[0] = 0
+#     elif shift == 64:
+#         copy_bitboard = np.roll(bitboard, 1)
+#         copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
+#         if bitboard[0] == 0:
+#             copy_bitboard[0] = 0
+#     elif shift < 0 and shift > -64:
+#         rshift = np.uint64(64 + shift)
+#         lshift = np.uint64(-shift)
+#         copy_bitboard = (bitboard << lshift) + (np.roll(bitboard, -1) >> rshift)
+#         if bitboard[4] == 0:
+#             copy_bitboard[4] = 0
+#     elif shift == -64:
+#         copy_bitboard = np.roll(bitboard, -1)
+#         if bitboard[4] == 0:
+#             copy_bitboard[4] = 0
+#     elif shift < -64 and shift > -128:
+#         copy_bitboard = shift_bitboard(shift_bitboard(bitboard, -64), shift + 64)
+
+#     return copy_bitboard
+
+
+# @njit(cache=True)
+# def shift_bitboard(init_bitboard, shift):
+#     # right is positive shift EAST
+#     """
+#     Shift the bitboard by shift
+#     while ensuring that bits outside of the 17x17 are not set
+#     """
+#     bitboard = np.copy(init_bitboard)
+#     if shift < 128 and shift > 64:
+#         copy_bitboard = np.roll(bitboard, 1)
+#         copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
+#         if bitboard[0] == 0:
+#             copy_bitboard[0] = 0
+#         rshift = np.uint64(shift)
+#         lshift = np.uint64(64 - shift)
+#         copy_bitboard = (bitboard >> rshift) + (np.roll(bitboard, 1) << lshift)
+#         copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
+#         if bitboard[0] == 0:
+#             copy_bitboard[0] = 0
+#     elif shift == 64:
+#         copy_bitboard = np.roll(bitboard, 1)
+#         copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
+#         if bitboard[0] == 0:
+#             copy_bitboard[0] = 0
+#     elif shift < 64 and shift > 0:
+#         rshift = np.uint64(shift)
+#         lshift = np.uint64(64 - shift)
+#         copy_bitboard = (bitboard >> rshift) + (np.roll(bitboard, 1) << lshift)
+#         copy_bitboard[4] = copy_bitboard[4] & np.uint64(18446744071562067968)
+#         if bitboard[0] == 0:
+#             copy_bitboard[0] = 0
+#     elif shift < 0 and shift > -64:
+#         rshift = np.uint64(64 + shift)
+#         lshift = np.uint64(-shift)
+#         copy_bitboard = (bitboard << lshift) + (np.roll(bitboard, -1) >> rshift)
+#         if bitboard[4] == 0:
+#             copy_bitboard[4] = 0
+#     elif shift == -64:
+#         copy_bitboard = np.roll(bitboard, -1)
+#         if bitboard[4] == 0:
+#             copy_bitboard[4] = 0
+#     elif shift < -64 and shift > -128:
+#         copy_bitboard = np.roll(bitboard, -1)
+#         if bitboard[4] == 0:
+#             copy_bitboard[4] = 0
+#         rshift = np.uint64(64 + shift)
+#         lshift = np.uint64(-shift)
+#         copy_bitboard = (bitboard << lshift) + (np.roll(bitboard, -1) >> rshift)
+#         if bitboard[4] == 0:
+#             copy_bitboard[4] = 0
+
+#     return copy_bitboard
+
+
+# import timeit
+
+# print(timeit.timeit("ashift_bitboard(p1, 5)", globals=globals(), number=10000) / 10000)
+# print(timeit.timeit("shift_bitboard(p1, 5)", globals=globals(), number=10000) / 10000)
+
+
+for i in range(81):
+    if 0 <= i < 9:
+        print("elif bitboard[4] ==", 2 ** (i * 2 + 31), ":", sep="")
+        print("    return", i)
+    elif 9 <= i < 18:
+        print("elif bitboard[3] ==", 2 ** (i * 2 - 17), ":", sep="")
+        print("    return", i)
+    elif 18 <= i < 27:
+        print("elif bitboard[3] ==", 2 ** (i * 2 - 1), ":", sep="")
+        print("    return", i)
+    elif 27 <= i < 36:
+        print("elif bitboard[2] ==", 2 ** (i * 2 - 49), ":", sep="")
+        print("    return", i)
+    elif 36 <= i < 45:
+        print("elif bitboard[2] ==", 2 ** (i * 2 - 33), ":", sep="")
+        print("    return", i)
+    elif 45 <= i < 54:
+        print("elif bitboard[1] ==", 2 ** (i * 2 - 81), ":", sep="")
+        print("    return", i)
+    elif 54 <= i < 63:
+        print("elif bitboard[1] ==", 2 ** (i * 2 - 65), ":", sep="")
+        print("    return", i)
+    elif 63 <= i < 72:
+        print("elif bitboard[0] ==", 2 ** (i * 2 - 113), ":", sep="")
+        print("    return", i)
+    elif 72 <= i < 81:
+        print("elif bitboard[0] ==", 2 ** (i * 2 - 97), ":", sep="")
+        print("    return", i)

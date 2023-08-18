@@ -4,7 +4,7 @@ from numba.experimental import jitclass
 import copy
 
 try:
-    from Quoridor.b_pathfinding_optim import (
+    from Quoridor.b_pathfinding_optim_path import (
         BreadthFirstSearch_Bitboard,
         DepthFirstSearch_Bitboard,
         GreedyBestFirstSearch_Bitboard,
@@ -176,6 +176,7 @@ def bitboard_get_row_col(bitboard, row, col):
         return bitboard[0] & np.uint64(2 ** (idx - 225)) != 0
 
 
+@njit(cache=True)
 def bitboard_get_idx(bitboard, idx):
     if 0 <= idx <= 32:
         return bitboard[4] & np.uint64(2 ** (idx + 31)) != 0
