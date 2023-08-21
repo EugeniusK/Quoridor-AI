@@ -1,14 +1,16 @@
 from Quoridor.vanilla_graph import VanillaPythonStaticGraph, VanillaPythonDynamicGraph
 from Quoridor.numpy_graph import NumpyPythonStaticGraph, NumpyPythonDynamicGraph
+from Quoridor.numba_graph import NumbaPythonStaticGraph, NumbaPythonDynamicGraph
 import timeit
 from Quoridor.actions import is_action_available
+from Quoridor.display import output_to_cli
 
 
-def test(pathfinding, get_available_actions=1, n=1):
+def test(pathfinding, get_available_actions=1, n=10):
     actions = [52, 20, 15, 0, 65, 82, 127, 62, 56, 32, 6, 38, 9]
 
     board = VanillaPythonStaticGraph(pathfinding)
-    board1 = NumpyPythonStaticGraph(pathfinding)
+    board1 = NumbaPythonDynamicGraph(pathfinding)
 
     board.p1_pos = 58
     board.p2_pos = 59
@@ -40,8 +42,8 @@ import time
 
 def compare(path1, path2, get1, get2, n=1):
     for i in range(n):
-        board1 = GraphVanilla(path1)
-        board2 = GraphNumpy(path2)
+        board1 = VanillaPythonStaticGraph(path1)
+        board2 = NumbaPythonStaticGraph(path2)
 
         time_taken = 0
         moves_played = 0
@@ -58,22 +60,21 @@ def compare(path1, path2, get1, get2, n=1):
             ]
             if set(moves1) != set(moves2):
                 print("ERROR", board1.turn)
-                board2.display()
+                output_to_cli(board2)
                 break
             elif set(moves1_ones) != set(moves1):
                 print("ERROR ONES", board1.turn)
-                board2.display()
+                output_to_cli(board2)
                 print(moves1_ones, moves1)
                 break
             elif set(moves1_ones) != set(moves2_ones):
                 print("ERROR ONES ONLY", board1.turn)
-                board2.display()
+                output_to_cli(board2)
                 break
             else:
                 move = random.choice(moves1)
                 board1.take_action(move)
                 board2.take_action(move)
-                # board1.display()
                 moves_played += 1
 
             if board1.is_over() or board2.is_over():
@@ -110,3 +111,13 @@ test("Astar", 2)
 # board.display()
 # print(board.turn)
 # print(board.get_available_actions(1))
+
+
+# board = NumbaPythonStaticGraph()
+# board.take_action(7)
+# print(board.get_available_actions())
+# board.display()
+# board = NumbaPythonDynamicGraph()
+# board.take_action(7)
+# print(board.get_available_actions())
+# board.display()

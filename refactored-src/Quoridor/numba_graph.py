@@ -108,7 +108,7 @@ GraphVanillaAdjList = np.array(
 )
 
 
-class NumpyPythonStaticGraph:
+class NumbaPythonStaticGraph:
     def __init__(self, pathfinding_mode="BFS"):
         # each index indicates if moves are possible in
         # S, E, N, W in order
@@ -299,7 +299,7 @@ class NumpyPythonStaticGraph:
             return get_available_actions_2(self)
 
 
-class NumpyPythonDynamicGraph:
+class NumbaPythonDynamicGraph:
     def __init__(self, pathfinding_mode="BFS"):
         # each index indicates if moves are possible in
         # S, E, N, W in order
