@@ -244,92 +244,30 @@ def is_direction_valid(
 
 
 # a node is PATH + length PATH + end of PATH --> ensures no need to traverse to find -1
-# @njit(cache=True)
+@njit(cache=True)
 def BFS(board, start_pos, player_number, is_static, hor_walls_placed, ver_walls_placed):
-    node = np.full(83, -1, dtype=np.int8)
-    node[0] = start_pos
-    node[81] = 1
-    node[82] = start_pos
-
-    if player_number == 1 and node[-1] <= 8:
-        return node
-    elif player_number == 2 and node[-1] >= 72:
-        return node
-
-    frontier = []
-    frontier.append(node)
-
-    explored = np.zeros(81, dtype=np.bool8)
-
-    in_frontier = np.zeros(81, dtype=np.bool8)
-    in_frontier[node[-1]] = True
-
-    while len(frontier) != 0:
-        node = frontier.pop(0)
-
-        pos = node[-1]
-        explored[pos] = True
-        in_frontier[pos] = False
-
-        for direction in range(4):
-            new_pos = pos + GraphShiftDict[direction]
-            if (
-                is_direction_valid(
-                    board, pos, direction, is_static, hor_walls_placed, ver_walls_placed
-                )
-                and not explored[new_pos]
-                and not in_frontier[new_pos]
-            ):
-                node_to_add = np.zeros(83, dtype=np.int8)
-                node_to_add[node[-2]] = new_pos + 1
-                node_to_add[-2] = 1
-                node_to_add[-1] = GraphShiftDict[direction]
-
-                frontier.append(node + node_to_add)
-
-                in_frontier[new_pos] = True
-                if player_number == 1 and new_pos <= 8:
-                    return frontier[-1]
-                elif player_number == 2 and new_pos >= 72:
-                    return frontier[-1]
-    return None
-
-
-# a node is PATH + length PATH + end of PATH --> ensures no need to traverse to find -1
-# @njit(cache=True)
-def DFS(board, start_pos, player_number, is_static, hor_walls_placed, ver_walls_placed):
-    node = np.full(83, -1, dtype=np.int8)
-    node[0] = start_pos
-    node[81] = 1
-    node[82] = start_pos
-
-    if player_number == 1 and node[-1] <= 8:
-        return node
-    elif player_number == 2 and node[-1] >= 72:
-        return node
-
-    frontier = np.full((81, 83), -1, dtype=np.int8)
-    frontier[0] = node
+    frontier = np.full(81, -1, dtype=np.int8)
+    frontier[0] = start_pos
     frontier_front = 0
     frontier_rear = 0
 
     explored = np.zeros(81, dtype=np.bool8)
-
     in_frontier = np.zeros(81, dtype=np.bool8)
-    in_frontier[node[-1]] = True
+    in_frontier[start_pos] = True
+
+    parent = np.full(81, -1, dtype=np.int8)
 
     while frontier_front != -1:
         if frontier_front == -1:
             print("Error")
         elif frontier_front == frontier_rear:
-            node = frontier[frontier_front]
+            pos = frontier[frontier_front]
             frontier_front = -1
             frontier_rear = -1
         else:
-            node = frontier[frontier_front]
+            pos = frontier[frontier_front]
             frontier_front = (frontier_front + 1) % 81
 
-        pos = node[-1]
         explored[pos] = True
         in_frontier[pos] = False
 
@@ -342,25 +280,102 @@ def DFS(board, start_pos, player_number, is_static, hor_walls_placed, ver_walls_
                 and not explored[new_pos]
                 and not in_frontier[new_pos]
             ):
-                node_to_add = np.zeros(83, dtype=np.int8)
-                node_to_add[node[-2]] = new_pos + 1
-                node_to_add[-2] = 1
-                node_to_add[-1] = GraphShiftDict[direction]
+                parent[new_pos] = pos
+                if (player_number == 1 and new_pos <= 8) or (
+                    player_number == 2 and new_pos >= 72
+                ):
+                    stack = np.full(81, -1, dtype=np.int8)
+                    stack[0] = new_pos
+                    stack_idx = 1
+                    while True:
+                        if parent[new_pos] == -1:
+                            stack[stack_idx] = -1
+                            break
+                        stack[stack_idx] = parent[new_pos]
+                        stack_idx += 1
+                        new_pos = parent[new_pos]
+
+                    path = np.full(81, -1, dtype=np.int8)
+                    path[0] = new_pos
+                    idx = 0
+                    stack_idx -= 1
+                    while True:
+                        path[idx] = stack[stack_idx]
+                        stack_idx -= 1
+                        idx += 1
+                        if stack[stack_idx] == -1:
+                            return path
 
                 if (frontier_rear + 1) % 81 == frontier_front:
                     print("Errrorr")
                 elif frontier_front == -1:
                     frontier_front = 0
                     frontier_rear = 0
-                    frontier[frontier_rear] = node + node_to_add
+                    frontier[frontier_rear] = new_pos
                 else:
                     frontier_rear = (frontier_rear + 1) % 81
-                    frontier[frontier_rear] = node + node_to_add
+                    frontier[frontier_rear] = new_pos
 
                 in_frontier[new_pos] = True
+
+    return None
+
+
+@njit(cache=True)
+def DFS(board, start_pos, player_number, is_static, hor_walls_placed, ver_walls_placed):
+    frontier = np.full(81, -1, dtype=np.int8)
+    frontier[0] = start_pos
+    frontier_length = 1
+
+    explored = np.zeros(81, dtype=np.bool8)
+    in_frontier = np.zeros(81, dtype=np.bool8)
+    in_frontier[start_pos] = True
+
+    parent = np.full(81, -1, dtype=np.int8)
+
+    while frontier_length != 0:
+        pos = frontier[frontier_length - 1]
+        frontier_length -= 1
+        explored[pos] = True
+        in_frontier[pos] = False
+
+        for direction in range(4):
+            new_pos = pos + GraphShiftDict[direction]
+            if (
+                is_direction_valid(
+                    board, pos, direction, is_static, hor_walls_placed, ver_walls_placed
+                )
+                and not explored[new_pos]
+                and not in_frontier[new_pos]
+            ):
+                parent[new_pos] = pos
                 if (player_number == 1 and new_pos <= 8) or (
                     player_number == 2 and new_pos >= 72
                 ):
-                    return frontier[frontier_rear]
+                    stack = np.full(81, -1, dtype=np.int8)
+                    stack[0] = new_pos
+                    stack_idx = 1
+                    while True:
+                        if parent[new_pos] == -1:
+                            stack[stack_idx] = -1
+                            break
+                        stack[stack_idx] = parent[new_pos]
+                        stack_idx += 1
+                        new_pos = parent[new_pos]
+
+                    path = np.full(81, -1, dtype=np.int8)
+                    path[0] = new_pos
+                    idx = 0
+                    stack_idx -= 1
+                    while True:
+                        path[idx] = stack[stack_idx]
+                        stack_idx -= 1
+                        idx += 1
+                        if stack[stack_idx] == -1:
+                            return path
+
+                frontier[frontier_length] = new_pos
+                frontier_length += 1
+                in_frontier[new_pos] = True
 
     return None

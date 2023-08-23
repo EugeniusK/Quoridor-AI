@@ -186,56 +186,72 @@ Heuristic_PlayerTwo = {
 
 
 def BFS(self, start_pos, player_number):
-    node = [start_pos]
-    if player_number == 1 and node[-1] <= 8:
-        return node
-    elif player_number == 2 and node[-1] >= 72:
-        return node
-
     frontier = []
-    frontier.append(node)
+    frontier.append(start_pos)
+
     explored = set()
 
+    parent = {start_pos: -1}
+
     while len(frontier) != 0:
-        node = frontier.pop(0)
-        pos = node[-1]
+        pos = frontier.pop(0)
+
         explored.add(pos)
 
         for direction in range(4):
             new_pos = pos + GraphShiftDict[128 + direction]
-            if self.is_direction_valid(pos, direction) and new_pos not in explored:
-                if player_number == 1 and new_pos <= 8:
-                    return node + [new_pos]
-                elif player_number == 2 and new_pos >= 72:
-                    return node + [new_pos]
-                frontier.append(node + [new_pos])
+            if (
+                self.is_direction_valid(pos, direction)
+                and new_pos not in explored
+                and new_pos not in frontier
+            ):
+                parent[new_pos] = pos
+                if (player_number == 1 and new_pos <= 8) or (
+                    player_number == 2 and new_pos >= 72
+                ):
+                    path = [new_pos]
+                    while True:
+                        if parent[new_pos] == -1:
+                            path.append(-1)
+                            return path
+                        path.insert(0, parent[new_pos])
+                        new_pos = parent[new_pos]
+                frontier.append(new_pos)
     return None
 
 
 def DFS(self, start_pos, player_number):
-    node = [start_pos]
-    if player_number == 1 and node[-1] <= 8:
-        return node
-    elif player_number == 2 and node[-1] >= 72:
-        return node
-
     frontier = []
-    frontier.append(node)
+    frontier.append(start_pos)
+
     explored = set()
 
+    parent = {start_pos: -1}
+
     while len(frontier) != 0:
-        node = frontier.pop(-1)
-        pos = node[-1]
+        pos = frontier.pop(-1)
+
         explored.add(pos)
 
         for direction in range(4):
             new_pos = pos + GraphShiftDict[128 + direction]
-            if self.is_direction_valid(pos, direction) and new_pos not in explored:
-                if player_number == 1 and new_pos <= 8:
-                    return node + [new_pos]
-                elif player_number == 2 and new_pos >= 72:
-                    return node + [new_pos]
-                frontier.append(node + [new_pos])
+            if (
+                self.is_direction_valid(pos, direction)
+                and new_pos not in explored
+                and new_pos not in frontier
+            ):
+                parent[new_pos] = pos
+                if (player_number == 1 and new_pos <= 8) or (
+                    player_number == 2 and new_pos >= 72
+                ):
+                    path = [new_pos]
+                    while True:
+                        if parent[new_pos] == -1:
+                            path.append(-1)
+                            return path
+                        path.insert(0, parent[new_pos])
+                        new_pos = parent[new_pos]
+                frontier.append(new_pos)
     return None
 
 
