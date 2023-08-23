@@ -163,7 +163,7 @@ def is_action_available(self, action_number):
             self.take_action(action_number)
             path_1 = self.search(self.p1_pos, 1)
             path_2 = self.search(self.p2_pos, 2)
-            print(action_number, path_1, path_2)
+            # print(action_number, path_1, path_2)
 
             if path_1 is not None and path_2 is not None:
                 self.undo_action(action_number)

@@ -99,11 +99,16 @@ def compare(path1, path2, get1, get2, n=1):
 # test("DFS", 2)
 
 
-# compare("BFS", "BFS", 1, 1, 1)
+compare("BFS", "BFS", 1, 1, 100)
+compare("BFS", "DFS", 1, 1, 100)
 
 # board = NumbaPythonStaticGraph("BFS")
 # print(is_action_available(board, 0))
-# board = VanillaPythonStaticGraph("BFS")
+# print(board.get_available_actions(1))
+# board = VanillaPythonStaticGraph("DFS")
 # is_action_available(board, 0)
+# print(board.get_available_actions(1))
+
+# print(board.get_available_actions(2))
 # board = NumpyPythonStaticGraph("BFS")
 # is_action_available(board, 0)
