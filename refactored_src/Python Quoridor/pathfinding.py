@@ -256,38 +256,44 @@ def DFS(self, start_pos, player_number):
 
 
 def GBFS(self, start_pos, player_number):
-    if player_number == 1:
-        node = (Heuristic_PlayerOne[start_pos], [start_pos])
-    else:
-        node = (Heuristic_PlayerTwo[start_pos], [start_pos])
+    frontier = []
+    frontier.append(start_pos)
 
-    if player_number == 1 and node[1][-1] <= 8:
-        return node[1]
-    elif player_number == 2 and node[1][-1] >= 72:
-        return node[1]
-
-    frontier = [node]
-    heapify(frontier)
     explored = set()
 
+    parent = {start_pos: -1}
+
     while len(frontier) != 0:
-        node = heappop(frontier)
-        pos = node[1][-1]
+        if player_number == 1:
+            pos = frontier.pop(
+                frontier.index(min(frontier, key=lambda x: Heuristic_PlayerOne[x]))
+            )
+        else:
+            pos = frontier.pop(
+                frontier.index(min(frontier, key=lambda x: Heuristic_PlayerTwo[x]))
+            )
+
         explored.add(pos)
 
         for direction in range(4):
             new_pos = pos + GraphShiftDict[128 + direction]
-            if self.is_direction_valid(pos, direction) and new_pos not in explored:
-                if player_number == 1:
-                    if new_pos <= 8:
-                        return node[1] + [new_pos]
-                    frontier.append((Heuristic_PlayerOne[new_pos], node[1] + [new_pos]))
-
-                elif player_number == 2:
-                    if new_pos >= 72:
-                        return node[1] + [new_pos]
-                    frontier.append((Heuristic_PlayerTwo[new_pos], node[1] + [new_pos]))
-
+            if (
+                self.is_direction_valid(pos, direction)
+                and new_pos not in explored
+                and new_pos not in frontier
+            ):
+                parent[new_pos] = pos
+                if (player_number == 1 and new_pos <= 8) or (
+                    player_number == 2 and new_pos >= 72
+                ):
+                    path = [new_pos]
+                    while True:
+                        if parent[new_pos] == -1:
+                            path.append(-1)
+                            return path
+                        path.insert(0, parent[new_pos])
+                        new_pos = parent[new_pos]
+                frontier.append(new_pos)
     return None
 
 

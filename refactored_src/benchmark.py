@@ -6,36 +6,37 @@ from Quoridor.actions import is_action_available
 from Quoridor.display import output_to_cli
 
 
-def test(pathfinding, get_available_actions=1, n=100):
+from Quoridor.bitboard import QuoridorBitboardOptim
+
+# board = QuoridorBitboardOptim("BFS")
+# moves = board.get_available_actions()
+# print([x for x in range(140) if moves[x]])
+
+
+def test(pathfinding, get_available_actions=1, n=1):
     actions = [52, 20, 15, 0, 65, 82, 127, 62, 56, 32, 6, 38, 9]
 
-    board = VanillaPythonDynamicGraph(pathfinding)
-    board1 = NumbaPythonStaticGraph(pathfinding)
-    board.get_available_actions(get_available_actions)
-    board1.get_available_actions(get_available_actions)
-
-    board.p1_pos = 58
-    board.p2_pos = 59
-    board1.p1_pos = 58
-    board1.p2_pos = 59
-    for a in actions:
-        board.take_action(a)
-        board1.take_action(a)
-
-    print(
-        timeit.timeit(
-            f"board.get_available_actions({get_available_actions})",
-            globals=locals(),
-            number=n,
+    boards = [
+        VanillaPythonDynamicGraph(pathfinding),
+        VanillaPythonStaticGraph(pathfinding),
+        NumpyPythonDynamicGraph(pathfinding),
+        NumpyPythonStaticGraph(pathfinding),
+        NumbaPythonDynamicGraph(pathfinding),
+        NumbaPythonStaticGraph(pathfinding),
+    ]
+    for board in boards:
+        board.p1_pos = 58
+        board.p2_pos = 59
+        for a in actions:
+            board.take_action(a)
+        print(
+            str(type(board)),
+            timeit.timeit(
+                f"board.get_available_actions({get_available_actions})",
+                globals=locals(),
+                number=n,
+            ),
         )
-    )
-    print(
-        timeit.timeit(
-            f"board1.get_available_actions({get_available_actions})",
-            globals=locals(),
-            number=n,
-        )
-    )
 
 
 import random
@@ -45,14 +46,15 @@ import time
 def compare(path1, path2, get1, get2, n=1):
     for i in range(n):
         board1 = VanillaPythonStaticGraph(path1)
-        board2 = NumbaPythonStaticGraph(path2)
+        board2 = NumbaPythonDynamicGraph(path2)
 
         time_taken = 0
         moves_played = 0
         while True:
             start = time.perf_counter()
             moves1 = board1.get_available_actions(get1)
-            moves2 = board2.get_available_actions(get2)
+            moves2 = board2.get_available_actions()
+
             time_taken += time.perf_counter() - start
             moves1_ones = [
                 x for x in range(140) if is_action_available(board1, x) != None
@@ -99,16 +101,18 @@ def compare(path1, path2, get1, get2, n=1):
 # test("DFS", 2)
 
 
-compare("BFS", "BFS", 1, 1, 100)
-compare("BFS", "DFS", 1, 1, 100)
+# compare("BFS", "BFS", 1, 1, 100)
+# compare("BFS", "DFS", 1, 1, 100)
 
-# board = NumbaPythonStaticGraph("BFS")
-# print(is_action_available(board, 0))
+# board = NumbaPythonStaticGraph("GBFS")
+# # print(is_action_available(board, 0))
 # print(board.get_available_actions(1))
-# board = VanillaPythonStaticGraph("DFS")
-# is_action_available(board, 0)
+# board = VanillaPythonStaticGraph("GBFS")
 # print(board.get_available_actions(1))
 
 # print(board.get_available_actions(2))
 # board = NumpyPythonStaticGraph("BFS")
 # is_action_available(board, 0)
+
+test("GBFS")
+test("BFS")

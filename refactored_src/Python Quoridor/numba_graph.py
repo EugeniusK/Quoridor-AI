@@ -1,6 +1,6 @@
 import numpy as np
 
-from Quoridor.numba_pathfinding import BFS, DFS  # , DFS, GBFS, Astar
+from Quoridor.numba_pathfinding import BFS, DFS, GBFS  # , DFS, GBFS, Astar
 from Quoridor.actions import (
     get_available_actions_1,
     get_available_actions_2,
@@ -295,14 +295,15 @@ class NumbaPythonStaticGraph:
                 self.hor_walls_placed,
                 self.ver_walls_placed,
             )
-        # elif self.pathfinding_mode == "GBFS":
-        #     return GBFS(
-        #         self.nodes,
-        #         start_pos,
-        #         player_number,
-        #         self.hor_walls_placed,
-        #         self.ver_walls_placed,
-        #     )
+        elif self.pathfinding_mode == "GBFS":
+            return GBFS(
+                GraphVanillaAdjList,
+                start_pos,
+                player_number,
+                True,
+                self.hor_walls_placed,
+                self.ver_walls_placed,
+            )
         # elif self.pathfinding_mode == "Astar":
         #     return Astar(
         #         self.nodes,
@@ -562,6 +563,15 @@ class NumbaPythonDynamicGraph:
             )
         elif self.pathfinding_mode == "DFS":
             return DFS(
+                self.nodes,
+                start_pos,
+                player_number,
+                False,
+                np.zeros(64, dtype=np.bool8),
+                np.zeros(64, dtype=np.bool8),
+            )
+        elif self.pathfinding_mode == "GBFS":
+            return GBFS(
                 self.nodes,
                 start_pos,
                 player_number,
