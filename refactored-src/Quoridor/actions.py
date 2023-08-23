@@ -68,6 +68,8 @@ def get_available_actions_2(self) -> list:
                     for path in previous_valid_paths_1:
                         for idx in range(len(path) - 1):
                             shift = path[idx + 1] - path[idx]
+                            if path[idx + 1] == -1 or path[idx] == -1:
+                                break
                             if shift == -9 and not self.is_direction_valid(
                                 path[idx], 0
                             ):
@@ -92,6 +94,8 @@ def get_available_actions_2(self) -> list:
                     for path in previous_valid_paths_2:
                         for idx in range(len(path) - 1):
                             shift = path[idx + 1] - path[idx]
+                            if path[idx + 1] == -1 or path[idx] == -1:
+                                break
                             if shift == -9 and not self.is_direction_valid(
                                 path[idx], 0
                             ):
@@ -159,6 +163,8 @@ def is_action_available(self, action_number):
             self.take_action(action_number)
             path_1 = self.search(self.p1_pos, 1)
             path_2 = self.search(self.p2_pos, 2)
+            print(action_number, path_1, path_2)
+
             if path_1 is not None and path_2 is not None:
                 self.undo_action(action_number)
                 return action_number

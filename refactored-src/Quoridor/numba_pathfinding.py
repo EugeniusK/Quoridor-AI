@@ -1,6 +1,5 @@
-from collections import deque
-from heapq import heapify, heappush, heappop
-from queue import Queue, LifoQueue
+import numpy as np
+from numba import njit
 
 GraphShiftDict = {
     128: -9,
@@ -16,6 +15,9 @@ GraphShiftDict = {
     138: -2,
     139: -10,
 }
+
+GraphShiftDict = np.array([-9, 1, 9, -1], dtype=np.int8)
+
 Heuristic_PlayerOne = {
     0: 0,
     1: 0,
@@ -185,8 +187,70 @@ Heuristic_PlayerTwo = {
 }
 
 
-def BFS(self, start_pos, player_number):
-    node = [start_pos]
+@njit(cache=True)
+def is_direction_valid(
+    board, pos: int, direction: int, is_static: bool, hor_walls_placed, ver_walls_placed
+) -> bool:
+    """
+    direction: 0, 1, 2, 3 for NESW
+    Used only for path-finding algorithms
+    """
+    if is_static:
+        if board[pos][direction]:
+            if direction == 0:  # North
+                if pos % 9 == 0:
+                    return not hor_walls_placed[pos % 9 + 8 * (8 - pos // 9)]
+                elif pos % 9 == 8:
+                    return not hor_walls_placed[pos % 9 + 8 * (8 - pos // 9) - 1]
+                elif pos % 9 != 0:
+                    return (
+                        not hor_walls_placed[pos % 9 + 8 * (8 - pos // 9) - 1]
+                    ) and (not hor_walls_placed[pos % 9 + 8 * (8 - pos // 9)])
+
+            elif direction == 1:  # East
+                if pos < 9:
+                    return not ver_walls_placed[pos % 9 + (7 - pos // 9) * 8]
+                elif pos >= 72:
+                    return not ver_walls_placed[pos % 9 + (8 - pos // 9) * 8]
+
+                else:
+                    return (not ver_walls_placed[pos % 9 + (7 - pos // 9) * 8]) and (
+                        not ver_walls_placed[pos % 9 + (8 - pos // 9) * 8]
+                    )
+            elif direction == 2:  # South
+                if pos % 9 == 0:
+                    return not hor_walls_placed[pos % 9 + 8 * (7 - pos // 9)]
+                elif pos % 9 == 8:
+                    return not hor_walls_placed[pos % 9 + 8 * (7 - pos // 9) - 1]
+
+                elif pos % 9 != 0:
+                    return (
+                        not hor_walls_placed[pos % 9 + 8 * (7 - pos // 9) - 1]
+                    ) and (not hor_walls_placed[pos % 9 + 8 * (7 - pos // 9)])
+            elif direction == 3:  # West
+                if pos < 9:
+                    return not ver_walls_placed[pos % 9 + (7 - pos // 9) * 8 - 1]
+                elif pos >= 72:
+                    return not ver_walls_placed[pos % 9 + (8 - pos // 9) * 8 - 1]
+
+                else:
+                    return (
+                        not ver_walls_placed[pos % 9 + (7 - pos // 9) * 8 - 1]
+                    ) and (not ver_walls_placed[pos % 9 + (8 - pos // 9) * 8 - 1])
+        else:
+            return False
+    else:
+        return board[pos, direction]
+
+
+# a node is PATH + length PATH + end of PATH --> ensures no need to traverse to find -1
+# @njit(cache=True)
+def BFS(board, start_pos, player_number, is_static, hor_walls_placed, ver_walls_placed):
+    node = np.full(83, -1, dtype=np.int8)
+    node[0] = start_pos
+    node[81] = 1
+    node[82] = start_pos
+
     if player_number == 1 and node[-1] <= 8:
         return node
     elif player_number == 2 and node[-1] >= 72:
@@ -194,130 +258,109 @@ def BFS(self, start_pos, player_number):
 
     frontier = []
     frontier.append(node)
-    explored = set()
+
+    explored = np.zeros(81, dtype=np.bool8)
+
+    in_frontier = np.zeros(81, dtype=np.bool8)
+    in_frontier[node[-1]] = True
 
     while len(frontier) != 0:
         node = frontier.pop(0)
+
         pos = node[-1]
-        explored.add(pos)
+        explored[pos] = True
+        in_frontier[pos] = False
 
         for direction in range(4):
-            new_pos = pos + GraphShiftDict[128 + direction]
-            if self.is_direction_valid(pos, direction) and new_pos not in explored:
+            new_pos = pos + GraphShiftDict[direction]
+            if (
+                is_direction_valid(
+                    board, pos, direction, is_static, hor_walls_placed, ver_walls_placed
+                )
+                and not explored[new_pos]
+                and not in_frontier[new_pos]
+            ):
+                node_to_add = np.zeros(83, dtype=np.int8)
+                node_to_add[node[-2]] = new_pos + 1
+                node_to_add[-2] = 1
+                node_to_add[-1] = GraphShiftDict[direction]
+
+                frontier.append(node + node_to_add)
+
+                in_frontier[new_pos] = True
                 if player_number == 1 and new_pos <= 8:
-                    return node
+                    return frontier[-1]
                 elif player_number == 2 and new_pos >= 72:
-                    return node
-                frontier.append(node + [new_pos])
+                    return frontier[-1]
     return None
 
 
-def DFS(self, start_pos, player_number):
-    node = [start_pos]
+# a node is PATH + length PATH + end of PATH --> ensures no need to traverse to find -1
+# @njit(cache=True)
+def DFS(board, start_pos, player_number, is_static, hor_walls_placed, ver_walls_placed):
+    node = np.full(83, -1, dtype=np.int8)
+    node[0] = start_pos
+    node[81] = 1
+    node[82] = start_pos
+
     if player_number == 1 and node[-1] <= 8:
         return node
     elif player_number == 2 and node[-1] >= 72:
         return node
 
-    frontier = []
-    frontier.append(node)
-    explored = set()
+    frontier = np.full((81, 83), -1, dtype=np.int8)
+    frontier[0] = node
+    frontier_front = 0
+    frontier_rear = 0
 
-    while len(frontier) != 0:
-        node = frontier.pop(-1)
+    explored = np.zeros(81, dtype=np.bool8)
+
+    in_frontier = np.zeros(81, dtype=np.bool8)
+    in_frontier[node[-1]] = True
+
+    while frontier_front != -1:
+        if frontier_front == -1:
+            print("Error")
+        elif frontier_front == frontier_rear:
+            node = frontier[frontier_front]
+            frontier_front = -1
+            frontier_rear = -1
+        else:
+            node = frontier[frontier_front]
+            frontier_front = (frontier_front + 1) % 81
+
         pos = node[-1]
-        explored.add(pos)
+        explored[pos] = True
+        in_frontier[pos] = False
 
         for direction in range(4):
-            new_pos = pos + GraphShiftDict[128 + direction]
-            if self.is_direction_valid(pos, direction) and new_pos not in explored:
-                if player_number == 1 and new_pos <= 8:
-                    return node
-                elif player_number == 2 and new_pos >= 72:
-                    return node
-                frontier.append(node + [new_pos])
-    return None
+            new_pos = pos + GraphShiftDict[direction]
+            if (
+                is_direction_valid(
+                    board, pos, direction, is_static, hor_walls_placed, ver_walls_placed
+                )
+                and not explored[new_pos]
+                and not in_frontier[new_pos]
+            ):
+                node_to_add = np.zeros(83, dtype=np.int8)
+                node_to_add[node[-2]] = new_pos + 1
+                node_to_add[-2] = 1
+                node_to_add[-1] = GraphShiftDict[direction]
 
+                if (frontier_rear + 1) % 81 == frontier_front:
+                    print("Errrorr")
+                elif frontier_front == -1:
+                    frontier_front = 0
+                    frontier_rear = 0
+                    frontier[frontier_rear] = node + node_to_add
+                else:
+                    frontier_rear = (frontier_rear + 1) % 81
+                    frontier[frontier_rear] = node + node_to_add
 
-def GBFS(self, start_pos, player_number):
-    if player_number == 1:
-        node = (Heuristic_PlayerOne[start_pos], [start_pos])
-    else:
-        node = (Heuristic_PlayerTwo[start_pos], [start_pos])
-
-    if player_number == 1 and node[1][-1] <= 8:
-        return node[1]
-    elif player_number == 2 and node[1][-1] >= 72:
-        return node[1]
-
-    frontier = [node]
-    heapify(frontier)
-    explored = set()
-
-    while len(frontier) != 0:
-        node = heappop(frontier)
-        pos = node[1][-1]
-        explored.add(pos)
-
-        for direction in range(4):
-            new_pos = pos + GraphShiftDict[128 + direction]
-            if self.is_direction_valid(pos, direction) and new_pos not in explored:
-                if player_number == 1:
-                    if new_pos <= 8:
-                        return node[1]
-                    frontier.append((Heuristic_PlayerOne[new_pos], node[1] + [new_pos]))
-
-                elif player_number == 2:
-                    if new_pos >= 72:
-                        return node[1]
-                    frontier.append((Heuristic_PlayerTwo[new_pos], node[1] + [new_pos]))
-
-    return None
-
-
-def Astar(self, start_pos, player_number):
-    if player_number == 1:
-        node = (Heuristic_PlayerOne[start_pos], 0, [start_pos])
-    else:
-        node = (Heuristic_PlayerTwo[start_pos], 0, [start_pos])
-
-    if player_number == 1 and node[2][-1] <= 8:
-        return node[2]
-    elif player_number == 2 and node[2][-1] >= 72:
-        return node[2]
-
-    frontier = [node]
-    heapify(frontier)
-    explored = set()
-
-    while len(frontier) != 0:
-        node = heappop(frontier)
-        pos = node[2][-1]
-        explored.add(pos)
-
-        for direction in range(4):
-            new_pos = pos + GraphShiftDict[128 + direction]
-            if self.is_direction_valid(pos, direction) and new_pos not in explored:
-                if player_number == 1:
-                    if new_pos <= 8:
-                        return node[2]
-                    frontier.append(
-                        (
-                            Heuristic_PlayerOne[new_pos] + node[1] + 1,
-                            node[1] + 1,
-                            node[2] + [new_pos],
-                        )
-                    )
-
-                elif player_number == 2:
-                    if new_pos >= 72:
-                        return node[1]
-                    frontier.append(
-                        (
-                            Heuristic_PlayerTwo[new_pos] + node[1] + 1,
-                            node[1] + 1,
-                            node[2] + [new_pos],
-                        )
-                    )
+                in_frontier[new_pos] = True
+                if (player_number == 1 and new_pos <= 8) or (
+                    player_number == 2 and new_pos >= 72
+                ):
+                    return frontier[frontier_rear]
 
     return None

@@ -205,9 +205,9 @@ def BFS(self, start_pos, player_number):
             new_pos = pos + GraphShiftDict[128 + direction]
             if self.is_direction_valid(pos, direction) and new_pos not in explored:
                 if player_number == 1 and new_pos <= 8:
-                    return node
+                    return node + [new_pos]
                 elif player_number == 2 and new_pos >= 72:
-                    return node
+                    return node + [new_pos]
                 frontier.append(node + [new_pos])
     return None
 
@@ -232,9 +232,9 @@ def DFS(self, start_pos, player_number):
             new_pos = pos + GraphShiftDict[128 + direction]
             if self.is_direction_valid(pos, direction) and new_pos not in explored:
                 if player_number == 1 and new_pos <= 8:
-                    return node
+                    return node + [new_pos]
                 elif player_number == 2 and new_pos >= 72:
-                    return node
+                    return node + [new_pos]
                 frontier.append(node + [new_pos])
     return None
 
@@ -264,12 +264,12 @@ def GBFS(self, start_pos, player_number):
             if self.is_direction_valid(pos, direction) and new_pos not in explored:
                 if player_number == 1:
                     if new_pos <= 8:
-                        return node[1]
+                        return node[1] + [new_pos]
                     frontier.append((Heuristic_PlayerOne[new_pos], node[1] + [new_pos]))
 
                 elif player_number == 2:
                     if new_pos >= 72:
-                        return node[1]
+                        return node[1] + [new_pos]
                     frontier.append((Heuristic_PlayerTwo[new_pos], node[1] + [new_pos]))
 
     return None
@@ -300,7 +300,7 @@ def Astar(self, start_pos, player_number):
             if self.is_direction_valid(pos, direction) and new_pos not in explored:
                 if player_number == 1:
                     if new_pos <= 8:
-                        return node[2]
+                        return node[2] + [new_pos]
                     frontier.append(
                         (
                             Heuristic_PlayerOne[new_pos] + node[1] + 1,
@@ -311,7 +311,7 @@ def Astar(self, start_pos, player_number):
 
                 elif player_number == 2:
                     if new_pos >= 72:
-                        return node[1]
+                        return node[1] + [new_pos]
                     frontier.append(
                         (
                             Heuristic_PlayerTwo[new_pos] + node[1] + 1,

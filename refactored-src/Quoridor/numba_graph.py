@@ -1,6 +1,6 @@
 import numpy as np
 
-from Quoridor.pathfinding import BFS, DFS, GBFS, Astar
+from Quoridor.numba_pathfinding import BFS, DFS  # , DFS, GBFS, Astar
 from Quoridor.actions import (
     get_available_actions_1,
     get_available_actions_2,
@@ -167,12 +167,6 @@ class NumbaPythonStaticGraph:
                 self.hor_walls_placed[action] = False
             else:
                 self.ver_walls_placed[action - 64] = False
-                if self.turn == 2:
-                    self.p1_walls_placed -= 1
-                    self.turn = 1
-                elif self.turn == 1:
-                    self.p2_walls_placed -= 1
-                    self.turn = 2
 
             if self.turn == 2:
                 self.p1_walls_placed -= 1
@@ -284,19 +278,48 @@ class NumbaPythonStaticGraph:
 
     def search(self, start_pos, player_number):
         if self.pathfinding_mode == "BFS":
-            return BFS(self, start_pos, player_number)
+            return BFS(
+                GraphVanillaAdjList,
+                start_pos,
+                player_number,
+                True,
+                self.hor_walls_placed,
+                self.ver_walls_placed,
+            )
         elif self.pathfinding_mode == "DFS":
-            return DFS(self, start_pos, player_number)
-        elif self.pathfinding_mode == "GBFS":
-            return GBFS(self, start_pos, player_number)
-        elif self.pathfinding_mode == "Astar":
-            return Astar(self, start_pos, player_number)
+            return DFS(
+                GraphVanillaAdjList,
+                start_pos,
+                player_number,
+                True,
+                self.hor_walls_placed,
+                self.ver_walls_placed,
+            )
+        # elif self.pathfinding_mode == "GBFS":
+        #     return GBFS(
+        #         self.nodes,
+        #         start_pos,
+        #         player_number,
+        #         self.hor_walls_placed,
+        #         self.ver_walls_placed,
+        #     )
+        # elif self.pathfinding_mode == "Astar":
+        #     return Astar(
+        #         self.nodes,
+        #         start_pos,
+        #         player_number,
+        #         self.hor_walls_placed,
+        #         self.ver_walls_placed,
+        #     )
 
     def get_available_actions(self, version=1):
         if version is None or version == 1:
             return get_available_actions_1(self)
         else:
             return get_available_actions_2(self)
+
+    def is_over(self):
+        return self.over
 
 
 class NumbaPythonDynamicGraph:
@@ -529,13 +552,29 @@ class NumbaPythonDynamicGraph:
 
     def search(self, start_pos, player_number):
         if self.pathfinding_mode == "BFS":
-            return BFS(self, start_pos, player_number)
+            return BFS(
+                self.nodes,
+                start_pos,
+                player_number,
+                False,
+                np.zeros(64, dtype=np.bool8),
+                np.zeros(64, dtype=np.bool8),
+            )
         elif self.pathfinding_mode == "DFS":
-            return DFS(self, start_pos, player_number)
-        elif self.pathfinding_mode == "GBFS":
-            return GBFS(self, start_pos, player_number)
-        elif self.pathfinding_mode == "Astar":
-            return Astar(self, start_pos, player_number)
+            return DFS(
+                self.nodes,
+                start_pos,
+                player_number,
+                False,
+                np.zeros(64, dtype=np.bool8),
+                np.zeros(64, dtype=np.bool8),
+            )
+        # elif self.pathfinding_mode == "DFS":
+        #     return DFS(self.nodes, start_pos, player_number)
+        # elif self.pathfinding_mode == "GBFS":
+        #     return GBFS(self.nodes, start_pos, player_number)
+        # elif self.pathfinding_mode == "Astar":
+        #     return Astar(self.nodes, start_pos, player_number)
 
     def get_available_actions(self, version=1):
         if version is None or version == 1:

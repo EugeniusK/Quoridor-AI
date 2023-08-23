@@ -6,11 +6,13 @@ from Quoridor.actions import is_action_available
 from Quoridor.display import output_to_cli
 
 
-def test(pathfinding, get_available_actions=1, n=10):
+def test(pathfinding, get_available_actions=1, n=100):
     actions = [52, 20, 15, 0, 65, 82, 127, 62, 56, 32, 6, 38, 9]
 
-    board = VanillaPythonStaticGraph(pathfinding)
-    board1 = NumbaPythonDynamicGraph(pathfinding)
+    board = VanillaPythonDynamicGraph(pathfinding)
+    board1 = NumbaPythonStaticGraph(pathfinding)
+    board.get_available_actions(get_available_actions)
+    board1.get_available_actions(get_available_actions)
 
     board.p1_pos = 58
     board.p2_pos = 59
@@ -60,6 +62,9 @@ def compare(path1, path2, get1, get2, n=1):
             ]
             if set(moves1) != set(moves2):
                 print("ERROR", board1.turn)
+                print(moves1)
+                print(moves2)
+                output_to_cli(board1)
                 output_to_cli(board2)
                 break
             elif set(moves1_ones) != set(moves1):
@@ -87,37 +92,18 @@ def compare(path1, path2, get1, get2, n=1):
                     break
 
 
-test("BFS", 1)
-test("BFS", 2)
-print()
-test("DFS", 1)
-test("DFS", 2)
-print()
-test("GBFS", 1)
-test("GBFS", 2)
-print()
-test("Astar", 1)
-test("Astar", 2)
-
-# compare("BFS", "BFS", 1, 2, 100)
-# from Quoridor.actions import is_action_available
-
-# board = GraphVanilla()
-# board.take_action(0)
-# board.take_action(2)
-# board.take_action(4)
-# board.take_action(6)
-
-# board.display()
-# print(board.turn)
-# print(board.get_available_actions(1))
+# test("BFS", 2)
+# test("BFS", 2)
+# print()
+# test("DFS", 2)
+# test("DFS", 2)
 
 
-# board = NumbaPythonStaticGraph()
-# board.take_action(7)
-# print(board.get_available_actions())
-# board.display()
-# board = NumbaPythonDynamicGraph()
-# board.take_action(7)
-# print(board.get_available_actions())
-# board.display()
+# compare("BFS", "BFS", 1, 1, 1)
+
+# board = NumbaPythonStaticGraph("BFS")
+# print(is_action_available(board, 0))
+# board = VanillaPythonStaticGraph("BFS")
+# is_action_available(board, 0)
+# board = NumpyPythonStaticGraph("BFS")
+# is_action_available(board, 0)
