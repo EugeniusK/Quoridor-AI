@@ -20,19 +20,16 @@ fn main() {
     let mut rng = ChaCha8Rng::seed_from_u64(2);
 
     let mut board0: RustPartialBitboard = RustPartialBitboard::new(1);
-    let mut board1: RustFullBitboard = RustFullBitboard::new(10);
-    let mut board2: RustDynamicGraph = RustDynamicGraph::new(1);
-    let mut board3: RustStaticGraph = RustStaticGraph::new(1);
 
     let mut available: [bool; 140];
     let mut action: i16;
 
     println!("{:?}", board0.get_available_actions_fast());
-    for i in 0..0 {
-        board0 = RustPartialBitboard::new(1);
-        board1 = RustFullBitboard::new(10);
-        board2 = RustDynamicGraph::new(1);
-        board3 = RustStaticGraph::new(1);
+    for i in 0..10 {
+        let mut board0 = RustPartialBitboard::new(1);
+        let mut board1 = RustFullBitboard::new(10);
+        let mut board2 = RustDynamicGraph::new(1);
+        let mut board3 = RustStaticGraph::new(1);
         println!("{}", i);
         while !board0.is_over() && !board1.is_over() && !board2.is_over() && !board3.is_over() {
             if board0.get_available_actions_slow() == board1.get_available_actions_slow()

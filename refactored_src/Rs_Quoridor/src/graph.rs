@@ -390,7 +390,7 @@ pub mod graph_implementations {
             }
             println!("{}", output_board);
         }
-        fn BFS(&self, start_pos: i16, player_number: i16) -> [i16; 81] {
+        fn bfs(&self, start_pos: i16, player_number: i16) -> [i16; 81] {
             let mut frontier: VecDeque<i16> = VecDeque::with_capacity(81);
             frontier.push_back(start_pos);
 
@@ -399,7 +399,7 @@ pub mod graph_implementations {
             let mut in_frontier: [bool; 81] = [false; 81];
 
             let mut parent: [i16; 81] = [-1; 81];
-            let mut pos: i16 = start_pos;
+            let mut pos: i16;
             let mut new_pos: i16;
             while frontier.len() != 0 {
                 match frontier.pop_front() {
@@ -407,7 +407,7 @@ pub mod graph_implementations {
                         pos = popped;
                         in_frontier[pos as usize] = false;
                     }
-                    None => panic!("EMPTY FRONTIER IN BFS"),
+                    None => panic!("EMPTY FRONTIER IN bfs"),
                 }
                 explored[pos as usize] = true;
 
@@ -653,15 +653,15 @@ pub mod graph_implementations {
         fn search(&self, player_number: i16) -> [i16; 81] {
             if self.mode == 1 {
                 if player_number == 1 {
-                    self.BFS(self.p1_pos, 1)
+                    self.bfs(self.p1_pos, 1)
                 } else {
-                    self.BFS(self.p2_pos, 2)
+                    self.bfs(self.p2_pos, 2)
                 }
             } else {
                 if player_number == 1 {
-                    self.BFS(self.p1_pos, 1)
+                    self.bfs(self.p1_pos, 1)
                 } else {
-                    self.BFS(self.p2_pos, 2)
+                    self.bfs(self.p2_pos, 2)
                 }
             }
         }
@@ -925,15 +925,15 @@ pub mod graph_implementations {
         fn search(&self, player_number: i16) -> [i16; 81] {
             if self.mode == 1 {
                 if player_number == 1 {
-                    self.BFS(self.p1_pos, 1)
+                    self.bfs(self.p1_pos, 1)
                 } else {
-                    self.BFS(self.p2_pos, 2)
+                    self.bfs(self.p2_pos, 2)
                 }
             } else {
                 if player_number == 1 {
-                    self.BFS(self.p1_pos, 1)
+                    self.bfs(self.p1_pos, 1)
                 } else {
-                    self.BFS(self.p2_pos, 2)
+                    self.bfs(self.p2_pos, 2)
                 }
             }
         }

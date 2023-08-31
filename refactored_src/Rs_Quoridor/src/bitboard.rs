@@ -1,9 +1,8 @@
 pub mod bitboard_implementations {
-    use std::hash::{Hash, Hasher};
     use std::ops::*;
     pub const BITBOARD_SHIFT_ARR: [isize; 12] = [-34, 2, 34, -2, -68, -32, 4, 36, 68, 32, -4, -36];
 
-    use crate::{graph::graph_implementations::GRAPH_SHIFT_ARR, VecDeque};
+    use crate::VecDeque;
 
     #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Default)]
     pub struct QuoridorBitboard {
@@ -125,10 +124,9 @@ pub mod bitboard_implementations {
                             self.take_action(action_number);
                             path_1 = self.search(1);
                             path_2 = self.search(2);
-                            if path_1.hash() != 255 && path_2.hash() != 255 {
+                            if path_1 != BITBOARD_BLANK && path_2 != BITBOARD_BLANK {
                                 previous_paths_1.push(path_1);
                                 previous_paths_2.push(path_2);
-                                println!("{}", previous_paths_1.len());
                                 available_actions[action_number as usize] = true;
                                 path_available = true;
                             }
@@ -152,7 +150,7 @@ pub mod bitboard_implementations {
                             if !path_traversed_1 | !path_traversed_2 {
                                 if !path_traversed_1 {
                                     path_1 = self.search(1);
-                                    if path_1.hash() != 255 {
+                                    if path_1 != BITBOARD_BLANK {
                                         previous_paths_1.push(path_1);
                                     }
                                 } else {
@@ -160,13 +158,13 @@ pub mod bitboard_implementations {
                                 }
                                 if !path_traversed_2 {
                                     path_2 = self.search(2);
-                                    if path_2.hash() != 255 {
+                                    if path_2 != BITBOARD_BLANK {
                                         previous_paths_2.push(path_2)
                                     }
                                 } else {
-                                    path_1 = BITBOARD_BLANK;
+                                    path_2 = BITBOARD_BLANK;
                                 }
-                                if path_1.hash() != 255 && path_1.hash() != 255 {
+                                if path_1 != BITBOARD_BLANK && path_2 != BITBOARD_BLANK {
                                     available_actions[action_number as usize] = true;
                                 }
                             } else {
@@ -337,7 +335,7 @@ pub mod bitboard_implementations {
             }
             println!("{}", output_board);
         }
-        fn BFS(&self, start_bitboard: QuoridorBitboard, player_number: i16) -> QuoridorBitboard {
+        fn bfs(&self, start_bitboard: QuoridorBitboard, player_number: i16) -> QuoridorBitboard {
             let mut frontier: VecDeque<QuoridorBitboard> = VecDeque::with_capacity(81);
             frontier.push_back(start_bitboard);
 
@@ -356,7 +354,7 @@ pub mod bitboard_implementations {
                         bitboard = popped;
                         in_frontier -= bitboard;
                     }
-                    None => panic!("EMPTY FRONTIER IN BFS"),
+                    None => panic!("EMPTY FRONTIER IN bfs"),
                 }
                 explored += bitboard;
                 for direction in 0..4 {
@@ -406,10 +404,10 @@ pub mod bitboard_implementations {
                                     match stack[stack_idx - 1].hash() as isize
                                         - stack[stack_idx].hash() as isize
                                     {
-                                        -9 => path += (stack[stack_idx] >> -17),
-                                        1 => path += (stack[stack_idx] >> 1),
-                                        9 => path += (stack[stack_idx] >> 17),
-                                        -1 => path += (stack[stack_idx] >> -1),
+                                        -9 => path += stack[stack_idx] >> -17,
+                                        1 => path += stack[stack_idx] >> 1,
+                                        9 => path += stack[stack_idx] >> 17,
+                                        -1 => path += stack[stack_idx] >> -1,
                                         _ => {
                                             panic!("INVALID PARENT BITBOARD")
                                         }
@@ -885,15 +883,15 @@ pub mod bitboard_implementations {
         fn search(&self, player_number: i16) -> QuoridorBitboard {
             if self.get_mode() == 1 {
                 if player_number == 1 {
-                    self.BFS(self.p1, 1)
+                    self.bfs(self.p1, 1)
                 } else {
-                    self.BFS(self.p2, 2)
+                    self.bfs(self.p2, 2)
                 }
             } else {
                 if player_number == 1 {
-                    self.BFS(self.p1, 1)
+                    self.bfs(self.p1, 1)
                 } else {
-                    self.BFS(self.p2, 2)
+                    self.bfs(self.p2, 2)
                 }
             }
         }
@@ -1089,15 +1087,15 @@ pub mod bitboard_implementations {
         fn search(&self, player_number: i16) -> QuoridorBitboard {
             if self.mode == 1 {
                 if player_number == 1 {
-                    self.BFS(self.p1, 1)
+                    self.bfs(self.p1, 1)
                 } else {
-                    self.BFS(self.p2, 2)
+                    self.bfs(self.p2, 2)
                 }
             } else {
                 if player_number == 1 {
-                    self.BFS(self.p1, 1)
+                    self.bfs(self.p1, 1)
                 } else {
-                    self.BFS(self.p2, 2)
+                    self.bfs(self.p2, 2)
                 }
             }
         }
