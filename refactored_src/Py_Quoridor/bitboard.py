@@ -4,7 +4,7 @@ from numba.experimental import jitclass
 import copy
 
 try:
-    from Quoridor.b_pathfinding_optim import (
+    from Py_Quoridor.b_pathfinding_optim import (
         BreadthFirstSearch_Bitboard,
         DepthFirstSearch_Bitboard,
         GreedyBestFirstSearch_Bitboard,
@@ -12,7 +12,7 @@ try:
         AStarSearch_Bitboard,
     )
 except:
-    from Quoridor.b_pathfinding import (
+    from Py_Quoridor.b_pathfinding import (
         BreadthFirstSearch_Bitboard,
         DepthFirstSearch_Bitboard,
         GreedyBestFirstSearch_Bitboard,

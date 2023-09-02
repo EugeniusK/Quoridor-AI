@@ -1,0 +1,94 @@
+println!("SHIFT OPERATOR OF 1 WITH ASSIGNMENT");
+    let mut total: f64 = 0.0;
+    for _ in 0..10i32.pow(7) {
+        let start = Instant::now();
+        board = board >> 1;
+        let elapsed = start.elapsed();
+        total += elapsed.as_secs_f64();
+    }
+    println!(
+        "{} {:.10} {:.10}",
+        10i32.pow(7),
+        total,
+        total / 10i32.pow(7) as f64
+    );
+
+    println!("SHIFT OPERATOR OF 68 WITH ASSIGNMENT");
+    let mut total: f64 = 0.0;
+    for _ in 0..10i32.pow(7) {
+        let start = Instant::now();
+        board = board >> 68;
+        let elapsed = start.elapsed();
+        total += elapsed.as_secs_f64();
+    }
+    println!(
+        "{} {:.10} {:.10}",
+        10i32.pow(7),
+        total,
+        total / 10i32.pow(7) as f64
+    );
+
+    println!("SHIFT OPERATOR OF 136 WITH ASSIGNMENT");
+    let mut total: f64 = 0.0;
+    for _ in 0..10i32.pow(7) {
+        let start = Instant::now();
+        board = board >> 136;
+        let elapsed = start.elapsed();
+        total += elapsed.as_secs_f64();
+    }
+    println!(
+        "{} {:.10} {:.10}",
+        10i32.pow(7),
+        total,
+        total / 10i32.pow(7) as f64
+    );
+
+    println!("SET THEN CLEAR BIT");
+    let mut total: f64 = 0.0;
+    for _ in 0..10i32.pow(7) {
+        let start = Instant::now();
+        board.set_bit(63);
+        board.clear_bit(63);
+        let elapsed = start.elapsed();
+        total += elapsed.as_secs_f64();
+    }
+    println!(
+        "{} {:.10} {:.10}",
+        10i32.pow(7),
+        total,
+        total / 10i32.pow(7) as f64
+    );
+
+        let mut board: RustStaticGraph = RustStaticGraph::new(1);
+    board.take_action(5);
+    for i in 0..10 {
+        let start = Instant::now();
+        let result = board.get_available_actions_slow();
+        let elapsed = start.elapsed();
+        println!(
+            "Time elapsed in get_available_actions_slow() is: {:?}",
+            elapsed
+        );
+        // println!("{:?}", result)
+    }
+    println!("");
+    let mut board1: RustDynamicGraph = RustDynamicGraph::new(1);
+    board1.take_action(5);
+    for _ in 0..10 {
+        let start = Instant::now();
+        let result = board1.get_available_actions_fast();
+        let elapsed = start.elapsed();
+        println!(
+            "Time elapsed in get_available_actions_fast() is: {:?}",
+            elapsed
+        );
+        // println!("{:?}", result)
+    }
+
+    let result1 = board.get_available_actions_slow();
+    let result2 = board.get_available_actions_fast();
+    let result3 = board1.get_available_actions_slow();
+    let result4 = board1.get_available_actions_fast();
+
+    let mut board = QuoridorBitboard::new();
+    board.set_bit(63);

@@ -1,23 +1,19 @@
-import numpy as np
-from numba import njit
+# for i in range(204, 204 + 18, 2):
+#     print(2 ** (255 - i), "=> ", i, ",")
+# for i in range(238, 238 + 18, 2):
+#     print(2 ** (255 - i), "=> ", i, ",")
 
 
-@njit(cache=True)
-def enqueue(queue, front, rear, data):
-    # condition if queue is full
-    if (rear + 1) % 5 == front:
-        print(" Queue is Full\n")
-
-    # condition for empty queue
-    elif front == -1:
-        front = 0
-        rear = 0
-        queue[rear] = data
-    else:
-        # next position of rear
-        rear = (rear + 1) % 5
-        queue[rear] = data
+def output(i):
+    for i in range(i, i + 17, 2):
+        print(
+            2 ** ((i // 64 + 1) * 64 - 1 - i),
+            "=> ",
+            "return",
+            i // 2 - 8 * (i // 34),
+            ",",
+        )
 
 
-queue = np.zeros(5)
-front, rear = -1, -1
+for i in range(0, 288, 34):
+    output(i)

@@ -1,10 +1,10 @@
 pub mod bitboard_implementations {
+    use crate::VecDeque;
     use std::ops::*;
+
     pub const BITBOARD_SHIFT_ARR: [isize; 12] = [-34, 2, 34, -2, -68, -32, 4, 36, 68, 32, -4, -36];
 
-    use crate::VecDeque;
-
-    #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Default)]
+    #[derive(Clone, Copy, PartialEq)]
     pub struct QuoridorBitboard {
         // Bits in bitboard_0 are for index 0~63 and so on
         pub bitboard_0: u64,
@@ -13,6 +13,7 @@ pub mod bitboard_implementations {
         pub bitboard_3: u64,
         pub bitboard_4: u64,
     }
+    #[derive(Clone, Copy)]
 
     pub struct RustPartialBitboard {
         pub p1: QuoridorBitboard,
@@ -24,12 +25,29 @@ pub mod bitboard_implementations {
         pub over: bool,
         pub mode: i16,
     }
+    #[derive(Clone, Copy)]
 
     pub struct RustFullBitboard {
         pub p1: QuoridorBitboard,
         pub p2: QuoridorBitboard,
         pub walls_and_metadata: QuoridorBitboard,
     }
+
+    pub const RUST_PARTIAL_BITBOARD_BLANK: RustPartialBitboard = RustPartialBitboard {
+        p1: BITBOARD_BLANK,
+        p2: BITBOARD_BLANK,
+        walls: BITBOARD_BLANK,
+        p1_walls_placed: 0,
+        p2_walls_placed: 0,
+        turn: 1,
+        over: false,
+        mode: 1,
+    };
+    pub const RUST_FULL_BITBOARD_BLANK: RustFullBitboard = RustFullBitboard {
+        p1: BITBOARD_BLANK,
+        p2: BITBOARD_BLANK,
+        walls_and_metadata: BITBOARD_BLANK,
+    };
 
     pub const BITBOARD_FULL: QuoridorBitboard = QuoridorBitboard {
         bitboard_0: 18446744073709551615,
@@ -154,7 +172,7 @@ pub mod bitboard_implementations {
                                         previous_paths_1.push(path_1);
                                     }
                                 } else {
-                                    path_1 = BITBOARD_BLANK;
+                                    path_1 = previous_paths_1[0];
                                 }
                                 if !path_traversed_2 {
                                     path_2 = self.search(2);
@@ -162,7 +180,7 @@ pub mod bitboard_implementations {
                                         previous_paths_2.push(path_2)
                                     }
                                 } else {
-                                    path_2 = BITBOARD_BLANK;
+                                    path_2 = previous_paths_2[0];
                                 }
                                 if path_1 != BITBOARD_BLANK && path_2 != BITBOARD_BLANK {
                                     available_actions[action_number as usize] = true;
@@ -183,6 +201,7 @@ pub mod bitboard_implementations {
 
             available_actions
         }
+        fn get_turn(&self) -> i16;
         fn is_over(&self) -> bool;
         fn get_pos(&self, player_number: i16) -> i16;
         fn get_walls(&self) -> QuoridorBitboard;
@@ -654,7 +673,7 @@ pub mod bitboard_implementations {
             self.walls_and_metadata.bitboard_4 ^= 1;
         }
 
-        pub fn get_walls(&self, player_number: i16) -> i16 {
+        pub fn get_walls_left(&self, player_number: i16) -> i16 {
             if player_number == 1 {
                 ((self.walls_and_metadata.bitboard_4 >> 1) & 0x000000000000000F) as i16
             } else {
@@ -862,10 +881,12 @@ pub mod bitboard_implementations {
         }
 
         fn can_place_wall(&self) -> bool {
-            (self.get_turn() == 1 && self.get_walls(1) < 10)
-                | (self.get_turn() == 2 && self.get_walls(2) < 10)
+            (self.get_turn() == 1 && self.get_walls_left(1) < 10)
+                | (self.get_turn() == 2 && self.get_walls_left(2) < 10)
         }
-
+        fn get_turn(&self) -> i16 {
+            self.get_turn()
+        }
         fn is_over(&self) -> bool {
             self.get_over()
         }
@@ -1067,6 +1088,9 @@ pub mod bitboard_implementations {
         fn can_place_wall(&self) -> bool {
             (self.turn == 1 && self.p1_walls_placed < 10)
                 | (self.turn == 2 && self.p2_walls_placed < 10)
+        }
+        fn get_turn(&self) -> i16 {
+            self.turn
         }
 
         fn is_over(&self) -> bool {

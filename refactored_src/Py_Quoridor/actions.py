@@ -35,8 +35,7 @@ def get_available_actions_1(self) -> list:
 
 def get_available_actions_2(self) -> list:
     available_actions = []
-
-    previous_valid_paths = []
+    path_available = False
     previous_valid_paths_1 = []
     previous_valid_paths_2 = []
 
@@ -50,7 +49,7 @@ def get_available_actions_2(self) -> list:
         for action_number in range(128):
             # validate walls
             if self.is_wall_valid(action_number):
-                if len(previous_valid_paths) == 0:
+                if not path_available:
                     self.take_action(action_number)
                     path_1 = self.search(self.p1_pos, 1)
                     path_2 = self.search(self.p2_pos, 2)
@@ -59,77 +58,85 @@ def get_available_actions_2(self) -> list:
                         previous_valid_paths_1.append(path_1)
                         previous_valid_paths_2.append(path_2)
                         available_actions.append(action_number)
+                        path_available = True
                     self.undo_action(action_number)
 
                 else:
                     self.take_action(action_number)
 
-                    path_traversed_1 = False
+                    pass_1 = False
                     for path in previous_valid_paths_1:
-                        for idx in range(len(path) - 1):
-                            shift = path[idx + 1] - path[idx]
-                            if path[idx + 1] == -1 or path[idx] == -1:
+                        path_valid = True
+                        for idx in range(len(path)):
+                            if path[idx + 1] == -1:
+                                # print("EN")
                                 break
-                            if shift == -9 and not self.is_direction_valid(
-                                path[idx], 0
-                            ):
-                                break
-                            elif shift == 1 and not self.is_direction_valid(
-                                path[idx], 1
-                            ):
-                                break
-                            elif shift == 9 and not self.is_direction_valid(
-                                path[idx], 2
-                            ):
-                                break
-                            elif shift == -1 and not self.is_direction_valid(
-                                path[idx], 3
-                            ):
-                                break
-                        else:
-                            path_traversed_1 = True
-                            break
 
-                    path_traversed_2 = False
+                            shift = path[idx + 1] - path[idx]
+                            if (
+                                (shift == -9 and self.is_direction_valid(path[idx], 0))
+                                or (
+                                    shift == 1 and self.is_direction_valid(path[idx], 1)
+                                )
+                                or (
+                                    shift == 9 and self.is_direction_valid(path[idx], 2)
+                                )
+                                or (
+                                    shift == -1
+                                    and self.is_direction_valid(path[idx], 3)
+                                )
+                            ):
+                                pass
+                            else:
+                                path_valid = False
+                                break
+                        if path_valid:
+                            pass_1 = True
+                            break
+                    pass_2 = False
                     for path in previous_valid_paths_2:
-                        for idx in range(len(path) - 1):
-                            shift = path[idx + 1] - path[idx]
-                            if path[idx + 1] == -1 or path[idx] == -1:
+                        path_valid = True
+                        for idx in range(len(path)):
+                            if path[idx + 1] == -1:
+                                # print("EN")
                                 break
-                            if shift == -9 and not self.is_direction_valid(
-                                path[idx], 0
-                            ):
-                                break
-                            elif shift == 1 and not self.is_direction_valid(
-                                path[idx], 1
-                            ):
-                                break
-                            elif shift == 9 and not self.is_direction_valid(
-                                path[idx], 2
-                            ):
-                                break
-                            elif shift == -1 and not self.is_direction_valid(
-                                path[idx], 3
-                            ):
-                                break
-                        else:
-                            path_traversed_2 = True
-                            break
 
-                    if path_traversed_1 and path_traversed_2:
-                        available_actions.append(action_number)
-                    else:
-                        if not path_traversed_1:
+                            shift = path[idx + 1] - path[idx]
+                            if (
+                                (shift == -9 and self.is_direction_valid(path[idx], 0))
+                                or (
+                                    shift == 1 and self.is_direction_valid(path[idx], 1)
+                                )
+                                or (
+                                    shift == 9 and self.is_direction_valid(path[idx], 2)
+                                )
+                                or (
+                                    shift == -1
+                                    and self.is_direction_valid(path[idx], 3)
+                                )
+                            ):
+                                pass
+                            else:
+                                path_valid = False
+                                break
+                        if path_valid:
+                            pass_2 = True
+                            break
+                    if (not pass_1) or (not pass_2):
+                        if not pass_1:
                             path_1 = self.search(self.p1_pos, 1)
                             if path_1 is not None:
-                                previous_valid_paths_1.append(path)
-                        if not path_traversed_2:
+                                previous_valid_paths_1.append(path_1)
+                        if not pass_2:
                             path_2 = self.search(self.p2_pos, 2)
                             if path_2 is not None:
-                                previous_valid_paths_2.append(path)
-                        if path_1 is not None and path_2 is not None:
+                                previous_valid_paths_2.append(path_2)
+
+                        if (path_1 is not None) and (path_2 is not None):
                             available_actions.append(action_number)
+
                     self.undo_action(action_number)
+                print(len(previous_valid_paths_1), len(previous_valid_paths_2))
 
     if self.turn == 1:
         in_turn_pos, out_turn_pos = self.p1_pos, self.p2_pos

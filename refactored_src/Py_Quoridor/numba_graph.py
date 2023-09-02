@@ -1,7 +1,7 @@
 import numpy as np
 
-from Quoridor.numba_pathfinding import BFS, DFS, GBFS  # , DFS, GBFS, Astar
-from Quoridor.actions import (
+from Py_Quoridor.numba_pathfinding import BFS, DFS, GBFS  # , DFS, GBFS, Astar
+from Py_Quoridor.actions import (
     get_available_actions_1,
     get_available_actions_2,
 )

@@ -1,19 +1,22 @@
-from Quoridor.vanilla_graph import VanillaPythonStaticGraph, VanillaPythonDynamicGraph
-from Quoridor.numpy_graph import NumpyPythonStaticGraph, NumpyPythonDynamicGraph
-from Quoridor.numba_graph import NumbaPythonStaticGraph, NumbaPythonDynamicGraph
+from Py_Quoridor.vanilla_graph import (
+    VanillaPythonStaticGraph,
+    VanillaPythonDynamicGraph,
+)
+from Py_Quoridor.numpy_graph import NumpyPythonStaticGraph, NumpyPythonDynamicGraph
+from Py_Quoridor.numba_graph import NumbaPythonStaticGraph, NumbaPythonDynamicGraph
 import timeit
-from Quoridor.actions import is_action_available
-from Quoridor.display import output_to_cli
+from Py_Quoridor.actions import is_action_available
+from Py_Quoridor.display import output_to_cli
 
 
-from Quoridor.bitboard import QuoridorBitboardOptim
+from Py_Quoridor.bitboard import QuoridorBitboardOptim
 
 # board = QuoridorBitboardOptim("BFS")
 # moves = board.get_available_actions()
 # print([x for x in range(140) if moves[x]])
 
 
-def test(pathfinding, get_available_actions=1, n=1):
+def test(pathfinding, get_available_actions=1, repeat=1):
     actions = [52, 20, 15, 0, 65, 82, 127, 62, 56, 32, 6, 38, 9]
 
     boards = [
@@ -25,18 +28,19 @@ def test(pathfinding, get_available_actions=1, n=1):
         NumbaPythonStaticGraph(pathfinding),
     ]
     for board in boards:
-        board.p1_pos = 58
-        board.p2_pos = 59
         for a in actions:
             board.take_action(a)
-        print(
-            str(type(board)),
-            timeit.timeit(
-                f"board.get_available_actions({get_available_actions})",
-                globals=locals(),
-                number=n,
-            ),
-        )
+
+        print(str(type(board)))
+        for n in range(repeat):
+            print(
+                timeit.timeit(
+                    f"board.get_available_actions({get_available_actions})",
+                    globals=locals(),
+                    number=1,
+                )
+                * 1e6
+            )
 
 
 import random
@@ -114,5 +118,14 @@ def compare(path1, path2, get1, get2, n=1):
 # board = NumpyPythonStaticGraph("BFS")
 # is_action_available(board, 0)
 
-test("GBFS")
-test("BFS")
+# test("GBFS")
+test("BFS", 1, 1)
+test("BFS", 2, 1)
+
+
+board = VanillaPythonDynamicGraph()
+# board.get_available_actions(2)
+from Py_Quoridor.display import board_to_string
+
+board.take_action(127)
+print(board_to_string(board))

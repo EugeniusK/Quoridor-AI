@@ -1,6 +1,6 @@
 pub mod graph_implementations {
     use crate::VecDeque;
-
+    #[derive(Clone, Copy)]
     pub struct RustStaticGraph {
         pub p1_pos: i16,
         pub p2_pos: i16,
@@ -12,6 +12,7 @@ pub mod graph_implementations {
         pub ver_walls_placed: [bool; 64],
         pub mode: i16,
     }
+    #[derive(Clone, Copy)]
 
     pub struct RustDynamicGraph {
         pub nodes: [[bool; 4]; 81],
@@ -110,6 +111,30 @@ pub mod graph_implementations {
         [true, false, false, true],
     ];
 
+    pub const RUST_STATIC_GRAPH_BLANK: RustStaticGraph = RustStaticGraph {
+        p1_pos: 0,
+        p2_pos: 0,
+        p1_walls_placed: 0,
+        p2_walls_placed: 0,
+        turn: 0,
+        over: false,
+        hor_walls_placed: [false; 64],
+        ver_walls_placed: [false; 64],
+        mode: 0,
+    };
+
+    pub const RUST_DYNAMIC_GRAPH_BLANK: RustDynamicGraph = RustDynamicGraph {
+        nodes: [[false; 4]; 81],
+        p1_pos: 0,
+        p2_pos: 0,
+        p1_walls_placed: 0,
+        p2_walls_placed: 0,
+        turn: 0,
+        over: false,
+        hor_walls_placed: [false; 64],
+        ver_walls_placed: [false; 64],
+        mode: 0,
+    };
     pub trait Graph {
         fn new(mode: i16) -> Self;
         fn take_action(&mut self, action: i16);
@@ -195,7 +220,7 @@ pub mod graph_implementations {
                                 }
                             }
                             path_traversed_2 = false;
-                            for path in &previous_paths_1 {
+                            for path in &previous_paths_2 {
                                 path_valid = true;
                                 for idx in 0..81 {
                                     if path[idx + 1] == -1 {
@@ -223,7 +248,7 @@ pub mod graph_implementations {
                                         previous_paths_1.push(path_1);
                                     }
                                 } else {
-                                    path_1 = [-1; 81];
+                                    path_1 = previous_paths_1[0];
                                 }
                                 if !path_traversed_2 {
                                     path_2 = self.search(2);
@@ -231,8 +256,9 @@ pub mod graph_implementations {
                                         previous_paths_2.push(path_2)
                                     }
                                 } else {
-                                    path_2 = [-1; 81];
+                                    path_2 = previous_paths_2[0];
                                 }
+
                                 if path_1[0] != -1 && path_2[0] != -1 {
                                     available_actions[action_number as usize] = true;
                                 }
@@ -252,6 +278,7 @@ pub mod graph_implementations {
 
             available_actions
         }
+        fn get_turn(&self) -> i16;
         fn is_over(&self) -> bool;
         fn get_pos(&self, player_number: i16) -> i16;
         fn search(&self, player_number: i16) -> [i16; 81];
@@ -639,6 +666,9 @@ pub mod graph_implementations {
             (self.turn == 1 && self.p1_walls_placed < 10)
                 | (self.turn == 2 && self.p2_walls_placed < 10)
         }
+        fn get_turn(&self) -> i16 {
+            self.turn
+        }
         fn is_over(&self) -> bool {
             self.over
         }
@@ -911,6 +941,9 @@ pub mod graph_implementations {
         fn can_place_wall(&self) -> bool {
             (self.turn == 1 && self.p1_walls_placed < 10)
                 | (self.turn == 2 && self.p2_walls_placed < 10)
+        }
+        fn get_turn(&self) -> i16 {
+            self.turn
         }
         fn is_over(&self) -> bool {
             self.over
