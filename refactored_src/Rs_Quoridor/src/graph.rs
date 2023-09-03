@@ -1,6 +1,7 @@
 pub mod graph_implementations {
+    use crate::board::board::QuoridorBoard;
     use crate::VecDeque;
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, Debug)]
     pub struct RustStaticGraph {
         pub p1_pos: i16,
         pub p2_pos: i16,
@@ -12,7 +13,7 @@ pub mod graph_implementations {
         pub ver_walls_placed: [bool; 64],
         pub mode: i16,
     }
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, Debug)]
 
     pub struct RustDynamicGraph {
         pub nodes: [[bool; 4]; 81],
@@ -135,9 +136,10 @@ pub mod graph_implementations {
         ver_walls_placed: [false; 64],
         mode: 0,
     };
-    pub trait Graph {
-        fn new(mode: i16) -> Self;
-        fn take_action(&mut self, action: i16);
+
+    pub trait Graph: QuoridorBoard {
+        // fn new(mode: i16) -> Self;
+        // fn take_action(&mut self, action: i16);
         fn undo_action(&mut self, action: i16);
         fn is_direction_valid(&self, pos: i16, direction: i16) -> bool;
         fn is_wall_valid(&self, wall_number: i16) -> bool;
@@ -164,122 +166,15 @@ pub mod graph_implementations {
         fn get_available_actions_slow(&mut self) -> [bool; 140] {
             let mut available_actions: [bool; 140] = [false; 140];
             for action in 0..140 {
-                if self.is_action_available(action) {
+                if Graph::is_action_available(self, action) {
                     available_actions[action as usize] = true
                 }
             }
             available_actions
         }
-        fn get_available_actions_fast(&mut self) -> [bool; 140] {
-            let mut available_actions: [bool; 140] = [false; 140];
-            if self.can_place_wall() {
-                let mut path_available: bool = false;
-                let mut previous_paths_1: Vec<[i16; 81]> = Vec::new();
-                let mut previous_paths_2: Vec<[i16; 81]> = Vec::new();
-                let mut path_1: [i16; 81];
-                let mut path_2: [i16; 81];
-                let mut path_traversed_1: bool;
-                let mut path_traversed_2: bool;
-                let mut path_valid: bool;
-                let mut shift: i16;
-                for action_number in 0..128 {
-                    if self.is_wall_valid(action_number) {
-                        if !path_available {
-                            self.take_action(action_number);
-                            path_1 = self.search(1);
-                            path_2 = self.search(2);
-                            if path_1[0] != -1 && path_2[0] != -1 {
-                                previous_paths_1.push(path_1);
-                                previous_paths_2.push(path_2);
-                                available_actions[action_number as usize] = true;
-                                path_available = true;
-                            }
-                            self.undo_action(action_number);
-                        } else {
-                            self.take_action(action_number);
-                            path_traversed_1 = false;
-                            for path in &previous_paths_1 {
-                                path_valid = true;
-                                for idx in 0..81 {
-                                    if path[idx + 1] == -1 {
-                                        break;
-                                    }
-                                    shift = path[idx + 1] - path[idx];
-                                    if !((shift == -9 && self.is_direction_valid(path[idx], 0))
-                                        | (shift == 1 && self.is_direction_valid(path[idx], 1))
-                                        | (shift == 9 && self.is_direction_valid(path[idx], 2))
-                                        | (shift == -1 && self.is_direction_valid(path[idx], 3)))
-                                    {
-                                        path_valid = false;
-                                        break;
-                                    }
-                                }
-                                if path_valid {
-                                    path_traversed_1 = true;
-                                    break;
-                                }
-                            }
-                            path_traversed_2 = false;
-                            for path in &previous_paths_2 {
-                                path_valid = true;
-                                for idx in 0..81 {
-                                    if path[idx + 1] == -1 {
-                                        break;
-                                    }
-                                    shift = path[idx + 1] - path[idx];
-                                    if !((shift == -9 && self.is_direction_valid(path[idx], 0))
-                                        | (shift == 1 && self.is_direction_valid(path[idx], 1))
-                                        | (shift == 9 && self.is_direction_valid(path[idx], 2))
-                                        | (shift == -1 && self.is_direction_valid(path[idx], 3)))
-                                    {
-                                        path_valid = false;
-                                        break;
-                                    }
-                                }
-                                if path_valid {
-                                    path_traversed_2 = true;
-                                    break;
-                                }
-                            }
-                            if !path_traversed_1 | !path_traversed_2 {
-                                if !path_traversed_1 {
-                                    path_1 = self.search(1);
-                                    if path_1[0] != -1 {
-                                        previous_paths_1.push(path_1);
-                                    }
-                                } else {
-                                    path_1 = previous_paths_1[0];
-                                }
-                                if !path_traversed_2 {
-                                    path_2 = self.search(2);
-                                    if path_2[0] != -1 {
-                                        previous_paths_2.push(path_2)
-                                    }
-                                } else {
-                                    path_2 = previous_paths_2[0];
-                                }
 
-                                if path_1[0] != -1 && path_2[0] != -1 {
-                                    available_actions[action_number as usize] = true;
-                                }
-                            } else {
-                                available_actions[action_number as usize] = true;
-                            }
-                            self.undo_action(action_number)
-                        }
-                    }
-                }
-            }
-            for action_number in 128..140 {
-                if self.is_move_valid(action_number) {
-                    available_actions[action_number as usize] = true;
-                }
-            }
-
-            available_actions
-        }
-        fn get_turn(&self) -> i16;
-        fn is_over(&self) -> bool;
+        // fn get_turn(&self) -> i16;
+        // fn is_over(&self) -> bool;
         fn get_pos(&self, player_number: i16) -> i16;
         fn search(&self, player_number: i16) -> [i16; 81];
         fn display(&self) -> () {
@@ -481,7 +376,127 @@ pub mod graph_implementations {
             return [-1; 81];
         }
     }
-    impl Graph for RustStaticGraph {
+    impl QuoridorBoard for RustStaticGraph {
+        fn get_available_actions_fast(&mut self) -> [bool; 140] {
+            let mut available_actions: [bool; 140] = [false; 140];
+            if self.can_place_wall() {
+                let mut path_available: bool = false;
+                let mut previous_paths_1: Vec<[i16; 81]> = Vec::new();
+                let mut previous_paths_2: Vec<[i16; 81]> = Vec::new();
+                let mut path_1: [i16; 81];
+                let mut path_2: [i16; 81];
+                let mut path_traversed_1: bool;
+                let mut path_traversed_2: bool;
+                let mut path_valid: bool;
+                let mut shift: i16;
+                for action_number in 0..128 {
+                    if self.is_wall_valid(action_number) {
+                        if !path_available {
+                            self.take_action(action_number);
+                            path_1 = self.search(1);
+                            path_2 = self.search(2);
+                            if path_1[0] != -1 && path_2[0] != -1 {
+                                previous_paths_1.push(path_1);
+                                previous_paths_2.push(path_2);
+                                available_actions[action_number as usize] = true;
+                                path_available = true;
+                            }
+                            self.undo_action(action_number);
+                        } else {
+                            self.take_action(action_number);
+                            path_traversed_1 = false;
+                            for path in &previous_paths_1 {
+                                path_valid = true;
+                                for idx in 0..81 {
+                                    if path[idx + 1] == -1 {
+                                        break;
+                                    }
+                                    shift = path[idx + 1] - path[idx];
+                                    if !((shift == -9 && self.is_direction_valid(path[idx], 0))
+                                        | (shift == 1 && self.is_direction_valid(path[idx], 1))
+                                        | (shift == 9 && self.is_direction_valid(path[idx], 2))
+                                        | (shift == -1 && self.is_direction_valid(path[idx], 3)))
+                                    {
+                                        path_valid = false;
+                                        break;
+                                    }
+                                }
+                                if path_valid {
+                                    path_traversed_1 = true;
+                                    break;
+                                }
+                            }
+                            path_traversed_2 = false;
+                            for path in &previous_paths_2 {
+                                path_valid = true;
+                                for idx in 0..81 {
+                                    if path[idx + 1] == -1 {
+                                        break;
+                                    }
+                                    shift = path[idx + 1] - path[idx];
+                                    if !((shift == -9 && self.is_direction_valid(path[idx], 0))
+                                        | (shift == 1 && self.is_direction_valid(path[idx], 1))
+                                        | (shift == 9 && self.is_direction_valid(path[idx], 2))
+                                        | (shift == -1 && self.is_direction_valid(path[idx], 3)))
+                                    {
+                                        path_valid = false;
+                                        break;
+                                    }
+                                }
+                                if path_valid {
+                                    path_traversed_2 = true;
+                                    break;
+                                }
+                            }
+                            if !path_traversed_1 | !path_traversed_2 {
+                                if !path_traversed_1 {
+                                    path_1 = self.search(1);
+                                    if path_1[0] != -1 {
+                                        previous_paths_1.push(path_1);
+                                    }
+                                } else {
+                                    path_1 = previous_paths_1[0];
+                                }
+                                if !path_traversed_2 {
+                                    path_2 = self.search(2);
+                                    if path_2[0] != -1 {
+                                        previous_paths_2.push(path_2)
+                                    }
+                                } else {
+                                    path_2 = previous_paths_2[0];
+                                }
+
+                                if path_1[0] != -1 && path_2[0] != -1 {
+                                    available_actions[action_number as usize] = true;
+                                }
+                            } else {
+                                available_actions[action_number as usize] = true;
+                            }
+                            self.undo_action(action_number)
+                        }
+                    }
+                }
+            }
+            for action_number in 128..140 {
+                if self.is_move_valid(action_number) {
+                    available_actions[action_number as usize] = true;
+                }
+            }
+
+            available_actions
+        }
+        fn get_valid_actions(&mut self, mode: i16) -> [bool; 140] {
+            if mode == 1 {
+                RustStaticGraph::get_available_actions_slow(self)
+            } else if mode == 2 {
+                RustStaticGraph::get_available_actions_fast(self)
+            } else {
+                RustStaticGraph::get_available_actions_fast(self)
+            }
+        }
+        fn is_action_available(&mut self, action_number: i16) -> bool {
+            Graph::is_action_available(self, action_number)
+        }
         fn new(mode: i16) -> RustStaticGraph {
             RustStaticGraph {
                 p1_pos: 76,
@@ -512,6 +527,10 @@ pub mod graph_implementations {
                 }
             } else {
                 if self.turn == 1 {
+                    if self.p1_pos + GRAPH_SHIFT_ARR[(action - 128) as usize] < 0 {
+                        println!("{} {}", self.p1_pos, action);
+                        self.display();
+                    }
                     self.p1_pos += GRAPH_SHIFT_ARR[(action - 128) as usize];
                     if self.p1_pos <= 8 {
                         self.over = true;
@@ -519,6 +538,10 @@ pub mod graph_implementations {
                         self.turn = 2;
                     }
                 } else {
+                    if self.p2_pos + GRAPH_SHIFT_ARR[(action - 128) as usize] < 0 {
+                        println!("{} {}", self.p2_pos, action);
+                        self.display();
+                    }
                     self.p2_pos += GRAPH_SHIFT_ARR[(action - 128) as usize];
                     if self.p2_pos >= 72 {
                         self.over = true;
@@ -528,6 +551,14 @@ pub mod graph_implementations {
                 }
             }
         }
+        fn get_turn(&self) -> i16 {
+            self.turn
+        }
+        fn is_over(&self) -> bool {
+            self.over
+        }
+    }
+    impl Graph for RustStaticGraph {
         fn undo_action(&mut self, action: i16) {
             if action < 128 {
                 if action < 64 {
@@ -666,12 +697,7 @@ pub mod graph_implementations {
             (self.turn == 1 && self.p1_walls_placed < 10)
                 | (self.turn == 2 && self.p2_walls_placed < 10)
         }
-        fn get_turn(&self) -> i16 {
-            self.turn
-        }
-        fn is_over(&self) -> bool {
-            self.over
-        }
+
         fn get_pos(&self, player_number: i16) -> i16 {
             if player_number == 1 {
                 self.p1_pos
@@ -696,8 +722,127 @@ pub mod graph_implementations {
             }
         }
     }
+    impl QuoridorBoard for RustDynamicGraph {
+        fn get_available_actions_fast(&mut self) -> [bool; 140] {
+            let mut available_actions: [bool; 140] = [false; 140];
+            if self.can_place_wall() {
+                let mut path_available: bool = false;
+                let mut previous_paths_1: Vec<[i16; 81]> = Vec::new();
+                let mut previous_paths_2: Vec<[i16; 81]> = Vec::new();
+                let mut path_1: [i16; 81];
+                let mut path_2: [i16; 81];
+                let mut path_traversed_1: bool;
+                let mut path_traversed_2: bool;
+                let mut path_valid: bool;
+                let mut shift: i16;
+                for action_number in 0..128 {
+                    if self.is_wall_valid(action_number) {
+                        if !path_available {
+                            self.take_action(action_number);
+                            path_1 = self.search(1);
+                            path_2 = self.search(2);
+                            if path_1[0] != -1 && path_2[0] != -1 {
+                                previous_paths_1.push(path_1);
+                                previous_paths_2.push(path_2);
+                                available_actions[action_number as usize] = true;
+                                path_available = true;
+                            }
+                            self.undo_action(action_number);
+                        } else {
+                            self.take_action(action_number);
+                            path_traversed_1 = false;
+                            for path in &previous_paths_1 {
+                                path_valid = true;
+                                for idx in 0..81 {
+                                    if path[idx + 1] == -1 {
+                                        break;
+                                    }
+                                    shift = path[idx + 1] - path[idx];
+                                    if !((shift == -9 && self.is_direction_valid(path[idx], 0))
+                                        | (shift == 1 && self.is_direction_valid(path[idx], 1))
+                                        | (shift == 9 && self.is_direction_valid(path[idx], 2))
+                                        | (shift == -1 && self.is_direction_valid(path[idx], 3)))
+                                    {
+                                        path_valid = false;
+                                        break;
+                                    }
+                                }
+                                if path_valid {
+                                    path_traversed_1 = true;
+                                    break;
+                                }
+                            }
+                            path_traversed_2 = false;
+                            for path in &previous_paths_2 {
+                                path_valid = true;
+                                for idx in 0..81 {
+                                    if path[idx + 1] == -1 {
+                                        break;
+                                    }
+                                    shift = path[idx + 1] - path[idx];
+                                    if !((shift == -9 && self.is_direction_valid(path[idx], 0))
+                                        | (shift == 1 && self.is_direction_valid(path[idx], 1))
+                                        | (shift == 9 && self.is_direction_valid(path[idx], 2))
+                                        | (shift == -1 && self.is_direction_valid(path[idx], 3)))
+                                    {
+                                        path_valid = false;
+                                        break;
+                                    }
+                                }
+                                if path_valid {
+                                    path_traversed_2 = true;
+                                    break;
+                                }
+                            }
+                            if !path_traversed_1 | !path_traversed_2 {
+                                if !path_traversed_1 {
+                                    path_1 = self.search(1);
+                                    if path_1[0] != -1 {
+                                        previous_paths_1.push(path_1);
+                                    }
+                                } else {
+                                    path_1 = previous_paths_1[0];
+                                }
+                                if !path_traversed_2 {
+                                    path_2 = self.search(2);
+                                    if path_2[0] != -1 {
+                                        previous_paths_2.push(path_2)
+                                    }
+                                } else {
+                                    path_2 = previous_paths_2[0];
+                                }
 
-    impl Graph for RustDynamicGraph {
+                                if path_1[0] != -1 && path_2[0] != -1 {
+                                    available_actions[action_number as usize] = true;
+                                }
+                            } else {
+                                available_actions[action_number as usize] = true;
+                            }
+                            self.undo_action(action_number)
+                        }
+                    }
+                }
+            }
+            for action_number in 128..140 {
+                if self.is_move_valid(action_number) {
+                    available_actions[action_number as usize] = true;
+                }
+            }
+
+            available_actions
+        }
+        fn get_valid_actions(&mut self, mode: i16) -> [bool; 140] {
+            if mode == 1 {
+                RustDynamicGraph::get_available_actions_slow(self)
+            } else if mode == 2 {
+                RustDynamicGraph::get_available_actions_fast(self)
+            } else {
+                RustDynamicGraph::get_available_actions_fast(self)
+            }
+        }
+        fn is_action_available(&mut self, action_number: i16) -> bool {
+            Graph::is_action_available(self, action_number)
+        }
         fn new(mode: i16) -> RustDynamicGraph {
             RustDynamicGraph {
                 nodes: [
@@ -837,6 +982,14 @@ pub mod graph_implementations {
                 }
             }
         }
+        fn get_turn(&self) -> i16 {
+            self.turn
+        }
+        fn is_over(&self) -> bool {
+            self.over
+        }
+    }
+    impl Graph for RustDynamicGraph {
         fn undo_action(&mut self, action: i16) {
             if action < 128 {
                 if action < 64 {
@@ -941,12 +1094,6 @@ pub mod graph_implementations {
         fn can_place_wall(&self) -> bool {
             (self.turn == 1 && self.p1_walls_placed < 10)
                 | (self.turn == 2 && self.p2_walls_placed < 10)
-        }
-        fn get_turn(&self) -> i16 {
-            self.turn
-        }
-        fn is_over(&self) -> bool {
-            self.over
         }
         fn get_pos(&self, player_number: i16) -> i16 {
             if player_number == 1 {

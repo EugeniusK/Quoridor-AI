@@ -1,10 +1,10 @@
 pub mod bitboard_implementations {
+    use crate::board::board::QuoridorBoard;
     use crate::VecDeque;
     use std::ops::*;
-
     pub const BITBOARD_SHIFT_ARR: [isize; 12] = [-34, 2, 34, -2, -68, -32, 4, 36, 68, 32, -4, -36];
 
-    #[derive(Clone, Copy, PartialEq)]
+    #[derive(Clone, Copy, PartialEq, Debug)]
     pub struct QuoridorBitboard {
         // Bits in bitboard_0 are for index 0~63 and so on
         pub bitboard_0: u64,
@@ -13,7 +13,7 @@ pub mod bitboard_implementations {
         pub bitboard_3: u64,
         pub bitboard_4: u64,
     }
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, Debug)]
 
     pub struct RustPartialBitboard {
         pub p1: QuoridorBitboard,
@@ -25,7 +25,7 @@ pub mod bitboard_implementations {
         pub over: bool,
         pub mode: i16,
     }
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, Debug)]
 
     pub struct RustFullBitboard {
         pub p1: QuoridorBitboard,
@@ -92,9 +92,9 @@ pub mod bitboard_implementations {
         bitboard_3: 18442240439722180605,
         bitboard_4: 18446462594437873664,
     };
-    pub trait Bitboard {
-        fn new(mode: i16) -> Self;
-        fn take_action(&mut self, action: i16);
+    pub trait Bitboard: QuoridorBoard {
+        // fn new(mode: i16) -> Self;
+        // fn take_action(&mut self, action: i16);
         fn undo_action(&mut self, action: i16);
         fn is_direction_valid(&self, board: QuoridorBitboard, direction: i16) -> bool;
         fn is_wall_valid(&self, wall_number: i16) -> bool;
@@ -120,89 +120,13 @@ pub mod bitboard_implementations {
         fn get_available_actions_slow(&mut self) -> [bool; 140] {
             let mut available_actions: [bool; 140] = [false; 140];
             for action in 0..140 {
-                if self.is_action_available(action) {
+                if Bitboard::is_action_available(self, action) {
                     available_actions[action as usize] = true
                 }
             }
             available_actions
         }
-        fn get_available_actions_fast(&mut self) -> [bool; 140] {
-            let mut available_actions: [bool; 140] = [false; 140];
-            if self.can_place_wall() {
-                let mut path_available: bool = false;
-                let mut previous_paths_1: Vec<QuoridorBitboard> = Vec::new();
-                let mut previous_paths_2: Vec<QuoridorBitboard> = Vec::new();
-                let mut path_1: QuoridorBitboard;
-                let mut path_2: QuoridorBitboard;
-                let mut path_traversed_1: bool;
-                let mut path_traversed_2: bool;
-                for action_number in 0..128 {
-                    if self.is_wall_valid(action_number) {
-                        if !path_available {
-                            self.take_action(action_number);
-                            path_1 = self.search(1);
-                            path_2 = self.search(2);
-                            if path_1 != BITBOARD_BLANK && path_2 != BITBOARD_BLANK {
-                                previous_paths_1.push(path_1);
-                                previous_paths_2.push(path_2);
-                                available_actions[action_number as usize] = true;
-                                path_available = true;
-                            }
-                            self.undo_action(action_number);
-                        } else {
-                            self.take_action(action_number);
-                            path_traversed_1 = false;
-                            for path in &previous_paths_1 {
-                                if *path & self.get_walls() == BITBOARD_BLANK {
-                                    path_traversed_1 = true;
-                                    break;
-                                }
-                            }
-                            path_traversed_2 = false;
-                            for path in &previous_paths_2 {
-                                if *path & self.get_walls() == BITBOARD_BLANK {
-                                    path_traversed_2 = true;
-                                    break;
-                                }
-                            }
-                            if !path_traversed_1 | !path_traversed_2 {
-                                if !path_traversed_1 {
-                                    path_1 = self.search(1);
-                                    if path_1 != BITBOARD_BLANK {
-                                        previous_paths_1.push(path_1);
-                                    }
-                                } else {
-                                    path_1 = previous_paths_1[0];
-                                }
-                                if !path_traversed_2 {
-                                    path_2 = self.search(2);
-                                    if path_2 != BITBOARD_BLANK {
-                                        previous_paths_2.push(path_2)
-                                    }
-                                } else {
-                                    path_2 = previous_paths_2[0];
-                                }
-                                if path_1 != BITBOARD_BLANK && path_2 != BITBOARD_BLANK {
-                                    available_actions[action_number as usize] = true;
-                                }
-                            } else {
-                                available_actions[action_number as usize] = true;
-                            }
-                            self.undo_action(action_number)
-                        }
-                    }
-                }
-            }
-            for action_number in 128..140 {
-                if self.is_move_valid(action_number) {
-                    available_actions[action_number as usize] = true;
-                }
-            }
 
-            available_actions
-        }
-        fn get_turn(&self) -> i16;
-        fn is_over(&self) -> bool;
         fn get_pos(&self, player_number: i16) -> i16;
         fn get_walls(&self) -> QuoridorBitboard;
         fn search(&self, player_number: i16) -> QuoridorBitboard;
@@ -715,7 +639,95 @@ pub mod bitboard_implementations {
             ((self.walls_and_metadata.bitboard_4 >> 10) & 0x000000000000000F) as i16
         }
     }
-    impl Bitboard for RustFullBitboard {
+
+    impl QuoridorBoard for RustFullBitboard {
+        fn get_available_actions_fast(&mut self) -> [bool; 140] {
+            let mut available_actions: [bool; 140] = [false; 140];
+            if self.can_place_wall() {
+                let mut path_available: bool = false;
+                let mut previous_paths_1: Vec<QuoridorBitboard> = Vec::new();
+                let mut previous_paths_2: Vec<QuoridorBitboard> = Vec::new();
+                let mut path_1: QuoridorBitboard;
+                let mut path_2: QuoridorBitboard;
+                let mut path_traversed_1: bool;
+                let mut path_traversed_2: bool;
+                for action_number in 0..128 {
+                    if self.is_wall_valid(action_number) {
+                        if !path_available {
+                            self.take_action(action_number);
+                            path_1 = self.search(1);
+                            path_2 = self.search(2);
+                            if path_1 != BITBOARD_BLANK && path_2 != BITBOARD_BLANK {
+                                previous_paths_1.push(path_1);
+                                previous_paths_2.push(path_2);
+                                available_actions[action_number as usize] = true;
+                                path_available = true;
+                            }
+                            self.undo_action(action_number);
+                        } else {
+                            self.take_action(action_number);
+                            path_traversed_1 = false;
+                            for path in &previous_paths_1 {
+                                if *path & self.get_walls() == BITBOARD_BLANK {
+                                    path_traversed_1 = true;
+                                    break;
+                                }
+                            }
+                            path_traversed_2 = false;
+                            for path in &previous_paths_2 {
+                                if *path & self.get_walls() == BITBOARD_BLANK {
+                                    path_traversed_2 = true;
+                                    break;
+                                }
+                            }
+                            if !path_traversed_1 | !path_traversed_2 {
+                                if !path_traversed_1 {
+                                    path_1 = self.search(1);
+                                    if path_1 != BITBOARD_BLANK {
+                                        previous_paths_1.push(path_1);
+                                    }
+                                } else {
+                                    path_1 = previous_paths_1[0];
+                                }
+                                if !path_traversed_2 {
+                                    path_2 = self.search(2);
+                                    if path_2 != BITBOARD_BLANK {
+                                        previous_paths_2.push(path_2)
+                                    }
+                                } else {
+                                    path_2 = previous_paths_2[0];
+                                }
+                                if path_1 != BITBOARD_BLANK && path_2 != BITBOARD_BLANK {
+                                    available_actions[action_number as usize] = true;
+                                }
+                            } else {
+                                available_actions[action_number as usize] = true;
+                            }
+                            self.undo_action(action_number)
+                        }
+                    }
+                }
+            }
+            for action_number in 128..140 {
+                if self.is_move_valid(action_number) {
+                    available_actions[action_number as usize] = true;
+                }
+            }
+
+            available_actions
+        }
+        fn get_valid_actions(&mut self, mode: i16) -> [bool; 140] {
+            if mode == 1 {
+                RustFullBitboard::get_available_actions_slow(self)
+            } else if mode == 2 {
+                RustFullBitboard::get_available_actions_fast(self)
+            } else {
+                RustFullBitboard::get_available_actions_fast(self)
+            }
+        }
+        fn is_action_available(&mut self, action_number: i16) -> bool {
+            Bitboard::is_action_available(self, action_number)
+        }
         fn new(mode: i16) -> RustFullBitboard {
             let mut board = RustFullBitboard {
                 p1: QuoridorBitboard::new(1),
@@ -725,7 +737,6 @@ pub mod bitboard_implementations {
             board.walls_and_metadata.bitboard_4 = (mode as u64) << 10;
             board
         }
-
         fn take_action(&mut self, action: i16) {
             if action < 128 {
                 if action < 64 {
@@ -769,6 +780,14 @@ pub mod bitboard_implementations {
                 }
             }
         }
+        fn get_turn(&self) -> i16 {
+            self.get_turn()
+        }
+        fn is_over(&self) -> bool {
+            self.get_over()
+        }
+    }
+    impl Bitboard for RustFullBitboard {
         fn undo_action(&mut self, action: i16) {
             if action < 128 {
                 if action < 64 {
@@ -884,12 +903,7 @@ pub mod bitboard_implementations {
             (self.get_turn() == 1 && self.get_walls_left(1) < 10)
                 | (self.get_turn() == 2 && self.get_walls_left(2) < 10)
         }
-        fn get_turn(&self) -> i16 {
-            self.get_turn()
-        }
-        fn is_over(&self) -> bool {
-            self.get_over()
-        }
+
         fn get_pos(&self, player_number: i16) -> i16 {
             if player_number == 1 {
                 self.p1.hash() as i16
@@ -917,7 +931,94 @@ pub mod bitboard_implementations {
             }
         }
     }
-    impl Bitboard for RustPartialBitboard {
+    impl QuoridorBoard for RustPartialBitboard {
+        fn get_available_actions_fast(&mut self) -> [bool; 140] {
+            let mut available_actions: [bool; 140] = [false; 140];
+            if self.can_place_wall() {
+                let mut path_available: bool = false;
+                let mut previous_paths_1: Vec<QuoridorBitboard> = Vec::new();
+                let mut previous_paths_2: Vec<QuoridorBitboard> = Vec::new();
+                let mut path_1: QuoridorBitboard;
+                let mut path_2: QuoridorBitboard;
+                let mut path_traversed_1: bool;
+                let mut path_traversed_2: bool;
+                for action_number in 0..128 {
+                    if self.is_wall_valid(action_number) {
+                        if !path_available {
+                            self.take_action(action_number);
+                            path_1 = self.search(1);
+                            path_2 = self.search(2);
+                            if path_1 != BITBOARD_BLANK && path_2 != BITBOARD_BLANK {
+                                previous_paths_1.push(path_1);
+                                previous_paths_2.push(path_2);
+                                available_actions[action_number as usize] = true;
+                                path_available = true;
+                            }
+                            self.undo_action(action_number);
+                        } else {
+                            self.take_action(action_number);
+                            path_traversed_1 = false;
+                            for path in &previous_paths_1 {
+                                if *path & self.get_walls() == BITBOARD_BLANK {
+                                    path_traversed_1 = true;
+                                    break;
+                                }
+                            }
+                            path_traversed_2 = false;
+                            for path in &previous_paths_2 {
+                                if *path & self.get_walls() == BITBOARD_BLANK {
+                                    path_traversed_2 = true;
+                                    break;
+                                }
+                            }
+                            if !path_traversed_1 | !path_traversed_2 {
+                                if !path_traversed_1 {
+                                    path_1 = self.search(1);
+                                    if path_1 != BITBOARD_BLANK {
+                                        previous_paths_1.push(path_1);
+                                    }
+                                } else {
+                                    path_1 = previous_paths_1[0];
+                                }
+                                if !path_traversed_2 {
+                                    path_2 = self.search(2);
+                                    if path_2 != BITBOARD_BLANK {
+                                        previous_paths_2.push(path_2)
+                                    }
+                                } else {
+                                    path_2 = previous_paths_2[0];
+                                }
+                                if path_1 != BITBOARD_BLANK && path_2 != BITBOARD_BLANK {
+                                    available_actions[action_number as usize] = true;
+                                }
+                            } else {
+                                available_actions[action_number as usize] = true;
+                            }
+                            self.undo_action(action_number)
+                        }
+                    }
+                }
+            }
+            for action_number in 128..140 {
+                if self.is_move_valid(action_number) {
+                    available_actions[action_number as usize] = true;
+                }
+            }
+
+            available_actions
+        }
+        fn get_valid_actions(&mut self, mode: i16) -> [bool; 140] {
+            if mode == 1 {
+                RustPartialBitboard::get_available_actions_slow(self)
+            } else if mode == 2 {
+                RustPartialBitboard::get_available_actions_fast(self)
+            } else {
+                RustPartialBitboard::get_available_actions_fast(self)
+            }
+        }
+        fn is_action_available(&mut self, action_number: i16) -> bool {
+            Bitboard::is_action_available(self, action_number)
+        }
         fn new(mode: i16) -> RustPartialBitboard {
             RustPartialBitboard {
                 p1: QuoridorBitboard::new(1),
@@ -974,6 +1075,15 @@ pub mod bitboard_implementations {
                 }
             }
         }
+        fn get_turn(&self) -> i16 {
+            self.turn
+        }
+
+        fn is_over(&self) -> bool {
+            self.over
+        }
+    }
+    impl Bitboard for RustPartialBitboard {
         fn undo_action(&mut self, action: i16) {
             if action < 128 {
                 if action < 64 {
@@ -1089,13 +1199,7 @@ pub mod bitboard_implementations {
             (self.turn == 1 && self.p1_walls_placed < 10)
                 | (self.turn == 2 && self.p2_walls_placed < 10)
         }
-        fn get_turn(&self) -> i16 {
-            self.turn
-        }
 
-        fn is_over(&self) -> bool {
-            self.over
-        }
         fn get_pos(&self, player_number: i16) -> i16 {
             if player_number == 1 {
                 self.p1.hash() as i16

@@ -92,3 +92,196 @@ println!("SHIFT OPERATOR OF 1 WITH ASSIGNMENT");
 
     let mut board = QuoridorBitboard::new();
     board.set_bit(63);
+
+
+
+
+    extern crate rand;
+extern crate rand_chacha;
+use ordered_float::NotNan;
+use rand::prelude::*;
+pub use rand_chacha::ChaCha8Rng;
+pub use std::collections::VecDeque;
+pub use std::rc::Rc;
+use std::time::{Duration, Instant};
+pub mod board;
+pub use board::board::QuoridorBoard;
+
+pub use std::mem;
+
+pub mod bitboard;
+pub use bitboard::bitboard_implementations::Bitboard;
+pub use bitboard::bitboard_implementations::QuoridorBitboard;
+pub use bitboard::bitboard_implementations::RustFullBitboard;
+pub use bitboard::bitboard_implementations::RustPartialBitboard;
+
+pub mod graph;
+pub use graph::graph_implementations::Graph;
+pub use graph::graph_implementations::RustDynamicGraph;
+pub use graph::graph_implementations::RustStaticGraph;
+
+pub mod mcts;
+
+fn main() {
+    #[derive(Clone, Debug, Copy)]
+    pub struct MctsNode {
+        idx: usize,
+        parent_idx: usize,
+        action_taken: i16,
+
+        simulations_won: f32,
+        simulations_run: f32,
+
+        valid_actions: [bool; 140],
+        valid_actions_generated: bool,
+        children_idx: [usize; 140],
+
+        is_leaf: bool,
+    }
+
+    let mut a: MctsNode = MctsNode {
+        idx: 0,
+        parent_idx: 0,
+        action_taken: -1,
+
+        simulations_run: 0.0,
+        simulations_won: 0.0,
+
+        valid_actions: [false; 140],
+        valid_actions_generated: false,
+        children_idx: [0; 140],
+
+        is_leaf: false,
+    };
+
+    pub struct MctsTree<T: QuoridorBoard + Copy> {
+        nodes: Vec<MctsNode>,
+        exploration_weight: f32,
+    }
+
+    impl MctsTree<T: QuoridorBoard + Copy> {
+        fn new() -> MctsTree {
+            MctsTree {
+                nodes: vec![MctsNode {
+                    idx: 0,
+                    parent_idx: 0,
+                    action_taken: -1,
+
+                    simulations_run: 0.0,
+                    simulations_won: 0.0,
+
+                    valid_actions: [false; 140],
+                    valid_actions_generated: false,
+                    children_idx: [0; 140],
+
+                    is_leaf: false,
+                }],
+                exploration_weight: 2.0,
+            }
+        }
+        fn clear(&mut self) -> () {
+            self.nodes.clear()
+        }
+
+        fn select(&self) -> usize {
+            let mut selected_idx: usize = 1;
+            let calculate_UCT = |idx: &usize| -> NotNan<f32> {
+                if self.nodes[*idx].simulations_run == 0.0 {
+                    match NotNan::new(f32::INFINITY) {
+                        Ok(result) => return result,
+                        Err(_) => panic!("NAN in MCTS calculation"),
+                    }
+                }
+
+                match NotNan::new(
+                    self.nodes[*idx].simulations_won / self.nodes[*idx].simulations_run
+                        + (self.exploration_weight
+                            * self.nodes[self.nodes[*idx].parent_idx].simulations_run
+                            / self.nodes[*idx].simulations_run)
+                            .sqrt(),
+                ) {
+                    Ok(result) => return result,
+                    Err(_) => panic!("NAN in MCTS calculation"),
+                }
+            };
+            println!(
+                "{:?}",
+                self.nodes[selected_idx]
+                    .children_idx
+                    .into_iter()
+                    .filter(|&x| x != 0)
+                    .max_by_key(calculate_UCT)
+            );
+            while self.nodes[selected_idx].valid_actions_generated {
+                match self.nodes[selected_idx]
+                    .children_idx
+                    .into_iter()
+                    .filter(|&x| x != 0)
+                    .max_by_key(calculate_UCT)
+                {
+                    Some(idx) => selected_idx = idx,
+                    None => panic!("NO CHILD NODE"),
+                }
+            }
+
+            return selected_idx;
+        }
+        fn expand(&mut self, idx: usize) {
+            let mut new_idx: usize;
+            if self.nodes[idx].board_state.is_over() {
+                panic!("CALLED EXPAND ON LEAF NODE")
+            } else if idx == 0 {
+                panic!("CALLED ON NULL")
+            } else if !self.nodes[idx].valid_actions_generated {
+                self.nodes[idx].valid_actions = self.nodes[idx].board_state.get_valid_actions(2);
+                self.nodes[idx].valid_actions_generated = true;
+                for action in 0..140 {
+                    if self.nodes[idx].valid_actions[action] {
+                        new_idx = self.nodes.len();
+
+                        self.nodes.push(MctsNode {
+                            board_state: self.nodes[idx].board_state,
+                            simulations_won: 0.0,
+                            simulations_run: 0.0,
+                            valid_actions: [false; 140],
+                            valid_actions_generated: false,
+                            parent_idx: idx,
+                            idx: new_idx,
+                            children_idx: [0; 140],
+                            is_leaf: true,
+                        });
+                        self.nodes[new_idx].board_state.take_action(action as i16);
+                        self.nodes[idx].children_idx[action] = new_idx;
+                    }
+                }
+            }
+        }
+        fn simulate(&self, idx: usize) -> f32 {
+            let mut board = self.nodes[idx].board_state;
+            let mut action: i16;
+            while !board.is_over() {
+                action = board.get_random_action();
+                board.take_action(action);
+            }
+            if board.get_turn() == self.nodes[idx].board_state.get_turn() {
+                1.0
+            } else {
+                0.0
+            }
+        }
+        fn backpropagate(&mut self, mut idx: usize, mut result: f32) {
+            let mut parent_idx = self.nodes[idx].parent_idx;
+            while idx != 0 {
+                self.nodes[idx].simulations_run += 1.0;
+                self.nodes[idx].simulations_won += result;
+                result = 1.0 - result;
+                idx = parent_idx;
+                parent_idx = self.nodes[parent_idx].parent_idx;
+            }
+        }
+    }
+    // a.board_state.take_action(128);
+    let mut tree: MctsTree = MctsTree::new();
+
+    // println!("{:?}", mem::size_of_val(&a) * tree.nodes.len() / 1000000);
+}
