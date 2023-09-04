@@ -3,7 +3,6 @@ pub mod mcts_implementation {
     extern crate rand_chacha;
     use crate::board::board::QuoridorBoard;
     use ordered_float::NotNan;
-    use rand::prelude::*;
     pub use rand_chacha::ChaCha8Rng;
 
     #[derive(Clone, Debug, Copy)]
@@ -52,7 +51,7 @@ pub mod mcts_implementation {
                     simulations_won: 0.0,
 
                     children_action_idx: vec![],
-                    actions_not_performed: arr_actions_to_vec(board.get_available_actions_fast()),
+                    actions_not_performed: board.get_available_actions_fast(),
 
                     is_leaf: true,
                 }],
@@ -76,7 +75,7 @@ pub mod mcts_implementation {
                 simulations_won: 0.0,
 
                 children_action_idx: vec![],
-                actions_not_performed: arr_actions_to_vec(board.get_available_actions_fast()),
+                actions_not_performed: board.get_available_actions_fast(),
 
                 is_leaf: true,
             }];
@@ -175,9 +174,8 @@ pub mod mcts_implementation {
                         simulations_won: 0.0,
 
                         children_action_idx: vec![],
-                        actions_not_performed: arr_actions_to_vec(
-                            board_state.get_available_actions_fast(),
-                        ),
+                        actions_not_performed: board_state.get_available_actions_fast(),
+
                         is_leaf: true,
                     });
                 }

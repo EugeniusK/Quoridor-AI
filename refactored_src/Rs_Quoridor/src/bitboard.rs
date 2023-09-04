@@ -117,11 +117,11 @@ pub mod bitboard_implementations {
                 return self.is_move_valid(action_number);
             }
         }
-        fn get_available_actions_slow(&mut self) -> [bool; 140] {
-            let mut available_actions: [bool; 140] = [false; 140];
+        fn get_available_actions_slow(&mut self) -> Vec<i16> {
+            let mut available_actions: Vec<i16> = vec![];
             for action in 0..140 {
                 if Bitboard::is_action_available(self, action) {
-                    available_actions[action as usize] = true
+                    available_actions.push(action);
                 }
             }
             available_actions
@@ -641,8 +641,8 @@ pub mod bitboard_implementations {
     }
 
     impl QuoridorBoard for RustFullBitboard {
-        fn get_available_actions_fast(&mut self) -> [bool; 140] {
-            let mut available_actions: [bool; 140] = [false; 140];
+        fn get_available_actions_fast(&mut self) -> Vec<i16> {
+            let mut available_actions: Vec<i16> = vec![];
             if self.can_place_wall() {
                 let mut path_available: bool = false;
                 let mut previous_paths_1: Vec<QuoridorBitboard> = Vec::new();
@@ -660,7 +660,7 @@ pub mod bitboard_implementations {
                             if path_1 != BITBOARD_BLANK && path_2 != BITBOARD_BLANK {
                                 previous_paths_1.push(path_1);
                                 previous_paths_2.push(path_2);
-                                available_actions[action_number as usize] = true;
+                                available_actions.push(action_number);
                                 path_available = true;
                             }
                             self.undo_action(action_number);
@@ -698,10 +698,10 @@ pub mod bitboard_implementations {
                                     path_2 = previous_paths_2[0];
                                 }
                                 if path_1 != BITBOARD_BLANK && path_2 != BITBOARD_BLANK {
-                                    available_actions[action_number as usize] = true;
+                                    available_actions.push(action_number);
                                 }
                             } else {
-                                available_actions[action_number as usize] = true;
+                                available_actions.push(action_number);
                             }
                             self.undo_action(action_number)
                         }
@@ -710,13 +710,13 @@ pub mod bitboard_implementations {
             }
             for action_number in 128..140 {
                 if self.is_move_valid(action_number) {
-                    available_actions[action_number as usize] = true;
+                    available_actions.push(action_number);
                 }
             }
 
             available_actions
         }
-        fn get_valid_actions(&mut self, mode: i16) -> [bool; 140] {
+        fn get_valid_actions(&mut self, mode: i16) -> Vec<i16> {
             if mode == 1 {
                 RustFullBitboard::get_available_actions_slow(self)
             } else if mode == 2 {
@@ -932,8 +932,8 @@ pub mod bitboard_implementations {
         }
     }
     impl QuoridorBoard for RustPartialBitboard {
-        fn get_available_actions_fast(&mut self) -> [bool; 140] {
-            let mut available_actions: [bool; 140] = [false; 140];
+        fn get_available_actions_fast(&mut self) -> Vec<i16> {
+            let mut available_actions: Vec<i16> = vec![];
             if self.can_place_wall() {
                 let mut path_available: bool = false;
                 let mut previous_paths_1: Vec<QuoridorBitboard> = Vec::new();
@@ -951,7 +951,7 @@ pub mod bitboard_implementations {
                             if path_1 != BITBOARD_BLANK && path_2 != BITBOARD_BLANK {
                                 previous_paths_1.push(path_1);
                                 previous_paths_2.push(path_2);
-                                available_actions[action_number as usize] = true;
+                                available_actions.push(action_number);
                                 path_available = true;
                             }
                             self.undo_action(action_number);
@@ -989,10 +989,10 @@ pub mod bitboard_implementations {
                                     path_2 = previous_paths_2[0];
                                 }
                                 if path_1 != BITBOARD_BLANK && path_2 != BITBOARD_BLANK {
-                                    available_actions[action_number as usize] = true;
+                                    available_actions.push(action_number);
                                 }
                             } else {
-                                available_actions[action_number as usize] = true;
+                                available_actions.push(action_number);
                             }
                             self.undo_action(action_number)
                         }
@@ -1001,13 +1001,13 @@ pub mod bitboard_implementations {
             }
             for action_number in 128..140 {
                 if self.is_move_valid(action_number) {
-                    available_actions[action_number as usize] = true;
+                    available_actions.push(action_number);
                 }
             }
 
             available_actions
         }
-        fn get_valid_actions(&mut self, mode: i16) -> [bool; 140] {
+        fn get_valid_actions(&mut self, mode: i16) -> Vec<i16> {
             if mode == 1 {
                 RustPartialBitboard::get_available_actions_slow(self)
             } else if mode == 2 {

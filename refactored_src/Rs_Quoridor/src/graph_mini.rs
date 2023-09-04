@@ -1,39 +1,37 @@
-pub mod graph_implementations {
-    use crate::board::board::QuoridorBoard;
+pub mod mini_graph_implementations {
+    use crate::board::board::QuoridorBoardMini;
     use crate::VecDeque;
+
     #[derive(Clone, Copy, Debug)]
-    pub struct RustStaticGraph {
+    pub struct RustStaticGraphMini {
         pub p1_pos: i16,
         pub p2_pos: i16,
         pub p1_walls_placed: i16,
         pub p2_walls_placed: i16,
         pub turn: i16,
         pub over: bool,
-        pub hor_walls_placed: [bool; 64],
-        pub ver_walls_placed: [bool; 64],
+        pub hor_walls_placed: [bool; 16],
+        pub ver_walls_placed: [bool; 16],
         pub mode: i16,
     }
+
     #[derive(Clone, Copy, Debug)]
 
-    pub struct RustDynamicGraph {
-        pub nodes: [[bool; 4]; 81],
+    pub struct RustDynamicGraphMini {
+        pub nodes: [[bool; 4]; 25],
         pub p1_pos: i16,
         pub p2_pos: i16,
         pub p1_walls_placed: i16,
         pub p2_walls_placed: i16,
         pub turn: i16,
         pub over: bool,
-        pub hor_walls_placed: [bool; 64],
-        pub ver_walls_placed: [bool; 64],
+        pub hor_walls_placed: [bool; 16],
+        pub ver_walls_placed: [bool; 16],
         pub mode: i16,
     }
-    pub const GRAPH_SHIFT_ARR: [i16; 12] = [-9, 1, 9, -1, -18, -8, 2, 10, 18, 8, -2, -10];
-    pub const GRAPH_ADJ_LIST: [[bool; 4]; 81] = [
+    pub const GRAPH_SHIFT_ARR: [i16; 12] = [-5, 1, 5, -1, -10, -4, 2, 6, 10, 4, -2, -6];
+    pub const GRAPH_ADJ_LIST: [[bool; 4]; 25] = [
         [false, true, true, false],
-        [false, true, true, true],
-        [false, true, true, true],
-        [false, true, true, true],
-        [false, true, true, true],
         [false, true, true, true],
         [false, true, true, true],
         [false, true, true, true],
@@ -42,61 +40,13 @@ pub mod graph_implementations {
         [true, true, true, true],
         [true, true, true, true],
         [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
         [true, false, true, true],
         [true, true, true, false],
         [true, true, true, true],
         [true, true, true, true],
         [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
         [true, false, true, true],
         [true, true, true, false],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, false, true, true],
-        [true, true, true, false],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, false, true, true],
-        [true, true, true, false],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, false, true, true],
-        [true, true, true, false],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, false, true, true],
-        [true, true, true, false],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
-        [true, true, true, true],
         [true, true, true, true],
         [true, true, true, true],
         [true, true, true, true],
@@ -105,48 +55,42 @@ pub mod graph_implementations {
         [true, true, false, true],
         [true, true, false, true],
         [true, true, false, true],
-        [true, true, false, true],
-        [true, true, false, true],
-        [true, true, false, true],
-        [true, true, false, true],
         [true, false, false, true],
     ];
 
-    pub const RUST_STATIC_GRAPH_BLANK: RustStaticGraph = RustStaticGraph {
+    pub const RUST_STATIC_GRAPH_BLANK: RustStaticGraphMini = RustStaticGraphMini {
         p1_pos: 0,
         p2_pos: 0,
         p1_walls_placed: 0,
         p2_walls_placed: 0,
         turn: 0,
         over: false,
-        hor_walls_placed: [false; 64],
-        ver_walls_placed: [false; 64],
+        hor_walls_placed: [false; 16],
+        ver_walls_placed: [false; 16],
         mode: 0,
     };
 
-    pub const RUST_DYNAMIC_GRAPH_BLANK: RustDynamicGraph = RustDynamicGraph {
-        nodes: [[false; 4]; 81],
+    pub const RUST_DYNAMIC_GRAPH_BLANK: RustDynamicGraphMini = RustDynamicGraphMini {
+        nodes: [[false; 4]; 25],
         p1_pos: 0,
         p2_pos: 0,
         p1_walls_placed: 0,
         p2_walls_placed: 0,
         turn: 0,
         over: false,
-        hor_walls_placed: [false; 64],
-        ver_walls_placed: [false; 64],
+        hor_walls_placed: [false; 16],
+        ver_walls_placed: [false; 16],
         mode: 0,
     };
 
-    pub trait Graph: QuoridorBoard {
-        // fn new(mode: i16) -> Self;
-        // fn take_action(&mut self, action: i16);
+    pub trait GraphMini: QuoridorBoardMini {
         fn undo_action(&mut self, action: i16);
         fn is_direction_valid(&self, pos: i16, direction: i16) -> bool;
         fn is_wall_valid(&self, wall_number: i16) -> bool;
         fn is_move_valid(&self, move_number: i16) -> bool;
         fn can_place_wall(&self) -> bool;
         fn is_action_available(&mut self, action_number: i16) -> bool {
-            if action_number < 128 {
+            if action_number < 32 {
                 if self.can_place_wall() && self.is_wall_valid(action_number) {
                     self.take_action(action_number);
                     let path_1 = self.search(1);
@@ -165,8 +109,8 @@ pub mod graph_implementations {
         }
         fn get_available_actions_slow(&mut self) -> Vec<i16> {
             let mut available_actions: Vec<i16> = vec![];
-            for action in 0..140 {
-                if Graph::is_action_available(self, action) {
+            for action in 0..44 {
+                if GraphMini::is_action_available(self, action) {
                     available_actions.push(action);
                 }
             }
@@ -176,14 +120,14 @@ pub mod graph_implementations {
         // fn get_turn(&self) -> i16;
         // fn is_over(&self) -> bool;
         fn get_pos(&self, player_number: i16) -> i16;
-        fn search(&self, player_number: i16) -> [i16; 81];
+        fn search(&self, player_number: i16) -> [i16; 25];
         fn display(&self) -> () {
             let mut output_board = String::new();
             let (mut north, mut east, mut south, mut west): (bool, bool, bool, bool);
             let mut pos: i16;
-            for row in 0..9 {
-                for col in 0..9 {
-                    pos = row * 9 + col;
+            for row in 0..5 {
+                for col in 0..5 {
+                    pos = row * 5 + col;
                     if self.get_pos(1) == pos {
                         output_board.push_str(" 1 ")
                     } else if self.get_pos(2) == pos {
@@ -192,7 +136,7 @@ pub mod graph_implementations {
                         output_board.push_str("   ")
                     }
 
-                    if col != 8 {
+                    if col != 4 {
                         if self.is_direction_valid(pos, 1) {
                             output_board.push('\u{2502}')
                         } else {
@@ -202,18 +146,18 @@ pub mod graph_implementations {
                 }
                 output_board.push('\n');
 
-                for col in 0..9 {
-                    pos = row * 9 + col;
-                    if row != 8 {
+                for col in 0..5 {
+                    pos = row * 5 + col;
+                    if row != 4 {
                         if self.is_direction_valid(pos, 2) {
                             output_board.push_str("\u{2500}\u{2500}\u{2500}")
                         } else {
                             output_board.push_str("\u{2501}\u{2501}\u{2501}")
                         }
-                        if col != 8 {
+                        if col != 4 {
                             north = !self.is_direction_valid(pos, 1);
                             east = !self.is_direction_valid(pos + 1, 2);
-                            south = !self.is_direction_valid(pos + 9, 1);
+                            south = !self.is_direction_valid(pos + 5, 1);
                             west = !self.is_direction_valid(pos, 2);
                             if north == false && east == false && south == false && west == false {
                                 output_board.push('\u{253c}')
@@ -312,15 +256,15 @@ pub mod graph_implementations {
             }
             println!("{}", output_board);
         }
-        fn bfs(&self, start_pos: i16, player_number: i16) -> [i16; 81] {
-            let mut frontier: VecDeque<i16> = VecDeque::with_capacity(81);
+        fn bfs(&self, start_pos: i16, player_number: i16) -> [i16; 25] {
+            let mut frontier: VecDeque<i16> = VecDeque::with_capacity(25);
             frontier.push_back(start_pos);
 
-            let mut explored: [bool; 81] = [false; 81];
+            let mut explored: [bool; 25] = [false; 25];
 
-            let mut in_frontier: [bool; 81] = [false; 81];
+            let mut in_frontier: [bool; 25] = [false; 25];
 
-            let mut parent: [i16; 81] = [-1; 81];
+            let mut parent: [i16; 25] = [-1; 25];
             let mut pos: i16;
             let mut new_pos: i16;
             while frontier.len() != 0 {
@@ -340,10 +284,10 @@ pub mod graph_implementations {
                         && !in_frontier[new_pos as usize]
                     {
                         parent[new_pos as usize] = pos;
-                        if (player_number == 1 && new_pos <= 8)
-                            | (player_number == 2 && new_pos >= 72)
+                        if (player_number == 1 && new_pos <= 4)
+                            | (player_number == 2 && new_pos >= 20)
                         {
-                            let mut stack: [i16; 81] = [-1; 81];
+                            let mut stack: [i16; 25] = [-1; 25];
                             stack[0] = new_pos;
                             let mut stack_idx: usize = 1;
                             loop {
@@ -355,7 +299,7 @@ pub mod graph_implementations {
                                 stack_idx += 1;
                                 new_pos = parent[new_pos as usize];
                             }
-                            let mut path: [i16; 81] = [-1; 81];
+                            let mut path: [i16; 25] = [-1; 25];
                             path[0] = new_pos;
                             stack_idx -= 1;
                             let mut path_idx: usize = 0;
@@ -373,23 +317,24 @@ pub mod graph_implementations {
                     }
                 }
             }
-            return [-1; 81];
+            return [-1; 25];
         }
     }
-    impl QuoridorBoard for RustStaticGraph {
+
+    impl QuoridorBoardMini for RustStaticGraphMini {
         fn get_available_actions_fast(&mut self) -> Vec<i16> {
             let mut available_actions: Vec<i16> = vec![];
             if self.can_place_wall() {
                 let mut path_available: bool = false;
-                let mut previous_paths_1: Vec<[i16; 81]> = Vec::new();
-                let mut previous_paths_2: Vec<[i16; 81]> = Vec::new();
-                let mut path_1: [i16; 81];
-                let mut path_2: [i16; 81];
+                let mut previous_paths_1: Vec<[i16; 25]> = Vec::new();
+                let mut previous_paths_2: Vec<[i16; 25]> = Vec::new();
+                let mut path_1: [i16; 25];
+                let mut path_2: [i16; 25];
                 let mut path_traversed_1: bool;
                 let mut path_traversed_2: bool;
                 let mut path_valid: bool;
                 let mut shift: i16;
-                for action_number in 0..128 {
+                for action_number in 0..32 {
                     if self.is_wall_valid(action_number) {
                         if !path_available {
                             self.take_action(action_number);
@@ -407,14 +352,14 @@ pub mod graph_implementations {
                             path_traversed_1 = false;
                             for path in &previous_paths_1 {
                                 path_valid = true;
-                                for idx in 0..81 {
+                                for idx in 0..25 {
                                     if path[idx + 1] == -1 {
                                         break;
                                     }
                                     shift = path[idx + 1] - path[idx];
-                                    if !((shift == -9 && self.is_direction_valid(path[idx], 0))
+                                    if !((shift == -5 && self.is_direction_valid(path[idx], 0))
                                         | (shift == 1 && self.is_direction_valid(path[idx], 1))
-                                        | (shift == 9 && self.is_direction_valid(path[idx], 2))
+                                        | (shift == 5 && self.is_direction_valid(path[idx], 2))
                                         | (shift == -1 && self.is_direction_valid(path[idx], 3)))
                                     {
                                         path_valid = false;
@@ -429,14 +374,14 @@ pub mod graph_implementations {
                             path_traversed_2 = false;
                             for path in &previous_paths_2 {
                                 path_valid = true;
-                                for idx in 0..81 {
+                                for idx in 0..25 {
                                     if path[idx + 1] == -1 {
                                         break;
                                     }
                                     shift = path[idx + 1] - path[idx];
-                                    if !((shift == -9 && self.is_direction_valid(path[idx], 0))
+                                    if !((shift == -5 && self.is_direction_valid(path[idx], 0))
                                         | (shift == 1 && self.is_direction_valid(path[idx], 1))
-                                        | (shift == 9 && self.is_direction_valid(path[idx], 2))
+                                        | (shift == 5 && self.is_direction_valid(path[idx], 2))
                                         | (shift == -1 && self.is_direction_valid(path[idx], 3)))
                                     {
                                         path_valid = false;
@@ -477,7 +422,7 @@ pub mod graph_implementations {
                     }
                 }
             }
-            for action_number in 128..140 {
+            for action_number in 32..44 {
                 if self.is_move_valid(action_number) {
                     available_actions.push(action_number);
                 }
@@ -487,35 +432,35 @@ pub mod graph_implementations {
         }
         fn get_valid_actions(&mut self, mode: i16) -> Vec<i16> {
             if mode == 1 {
-                RustStaticGraph::get_available_actions_slow(self)
+                RustStaticGraphMini::get_available_actions_slow(self)
             } else if mode == 2 {
-                RustStaticGraph::get_available_actions_fast(self)
+                RustStaticGraphMini::get_available_actions_fast(self)
             } else {
-                RustStaticGraph::get_available_actions_fast(self)
+                RustStaticGraphMini::get_available_actions_fast(self)
             }
         }
         fn is_action_available(&mut self, action_number: i16) -> bool {
-            Graph::is_action_available(self, action_number)
+            GraphMini::is_action_available(self, action_number)
         }
-        fn new(mode: i16) -> RustStaticGraph {
-            RustStaticGraph {
-                p1_pos: 76,
-                p2_pos: 4,
+        fn new(mode: i16) -> RustStaticGraphMini {
+            RustStaticGraphMini {
+                p1_pos: 22,
+                p2_pos: 2,
                 p1_walls_placed: 0,
                 p2_walls_placed: 0,
                 turn: 1,
                 over: false,
-                hor_walls_placed: [false; 64],
-                ver_walls_placed: [false; 64],
+                hor_walls_placed: [false; 16],
+                ver_walls_placed: [false; 16],
                 mode: mode,
             }
         }
         fn take_action(&mut self, action: i16) {
-            if action < 128 {
-                if action < 64 {
+            if action < 32 {
+                if action < 16 {
                     self.hor_walls_placed[action as usize] = true;
                 } else {
-                    self.ver_walls_placed[(action - 64) as usize] = true;
+                    self.ver_walls_placed[(action - 16) as usize] = true;
                 }
 
                 if self.turn == 1 {
@@ -527,15 +472,15 @@ pub mod graph_implementations {
                 }
             } else {
                 if self.turn == 1 {
-                    self.p1_pos += GRAPH_SHIFT_ARR[(action - 128) as usize];
-                    if self.p1_pos <= 8 {
+                    self.p1_pos += GRAPH_SHIFT_ARR[(action - 32) as usize];
+                    if self.p1_pos <= 4 {
                         self.over = true;
                     } else {
                         self.turn = 2;
                     }
                 } else {
-                    self.p2_pos += GRAPH_SHIFT_ARR[(action - 128) as usize];
-                    if self.p2_pos >= 72 {
+                    self.p2_pos += GRAPH_SHIFT_ARR[(action - 32) as usize];
+                    if self.p2_pos >= 20 {
                         self.over = true;
                     } else {
                         self.turn = 1;
@@ -550,13 +495,14 @@ pub mod graph_implementations {
             self.over
         }
     }
-    impl Graph for RustStaticGraph {
+
+    impl GraphMini for RustStaticGraphMini {
         fn undo_action(&mut self, action: i16) {
-            if action < 128 {
-                if action < 64 {
+            if action < 32 {
+                if action < 16 {
                     self.hor_walls_placed[action as usize] = false;
                 } else {
-                    self.ver_walls_placed[(action - 64) as usize] = false;
+                    self.ver_walls_placed[(action - 16) as usize] = false;
                 }
 
                 if self.turn == 2 {
@@ -571,40 +517,40 @@ pub mod graph_implementations {
         fn is_direction_valid(&self, pos: i16, direction: i16) -> bool {
             if GRAPH_ADJ_LIST[pos as usize][direction as usize] {
                 if direction == 0 {
-                    if pos % 9 == 0 {
-                        !self.hor_walls_placed[(pos % 9 + 8 * (8 - pos / 9)) as usize]
-                    } else if pos % 9 == 8 {
-                        !self.hor_walls_placed[(pos % 9 + 8 * (8 - pos / 9) - 1) as usize]
+                    if pos % 5 == 0 {
+                        !self.hor_walls_placed[(pos % 5 + 4 * (4 - pos / 5)) as usize]
+                    } else if pos % 5 == 4 {
+                        !self.hor_walls_placed[(pos % 5 + 4 * (4 - pos / 5) - 1) as usize]
                     } else {
-                        !self.hor_walls_placed[(pos % 9 + 8 * (8 - pos / 9) - 1) as usize]
-                            && !self.hor_walls_placed[(pos % 9 + 8 * (8 - pos / 9)) as usize]
+                        !self.hor_walls_placed[(pos % 5 + 4 * (4 - pos / 5) - 1) as usize]
+                            && !self.hor_walls_placed[(pos % 5 + 4 * (4 - pos / 5)) as usize]
                     }
                 } else if direction == 1 {
-                    if pos < 9 {
-                        !self.ver_walls_placed[(pos % 9 + (7 - pos / 9) * 8) as usize]
-                    } else if pos >= 72 {
-                        !self.ver_walls_placed[(pos % 9 + (8 - pos / 9) * 8) as usize]
+                    if pos < 5 {
+                        !self.ver_walls_placed[(pos % 5 + (3 - pos / 5) * 4) as usize]
+                    } else if pos >= 20 {
+                        !self.ver_walls_placed[(pos % 5 + (4 - pos / 5) * 4) as usize]
                     } else {
-                        !self.ver_walls_placed[(pos % 9 + (7 - pos / 9) * 8) as usize]
-                            && !self.ver_walls_placed[(pos % 9 + (8 - pos / 9) * 8) as usize]
+                        !self.ver_walls_placed[(pos % 5 + (3 - pos / 5) * 4) as usize]
+                            && !self.ver_walls_placed[(pos % 5 + (4 - pos / 5) * 4) as usize]
                     }
                 } else if direction == 2 {
-                    if pos % 9 == 0 {
-                        !self.hor_walls_placed[(pos % 9 + 8 * (7 - pos / 9)) as usize]
-                    } else if pos % 9 == 8 {
-                        !self.hor_walls_placed[(pos % 9 + 8 * (7 - pos / 9) - 1) as usize]
+                    if pos % 5 == 0 {
+                        !self.hor_walls_placed[(pos % 5 + 4 * (3 - pos / 5)) as usize]
+                    } else if pos % 5 == 4 {
+                        !self.hor_walls_placed[(pos % 5 + 4 * (3 - pos / 5) - 1) as usize]
                     } else {
-                        !self.hor_walls_placed[(pos % 9 + 8 * (7 - pos / 9) - 1) as usize]
-                            && !self.hor_walls_placed[(pos % 9 + 8 * (7 - pos / 9)) as usize]
+                        !self.hor_walls_placed[(pos % 5 + 4 * (3 - pos / 5) - 1) as usize]
+                            && !self.hor_walls_placed[(pos % 5 + 4 * (3 - pos / 5)) as usize]
                     }
                 } else if direction == 3 {
-                    if pos < 9 {
-                        !self.ver_walls_placed[(pos % 9 + (7 - pos / 9) * 8 - 1) as usize]
-                    } else if pos >= 72 {
-                        !self.ver_walls_placed[(pos % 9 + (8 - pos / 9) * 8 - 1) as usize]
+                    if pos < 5 {
+                        !self.ver_walls_placed[(pos % 5 + (3 - pos / 5) * 4 - 1) as usize]
+                    } else if pos >= 20 {
+                        !self.ver_walls_placed[(pos % 5 + (4 - pos / 5) * 4 - 1) as usize]
                     } else {
-                        !self.ver_walls_placed[(pos % 9 + (7 - pos / 9) * 8 - 1) as usize]
-                            && !self.ver_walls_placed[(pos % 9 + (8 - pos / 9) * 8 - 1) as usize]
+                        !self.ver_walls_placed[(pos % 5 + (3 - pos / 5) * 4 - 1) as usize]
+                            && !self.ver_walls_placed[(pos % 5 + (4 - pos / 5) * 4 - 1) as usize]
                     }
                 } else {
                     panic!("UNKNOWN DIRECTION");
@@ -624,40 +570,39 @@ pub mod graph_implementations {
                 out_turn_pos = self.p1_pos;
             }
 
-            if move_number < 132 {
-                return self.is_direction_valid(in_turn_pos, move_number - 128)
-                    && in_turn_pos + GRAPH_SHIFT_ARR[(move_number - 128) as usize] != out_turn_pos;
+            if move_number < 36 {
+                return self.is_direction_valid(in_turn_pos, move_number - 32)
+                    && in_turn_pos + GRAPH_SHIFT_ARR[(move_number - 32) as usize] != out_turn_pos;
             } else {
                 if move_number % 2 == 0 {
-                    return self.is_direction_valid(in_turn_pos, (move_number - 132) / 2)
-                        && in_turn_pos + GRAPH_SHIFT_ARR[((move_number - 132) / 2) as usize]
+                    return self.is_direction_valid(in_turn_pos, (move_number - 36) / 2)
+                        && in_turn_pos + GRAPH_SHIFT_ARR[((move_number - 36) / 2) as usize]
                             == out_turn_pos
-                        && self.is_direction_valid(out_turn_pos, (move_number - 132) / 2);
+                        && self.is_direction_valid(out_turn_pos, (move_number - 36) / 2);
                 } else {
-                    return (self.is_direction_valid(in_turn_pos, ((move_number - 131) / 2) % 4)
-                        && in_turn_pos
-                            + GRAPH_SHIFT_ARR[(((move_number - 131) / 2) % 4) as usize]
+                    return (self.is_direction_valid(in_turn_pos, ((move_number - 35) / 2) % 4)
+                        && in_turn_pos + GRAPH_SHIFT_ARR[(((move_number - 35) / 2) % 4) as usize]
                             == out_turn_pos
-                        && !self.is_direction_valid(out_turn_pos, ((move_number - 131) / 2) % 4)
-                        && self.is_direction_valid(out_turn_pos, ((move_number - 133) / 2) % 4))
-                        | (self.is_direction_valid(in_turn_pos, ((move_number - 133) / 2) % 4)
+                        && !self.is_direction_valid(out_turn_pos, ((move_number - 35) / 2) % 4)
+                        && self.is_direction_valid(out_turn_pos, ((move_number - 37) / 2) % 4))
+                        | (self.is_direction_valid(in_turn_pos, ((move_number - 37) / 2) % 4)
                             && in_turn_pos
-                                + GRAPH_SHIFT_ARR[(((move_number - 133) / 2) % 4) as usize]
+                                + GRAPH_SHIFT_ARR[(((move_number - 37) / 2) % 4) as usize]
                                 == out_turn_pos
                             && !self
-                                .is_direction_valid(out_turn_pos, ((move_number - 133) / 2) % 4)
+                                .is_direction_valid(out_turn_pos, ((move_number - 37) / 2) % 4)
                             && self
-                                .is_direction_valid(out_turn_pos, ((move_number - 131) / 2) % 4));
+                                .is_direction_valid(out_turn_pos, ((move_number - 35) / 2) % 4));
                 }
             }
         }
         fn is_wall_valid(&self, wall_number: i16) -> bool {
-            if wall_number < 64 {
-                if wall_number % 8 == 0 {
+            if wall_number < 16 {
+                if wall_number % 4 == 0 {
                     !self.hor_walls_placed[wall_number as usize]
                         && !self.hor_walls_placed[(wall_number + 1) as usize]
                         && !self.ver_walls_placed[wall_number as usize]
-                } else if wall_number % 8 == 7 {
+                } else if wall_number % 4 == 3 {
                     !self.hor_walls_placed[(wall_number - 1) as usize]
                         && !self.hor_walls_placed[wall_number as usize]
                         && !self.ver_walls_placed[wall_number as usize]
@@ -668,26 +613,26 @@ pub mod graph_implementations {
                         && !self.ver_walls_placed[wall_number as usize]
                 }
             } else {
-                if (wall_number - 64) / 8 == 0 {
-                    !self.ver_walls_placed[(wall_number - 64) as usize]
-                        && !self.ver_walls_placed[(wall_number - 56) as usize]
-                        && !self.hor_walls_placed[(wall_number - 64) as usize]
-                } else if (wall_number - 64) / 8 == 7 {
-                    !self.ver_walls_placed[(wall_number - 72) as usize]
-                        && !self.ver_walls_placed[(wall_number - 64) as usize]
-                        && !self.hor_walls_placed[(wall_number - 64) as usize]
+                if (wall_number - 16) / 4 == 0 {
+                    !self.ver_walls_placed[(wall_number - 16) as usize]
+                        && !self.ver_walls_placed[(wall_number - 12) as usize]
+                        && !self.hor_walls_placed[(wall_number - 16) as usize]
+                } else if (wall_number - 16) / 4 == 3 {
+                    !self.ver_walls_placed[(wall_number - 20) as usize]
+                        && !self.ver_walls_placed[(wall_number - 16) as usize]
+                        && !self.hor_walls_placed[(wall_number - 16) as usize]
                 } else {
-                    !self.ver_walls_placed[(wall_number - 72) as usize]
-                        && !self.ver_walls_placed[(wall_number - 64) as usize]
-                        && !self.ver_walls_placed[(wall_number - 56) as usize]
-                        && !self.hor_walls_placed[(wall_number - 64) as usize]
+                    !self.ver_walls_placed[(wall_number - 20) as usize]
+                        && !self.ver_walls_placed[(wall_number - 16) as usize]
+                        && !self.ver_walls_placed[(wall_number - 12) as usize]
+                        && !self.hor_walls_placed[(wall_number - 16) as usize]
                 }
             }
         }
 
         fn can_place_wall(&self) -> bool {
-            (self.turn == 1 && self.p1_walls_placed < 10)
-                | (self.turn == 2 && self.p2_walls_placed < 10)
+            (self.turn == 1 && self.p1_walls_placed < 5)
+                | (self.turn == 2 && self.p2_walls_placed < 5)
         }
 
         fn get_pos(&self, player_number: i16) -> i16 {
@@ -698,7 +643,7 @@ pub mod graph_implementations {
             }
         }
 
-        fn search(&self, player_number: i16) -> [i16; 81] {
+        fn search(&self, player_number: i16) -> [i16; 25] {
             if self.mode == 1 {
                 if player_number == 1 {
                     self.bfs(self.p1_pos, 1)
@@ -714,20 +659,20 @@ pub mod graph_implementations {
             }
         }
     }
-    impl QuoridorBoard for RustDynamicGraph {
+    impl QuoridorBoardMini for RustDynamicGraphMini {
         fn get_available_actions_fast(&mut self) -> Vec<i16> {
             let mut available_actions: Vec<i16> = vec![];
             if self.can_place_wall() {
                 let mut path_available: bool = false;
-                let mut previous_paths_1: Vec<[i16; 81]> = Vec::new();
-                let mut previous_paths_2: Vec<[i16; 81]> = Vec::new();
-                let mut path_1: [i16; 81];
-                let mut path_2: [i16; 81];
+                let mut previous_paths_1: Vec<[i16; 25]> = Vec::new();
+                let mut previous_paths_2: Vec<[i16; 25]> = Vec::new();
+                let mut path_1: [i16; 25];
+                let mut path_2: [i16; 25];
                 let mut path_traversed_1: bool;
                 let mut path_traversed_2: bool;
                 let mut path_valid: bool;
                 let mut shift: i16;
-                for action_number in 0..128 {
+                for action_number in 0..32 {
                     if self.is_wall_valid(action_number) {
                         if !path_available {
                             self.take_action(action_number);
@@ -745,14 +690,14 @@ pub mod graph_implementations {
                             path_traversed_1 = false;
                             for path in &previous_paths_1 {
                                 path_valid = true;
-                                for idx in 0..81 {
+                                for idx in 0..25 {
                                     if path[idx + 1] == -1 {
                                         break;
                                     }
                                     shift = path[idx + 1] - path[idx];
-                                    if !((shift == -9 && self.is_direction_valid(path[idx], 0))
+                                    if !((shift == -5 && self.is_direction_valid(path[idx], 0))
                                         | (shift == 1 && self.is_direction_valid(path[idx], 1))
-                                        | (shift == 9 && self.is_direction_valid(path[idx], 2))
+                                        | (shift == 5 && self.is_direction_valid(path[idx], 2))
                                         | (shift == -1 && self.is_direction_valid(path[idx], 3)))
                                     {
                                         path_valid = false;
@@ -767,14 +712,14 @@ pub mod graph_implementations {
                             path_traversed_2 = false;
                             for path in &previous_paths_2 {
                                 path_valid = true;
-                                for idx in 0..81 {
+                                for idx in 0..25 {
                                     if path[idx + 1] == -1 {
                                         break;
                                     }
                                     shift = path[idx + 1] - path[idx];
-                                    if !((shift == -9 && self.is_direction_valid(path[idx], 0))
+                                    if !((shift == -5 && self.is_direction_valid(path[idx], 0))
                                         | (shift == 1 && self.is_direction_valid(path[idx], 1))
-                                        | (shift == 9 && self.is_direction_valid(path[idx], 2))
+                                        | (shift == 5 && self.is_direction_valid(path[idx], 2))
                                         | (shift == -1 && self.is_direction_valid(path[idx], 3)))
                                     {
                                         path_valid = false;
@@ -815,7 +760,7 @@ pub mod graph_implementations {
                     }
                 }
             }
-            for action_number in 128..140 {
+            for action_number in 32..44 {
                 if self.is_move_valid(action_number) {
                     available_actions.push(action_number);
                 }
@@ -825,24 +770,20 @@ pub mod graph_implementations {
         }
         fn get_valid_actions(&mut self, mode: i16) -> Vec<i16> {
             if mode == 1 {
-                RustDynamicGraph::get_available_actions_slow(self)
+                RustDynamicGraphMini::get_available_actions_slow(self)
             } else if mode == 2 {
-                RustDynamicGraph::get_available_actions_fast(self)
+                RustDynamicGraphMini::get_available_actions_fast(self)
             } else {
-                RustDynamicGraph::get_available_actions_fast(self)
+                RustDynamicGraphMini::get_available_actions_fast(self)
             }
         }
         fn is_action_available(&mut self, action_number: i16) -> bool {
-            Graph::is_action_available(self, action_number)
+            GraphMini::is_action_available(self, action_number)
         }
-        fn new(mode: i16) -> RustDynamicGraph {
-            RustDynamicGraph {
+        fn new(mode: i16) -> RustDynamicGraphMini {
+            RustDynamicGraphMini {
                 nodes: [
                     [false, true, true, false],
-                    [false, true, true, true],
-                    [false, true, true, true],
-                    [false, true, true, true],
-                    [false, true, true, true],
                     [false, true, true, true],
                     [false, true, true, true],
                     [false, true, true, true],
@@ -851,61 +792,13 @@ pub mod graph_implementations {
                     [true, true, true, true],
                     [true, true, true, true],
                     [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
                     [true, false, true, true],
                     [true, true, true, false],
                     [true, true, true, true],
                     [true, true, true, true],
                     [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
                     [true, false, true, true],
                     [true, true, true, false],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, false, true, true],
-                    [true, true, true, false],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, false, true, true],
-                    [true, true, true, false],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, false, true, true],
-                    [true, true, true, false],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, false, true, true],
-                    [true, true, true, false],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
-                    [true, true, true, true],
                     [true, true, true, true],
                     [true, true, true, true],
                     [true, true, true, true],
@@ -914,39 +807,35 @@ pub mod graph_implementations {
                     [true, true, false, true],
                     [true, true, false, true],
                     [true, true, false, true],
-                    [true, true, false, true],
-                    [true, true, false, true],
-                    [true, true, false, true],
-                    [true, true, false, true],
                     [true, false, false, true],
                 ],
-                p1_pos: 76,
-                p2_pos: 4,
+                p1_pos: 22,
+                p2_pos: 2,
                 p1_walls_placed: 0,
                 p2_walls_placed: 0,
                 turn: 1,
                 over: false,
-                hor_walls_placed: [false; 64],
-                ver_walls_placed: [false; 64],
+                hor_walls_placed: [false; 16],
+                ver_walls_placed: [false; 16],
                 mode: mode,
             }
         }
         fn take_action(&mut self, action: i16) {
-            if action < 128 {
-                if action < 64 {
+            if action < 32 {
+                if action < 16 {
                     self.hor_walls_placed[action as usize] = true;
-                    let idx = (action % 8 + 9 * (8 - action / 8)) as usize;
+                    let idx = (action % 4 + 5 * (4 - action / 4)) as usize;
                     self.nodes[idx][0] = false;
                     self.nodes[idx + 1][0] = false;
-                    self.nodes[idx - 9][2] = false;
-                    self.nodes[idx - 8][2] = false;
+                    self.nodes[idx - 5][2] = false;
+                    self.nodes[idx - 4][2] = false;
                 } else {
-                    self.ver_walls_placed[(action - 64) as usize] = true;
-                    let idx = (action % 8 + 9 * (8 - (action - 64) / 8)) as usize;
+                    self.ver_walls_placed[(action - 16) as usize] = true;
+                    let idx = (action % 4 + 5 * (4 - (action - 16) / 4)) as usize;
                     self.nodes[idx][1] = false;
                     self.nodes[idx + 1][3] = false;
-                    self.nodes[idx - 9][1] = false;
-                    self.nodes[idx - 8][3] = false;
+                    self.nodes[idx - 5][1] = false;
+                    self.nodes[idx - 4][3] = false;
                 }
 
                 if self.turn == 1 {
@@ -958,15 +847,15 @@ pub mod graph_implementations {
                 }
             } else {
                 if self.turn == 1 {
-                    self.p1_pos += GRAPH_SHIFT_ARR[(action - 128) as usize];
-                    if self.p1_pos <= 8 {
+                    self.p1_pos += GRAPH_SHIFT_ARR[(action - 32) as usize];
+                    if self.p1_pos <= 4 {
                         self.over = true;
                     } else {
                         self.turn = 2;
                     }
                 } else {
-                    self.p2_pos += GRAPH_SHIFT_ARR[(action - 128) as usize];
-                    if self.p2_pos >= 72 {
+                    self.p2_pos += GRAPH_SHIFT_ARR[(action - 32) as usize];
+                    if self.p2_pos >= 20 {
                         self.over = true;
                     } else {
                         self.turn = 1;
@@ -981,23 +870,23 @@ pub mod graph_implementations {
             self.over
         }
     }
-    impl Graph for RustDynamicGraph {
+    impl GraphMini for RustDynamicGraphMini {
         fn undo_action(&mut self, action: i16) {
-            if action < 128 {
-                if action < 64 {
+            if action < 32 {
+                if action < 16 {
                     self.hor_walls_placed[action as usize] = false;
-                    let idx = (action % 8 + 9 * (8 - action / 8)) as usize;
+                    let idx = (action % 4 + 5 * (4 - action / 4)) as usize;
                     self.nodes[idx][0] = true;
                     self.nodes[idx + 1][0] = true;
-                    self.nodes[idx - 9][2] = true;
-                    self.nodes[idx - 8][2] = true;
+                    self.nodes[idx - 5][2] = true;
+                    self.nodes[idx - 4][2] = true;
                 } else {
-                    self.ver_walls_placed[(action - 64) as usize] = false;
-                    let idx = (action % 8 + 9 * (8 - (action - 64) / 8)) as usize;
+                    self.ver_walls_placed[(action - 16) as usize] = false;
+                    let idx = (action % 4 + 5 * (4 - (action - 16) / 4)) as usize;
                     self.nodes[idx][1] = true;
                     self.nodes[idx + 1][3] = true;
-                    self.nodes[idx - 9][1] = true;
-                    self.nodes[idx - 8][3] = true;
+                    self.nodes[idx - 5][1] = true;
+                    self.nodes[idx - 4][3] = true;
                 }
 
                 if self.turn == 2 {
@@ -1023,40 +912,39 @@ pub mod graph_implementations {
                 out_turn_pos = self.p1_pos;
             }
 
-            if move_number < 132 {
-                return self.is_direction_valid(in_turn_pos, move_number - 128)
-                    && in_turn_pos + GRAPH_SHIFT_ARR[(move_number - 128) as usize] != out_turn_pos;
+            if move_number < 36 {
+                return self.is_direction_valid(in_turn_pos, move_number - 32)
+                    && in_turn_pos + GRAPH_SHIFT_ARR[(move_number - 32) as usize] != out_turn_pos;
             } else {
                 if move_number % 2 == 0 {
-                    return self.is_direction_valid(in_turn_pos, (move_number - 132) / 2)
-                        && in_turn_pos + GRAPH_SHIFT_ARR[((move_number - 132) / 2) as usize]
+                    return self.is_direction_valid(in_turn_pos, (move_number - 36) / 2)
+                        && in_turn_pos + GRAPH_SHIFT_ARR[((move_number - 36) / 2) as usize]
                             == out_turn_pos
-                        && self.is_direction_valid(out_turn_pos, (move_number - 132) / 2);
+                        && self.is_direction_valid(out_turn_pos, (move_number - 36) / 2);
                 } else {
-                    return (self.is_direction_valid(in_turn_pos, ((move_number - 131) / 2) % 4)
-                        && in_turn_pos
-                            + GRAPH_SHIFT_ARR[(((move_number - 131) / 2) % 4) as usize]
+                    return (self.is_direction_valid(in_turn_pos, ((move_number - 35) / 2) % 4)
+                        && in_turn_pos + GRAPH_SHIFT_ARR[(((move_number - 35) / 2) % 4) as usize]
                             == out_turn_pos
-                        && !self.is_direction_valid(out_turn_pos, ((move_number - 131) / 2) % 4)
-                        && self.is_direction_valid(out_turn_pos, ((move_number - 133) / 2) % 4))
-                        | (self.is_direction_valid(in_turn_pos, ((move_number - 133) / 2) % 4)
+                        && !self.is_direction_valid(out_turn_pos, ((move_number - 35) / 2) % 4)
+                        && self.is_direction_valid(out_turn_pos, ((move_number - 37) / 2) % 4))
+                        | (self.is_direction_valid(in_turn_pos, ((move_number - 37) / 2) % 4)
                             && in_turn_pos
-                                + GRAPH_SHIFT_ARR[(((move_number - 133) / 2) % 4) as usize]
+                                + GRAPH_SHIFT_ARR[(((move_number - 37) / 2) % 4) as usize]
                                 == out_turn_pos
                             && !self
-                                .is_direction_valid(out_turn_pos, ((move_number - 133) / 2) % 4)
+                                .is_direction_valid(out_turn_pos, ((move_number - 37) / 2) % 4)
                             && self
-                                .is_direction_valid(out_turn_pos, ((move_number - 131) / 2) % 4));
+                                .is_direction_valid(out_turn_pos, ((move_number - 35) / 2) % 4));
                 }
             }
         }
         fn is_wall_valid(&self, wall_number: i16) -> bool {
-            if wall_number < 64 {
-                if wall_number % 8 == 0 {
+            if wall_number < 16 {
+                if wall_number % 4 == 0 {
                     !self.hor_walls_placed[wall_number as usize]
                         && !self.hor_walls_placed[(wall_number + 1) as usize]
                         && !self.ver_walls_placed[wall_number as usize]
-                } else if wall_number % 8 == 7 {
+                } else if wall_number % 4 == 3 {
                     !self.hor_walls_placed[(wall_number - 1) as usize]
                         && !self.hor_walls_placed[wall_number as usize]
                         && !self.ver_walls_placed[wall_number as usize]
@@ -1067,25 +955,25 @@ pub mod graph_implementations {
                         && !self.ver_walls_placed[wall_number as usize]
                 }
             } else {
-                if (wall_number - 64) / 8 == 0 {
-                    !self.ver_walls_placed[(wall_number - 64) as usize]
-                        && !self.ver_walls_placed[(wall_number - 56) as usize]
-                        && !self.hor_walls_placed[(wall_number - 64) as usize]
-                } else if (wall_number - 64) / 8 == 7 {
-                    !self.ver_walls_placed[(wall_number - 72) as usize]
-                        && !self.ver_walls_placed[(wall_number - 64) as usize]
-                        && !self.hor_walls_placed[(wall_number - 64) as usize]
+                if (wall_number - 16) / 4 == 0 {
+                    !self.ver_walls_placed[(wall_number - 16) as usize]
+                        && !self.ver_walls_placed[(wall_number - 12) as usize]
+                        && !self.hor_walls_placed[(wall_number - 16) as usize]
+                } else if (wall_number - 16) / 4 == 3 {
+                    !self.ver_walls_placed[(wall_number - 20) as usize]
+                        && !self.ver_walls_placed[(wall_number - 16) as usize]
+                        && !self.hor_walls_placed[(wall_number - 16) as usize]
                 } else {
-                    !self.ver_walls_placed[(wall_number - 72) as usize]
-                        && !self.ver_walls_placed[(wall_number - 64) as usize]
-                        && !self.ver_walls_placed[(wall_number - 56) as usize]
-                        && !self.hor_walls_placed[(wall_number - 64) as usize]
+                    !self.ver_walls_placed[(wall_number - 20) as usize]
+                        && !self.ver_walls_placed[(wall_number - 16) as usize]
+                        && !self.ver_walls_placed[(wall_number - 12) as usize]
+                        && !self.hor_walls_placed[(wall_number - 16) as usize]
                 }
             }
         }
         fn can_place_wall(&self) -> bool {
-            (self.turn == 1 && self.p1_walls_placed < 10)
-                | (self.turn == 2 && self.p2_walls_placed < 10)
+            (self.turn == 1 && self.p1_walls_placed < 5)
+                | (self.turn == 2 && self.p2_walls_placed < 5)
         }
         fn get_pos(&self, player_number: i16) -> i16 {
             if player_number == 1 {
@@ -1094,7 +982,7 @@ pub mod graph_implementations {
                 self.p2_pos
             }
         }
-        fn search(&self, player_number: i16) -> [i16; 81] {
+        fn search(&self, player_number: i16) -> [i16; 25] {
             if self.mode == 1 {
                 if player_number == 1 {
                     self.bfs(self.p1_pos, 1)

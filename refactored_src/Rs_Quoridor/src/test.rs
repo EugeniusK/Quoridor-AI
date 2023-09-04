@@ -21,7 +21,7 @@ pub mod test_compare {
     pub fn compare(n: usize) {
         let mut rng = ChaCha8Rng::seed_from_u64(2);
 
-        let mut available: [bool; 140];
+        let mut available: Vec<i16>;
         let mut action: i16;
 
         let mut actions_played = 0.0;
@@ -52,7 +52,7 @@ pub mod test_compare {
                 {
                     available = board0.get_available_actions_fast();
                     action = rng.gen_range(0..140);
-                    while !available[action as usize] {
+                    while !available.contains(&action) {
                         action = rng.gen_range(0..140);
                     }
                     board0.take_action(action);
@@ -83,3 +83,42 @@ pub mod test_compare {
         }
     }
 }
+
+// let mut wins = 0.0;
+
+//     for x in 1..=1 {
+//         let mut tree: MctsTree<RustDynamicGraph>;
+
+//         let mut a: RustDynamicGraph = RustDynamicGraph::new(1);
+//         let mut random_action: i16;
+//         let mut ai_action: i16;
+//         loop {
+//             // random opponent
+//             random_action = a.get_random_action();
+//             // println!("RANDOM TURN {} {}", a.get_turn(), random_action);
+//             a.take_action(random_action);
+//             if a.is_over() {
+//                 // a.display();
+//                 println!("{}", wins / x as f32);
+
+//                 // println!("OVER RANDOM, {}", a.get_turn());
+//                 break;
+//             }
+//             // AI opponent
+//             // tree.reset_tree(a);
+//             tree = MctsTree::new(a);
+//             ai_action = tree.rollout_choose(50000);
+//             println!("AI TURN {} {}", a.get_turn(), ai_action);
+
+//             a.take_action(ai_action);
+//             a.display();
+//             if a.is_over() {
+//                 // a.display();
+//                 println!("{}", wins / x as f32);
+//                 wins += 1.0;
+//                 // println!("OVER AI, {}", a.get_turn());
+//                 break;
+//             }
+//         }
+//     }
+//     println!("{}", wins / 100.0);
