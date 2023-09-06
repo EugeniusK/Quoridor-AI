@@ -1,5 +1,5 @@
 pub mod mini_bitboard_implementations {
-    use crate::board::board::QuoridorBoardMini;
+    use crate::board::board::QuoridorBoard;
     use crate::VecDeque;
     use std::ops::*;
     pub const BITBOARD_SHIFT_ARR: [isize; 12] = [-18, 2, 18, -2, -36, -16, 4, 20, 36, 16, -4, -20];
@@ -8,6 +8,7 @@ pub mod mini_bitboard_implementations {
     pub struct QuoridorBitboardMini {
         pub bitboard: u128,
     }
+    #[derive(Clone, Copy, Debug)]
     pub struct RustPartialBitboardMini {
         pub p1: QuoridorBitboardMini,
         pub p2: QuoridorBitboardMini,
@@ -24,7 +25,7 @@ pub mod mini_bitboard_implementations {
     };
     pub const BITBOARD_MINI_BLANK: QuoridorBitboardMini = QuoridorBitboardMini { bitboard: 0 };
     pub const BITBOARD_MINI_NORTH_MASK: QuoridorBitboardMini = QuoridorBitboardMini {
-        bitboard: 180282366920938461863302549837730283520,
+        bitboard: 340282366920938463463302549837730283520,
     };
     pub const BITBOARD_MINI_EAST_MASK: QuoridorBitboardMini = QuoridorBitboardMini {
         bitboard: 169808226154284360436713285728065290240,
@@ -36,16 +37,14 @@ pub mod mini_bitboard_implementations {
         bitboard: 339616452308568720873426571456130580480,
     };
 
-    pub trait BitboardMini: QuoridorBoardMini {
-        // fn new(mode: i16) -> Self;
-        // fn take_action(&mut self, action: i16);
+    pub trait BitboardMini: QuoridorBoard {
         fn undo_action(&mut self, action: i16);
         fn is_direction_valid(&self, board: QuoridorBitboardMini, direction: i16) -> bool;
         fn is_wall_valid(&self, wall_number: i16) -> bool;
         fn is_move_valid(&self, move_number: i16) -> bool;
         fn can_place_wall(&self) -> bool;
         fn is_action_available(&mut self, action_number: i16) -> bool {
-            if action_number < 128 {
+            if action_number < 32 {
                 if self.can_place_wall() && self.is_wall_valid(action_number) {
                     self.take_action(action_number);
                     let path_1: QuoridorBitboardMini = self.search(1);
@@ -332,7 +331,7 @@ pub mod mini_bitboard_implementations {
         }
         pub fn clear_bit(&mut self, idx: usize) {
             if idx < 128 {
-                self.bitboard &= 0xFFFFFFFFFFFFFFFF ^ 1 << (127 - idx);
+                self.bitboard &= 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF ^ 1 << (127 - idx);
             } else {
                 panic!("ACCESSING INVALID INDEX")
             }
@@ -400,7 +399,13 @@ pub mod mini_bitboard_implementations {
         }
     }
 
-    impl QuoridorBoardMini for RustPartialBitboardMini {
+    impl QuoridorBoard for RustPartialBitboardMini {
+        fn flip_turn(&mut self) {
+            self.turn = 3 - self.turn
+        }
+        fn number_actions(&self) -> i16 {
+            44
+        }
         fn get_available_actions_fast(&mut self) -> Vec<i16> {
             let mut available_actions: Vec<i16> = vec![];
             if self.can_place_wall() {
@@ -637,7 +642,7 @@ pub mod mini_bitboard_implementations {
                         && self
                             .is_direction_valid(out_turn_bitboard, ((move_number - 37) / 2) % 4))
                         | (self
-                            .is_direction_valid(in_turn_bitboard, ((move_number - 35) / 2) % 4)
+                            .is_direction_valid(in_turn_bitboard, ((move_number - 37) / 2) % 4)
                             && in_turn_bitboard
                                 >> BITBOARD_SHIFT_ARR[(((move_number - 37) / 2) % 4) as usize]
                                 == out_turn_bitboard

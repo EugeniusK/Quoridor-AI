@@ -1,6 +1,6 @@
 extern crate rand;
 extern crate rand_chacha;
-use board::board::QuoridorBoardMini;
+// use board::board::QuoridorBoardMini;
 pub use rand_chacha::ChaCha8Rng;
 pub use std::collections::VecDeque;
 pub use std::rc::Rc;
@@ -35,48 +35,91 @@ pub use mcts::mcts_implementation::MctsTree;
 pub mod test;
 pub use test::test_compare;
 
-use crate::bitboard_mini::mini_bitboard_implementations::BitboardMini;
-
+pub mod tictactoe;
+pub use tictactoe::tictactoe_implementation::TicTacToe;
 fn main() {
-    // board.take_action(16);
-    // println!("{}", board.is_wall_valid(16));
-    // println!("{}", board.is_wall_valid(17));
-    // println!("{}", board.is_wall_valid(24));
-    // println!("{}", board.is_wall_valid(0));
-
-    let (mut wins, mut games_played) = (0.0, 0.0);
-    let mut board1: RustPartialBitboardMini;
-    let mut board2: RustDynamicGraphMini;
-
-    board1 = RustPartialBitboardMini::new(1);
-    board2 = RustDynamicGraphMini::new(1);
+    // println!("{:?}", board1.get_available_actions_fast());
+    // println!("{}", board1.get_random_action());
     let mut action1: i16;
-    for x in 1..=100000 {
-        games_played += 1.0;
+    let (mut wins, mut games_played, mut draws) = (0.0, 0.0, 0.0);
 
-        board1 = RustPartialBitboardMini::new(1);
-        board2 = RustDynamicGraphMini::new(1);
+    let mut tree: MctsTree<TicTacToe>;
+    for x in 0..100 {
+        let mut board1 = TicTacToe::new(1);
 
-        while !board1.is_over() && !board2.is_over() {
-            if board1.get_available_actions_fast() != board2.get_available_actions_fast() {
-                board1.display();
-                board2.display();
-
-                println!("{:?}", board1.get_available_actions_fast());
-                println!("{:?}", board2.get_available_actions_fast());
-
-                panic!("NOT EQ");
+        loop {
+            // board1.flip_turn();
+            tree = MctsTree::new(board1);
+            action1 = tree.rollout_choose(50);
+            // board1.flip_turn();
+            // panic!();
+            board1.take_action(action1);
+            if board1.is_over() {
+                break;
             }
             action1 = board1.get_random_action();
+
             board1.take_action(action1);
-            board2.take_action(action1);
+            if board1.is_over() {
+                break;
+            }
         }
         if board1.get_turn() == 1 {
             wins += 1.0;
+        } else if board1.get_turn() == -1 {
+            draws += 1.0
         }
-
-        if (x == 10000) | (x == 100000) | (x == 1000000) | (x == 1000000) {
-            println!("{} {}", games_played, wins / games_played);
-        }
+        // board1.display();
+        games_played += 1.0;
+        // board1.display();
+        // println!("{:?}", board1.get_available_actions_fast());
     }
+    println!(
+        "{} games {} of games won {} drawn {} won",
+        games_played,
+        wins / games_played,
+        draws,
+        wins
+    );
 }
+
+// // board.take_action(16);
+// // println!("{}", board.is_wall_valid(16));
+// // println!("{}", board.is_wall_valid(17));
+// // println!("{}", board.is_wall_valid(24));
+// // println!("{}", board.is_wall_valid(0));
+
+// let (mut wins, mut games_played) = (0.0, 0.0);
+// let mut board1: RustDynamicGraphMini;
+// // let mut board2: RustDynamicGraphMini;
+// let mut tree: MctsTree<RustDynamicGraphMini>;
+
+// let mut action1: i16;
+// for x in 1..=10000 {
+//     games_played += 1.0;
+
+//     board1 = RustDynamicGraphMini::new(1);
+//     // board2 = RustDynamicGraphMini::new(1);
+
+//     while !board1.is_over() {
+//         //&& !board2.is_over() {
+//         tree = MctsTree::new(board1);
+//         action1 = tree.rollout_choose(50);
+//         board1.take_action(action1);
+
+//         action1 = board1.get_random_action();
+
+//         board1.take_action(action1);
+//         // println!("{}", action1);
+//         // board1.display();
+//         // board2.display();
+//     }
+//     // board1.display();
+//     if board1.get_turn() == 1 {
+//         wins += 1.0;
+//     }
+//     if x % 100 == 0 {
+//         println!("{} {}", games_played, wins / games_played);
+//         board1.display();
+//     }
+// }

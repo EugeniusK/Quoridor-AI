@@ -377,6 +377,12 @@ pub mod graph_implementations {
         }
     }
     impl QuoridorBoard for RustStaticGraph {
+        fn flip_turn(&mut self) {
+            self.turn = 3 - self.turn
+        }
+        fn number_actions(&self) -> i16 {
+            140
+        }
         fn get_available_actions_fast(&mut self) -> Vec<i16> {
             let mut available_actions: Vec<i16> = vec![];
             if self.can_place_wall() {
@@ -715,6 +721,12 @@ pub mod graph_implementations {
         }
     }
     impl QuoridorBoard for RustDynamicGraph {
+        fn flip_turn(&mut self) {
+            self.turn = 3 - self.turn
+        }
+        fn number_actions(&self) -> i16 {
+            140
+        }
         fn get_available_actions_fast(&mut self) -> Vec<i16> {
             let mut available_actions: Vec<i16> = vec![];
             if self.can_place_wall() {

@@ -4,7 +4,7 @@ pub mod bitboard_implementations {
     use std::ops::*;
     pub const BITBOARD_SHIFT_ARR: [isize; 12] = [-34, 2, 34, -2, -68, -32, 4, 36, 68, 32, -4, -36];
 
-    #[derive(Clone, Copy, PartialEq, Debug)]
+    #[derive(Clone, Copy, PartialEq, Eq, Debug)]
     pub struct QuoridorBitboard {
         // Bits in bitboard_0 are for index 0~63 and so on
         pub bitboard_0: u64,
@@ -93,8 +93,6 @@ pub mod bitboard_implementations {
         bitboard_4: 18446462594437873664,
     };
     pub trait Bitboard: QuoridorBoard {
-        // fn new(mode: i16) -> Self;
-        // fn take_action(&mut self, action: i16);
         fn undo_action(&mut self, action: i16);
         fn is_direction_valid(&self, board: QuoridorBitboard, direction: i16) -> bool;
         fn is_wall_valid(&self, wall_number: i16) -> bool;
@@ -641,6 +639,13 @@ pub mod bitboard_implementations {
     }
 
     impl QuoridorBoard for RustFullBitboard {
+        fn flip_turn(&mut self) {
+            self.change_turn()
+        }
+
+        fn number_actions(&self) -> i16 {
+            140
+        }
         fn get_available_actions_fast(&mut self) -> Vec<i16> {
             let mut available_actions: Vec<i16> = vec![];
             if self.can_place_wall() {
@@ -932,6 +937,12 @@ pub mod bitboard_implementations {
         }
     }
     impl QuoridorBoard for RustPartialBitboard {
+        fn flip_turn(&mut self) {
+            self.turn = 3 - self.turn
+        }
+        fn number_actions(&self) -> i16 {
+            140
+        }
         fn get_available_actions_fast(&mut self) -> Vec<i16> {
             let mut available_actions: Vec<i16> = vec![];
             if self.can_place_wall() {

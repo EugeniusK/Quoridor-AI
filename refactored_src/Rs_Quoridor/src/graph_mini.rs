@@ -1,7 +1,8 @@
 pub mod mini_graph_implementations {
-    use crate::board::board::QuoridorBoardMini;
+    use crate::board::board::QuoridorBoard;
     use crate::VecDeque;
 
+    const WALL_LIMIT: i16 = 3;
     #[derive(Clone, Copy, Debug)]
     pub struct RustStaticGraphMini {
         pub p1_pos: i16,
@@ -83,7 +84,7 @@ pub mod mini_graph_implementations {
         mode: 0,
     };
 
-    pub trait GraphMini: QuoridorBoardMini {
+    pub trait GraphMini: QuoridorBoard {
         fn undo_action(&mut self, action: i16);
         fn is_direction_valid(&self, pos: i16, direction: i16) -> bool;
         fn is_wall_valid(&self, wall_number: i16) -> bool;
@@ -321,7 +322,13 @@ pub mod mini_graph_implementations {
         }
     }
 
-    impl QuoridorBoardMini for RustStaticGraphMini {
+    impl QuoridorBoard for RustStaticGraphMini {
+        fn flip_turn(&mut self) {
+            self.turn = 3 - self.turn
+        }
+        fn number_actions(&self) -> i16 {
+            44
+        }
         fn get_available_actions_fast(&mut self) -> Vec<i16> {
             let mut available_actions: Vec<i16> = vec![];
             if self.can_place_wall() {
@@ -631,8 +638,8 @@ pub mod mini_graph_implementations {
         }
 
         fn can_place_wall(&self) -> bool {
-            (self.turn == 1 && self.p1_walls_placed < 5)
-                | (self.turn == 2 && self.p2_walls_placed < 5)
+            (self.turn == 1 && self.p1_walls_placed < WALL_LIMIT)
+                | (self.turn == 2 && self.p2_walls_placed < WALL_LIMIT)
         }
 
         fn get_pos(&self, player_number: i16) -> i16 {
@@ -659,7 +666,13 @@ pub mod mini_graph_implementations {
             }
         }
     }
-    impl QuoridorBoardMini for RustDynamicGraphMini {
+    impl QuoridorBoard for RustDynamicGraphMini {
+        fn flip_turn(&mut self) {
+            self.turn = 3 - self.turn
+        }
+        fn number_actions(&self) -> i16 {
+            44
+        }
         fn get_available_actions_fast(&mut self) -> Vec<i16> {
             let mut available_actions: Vec<i16> = vec![];
             if self.can_place_wall() {
@@ -972,8 +985,8 @@ pub mod mini_graph_implementations {
             }
         }
         fn can_place_wall(&self) -> bool {
-            (self.turn == 1 && self.p1_walls_placed < 5)
-                | (self.turn == 2 && self.p2_walls_placed < 5)
+            (self.turn == 1 && self.p1_walls_placed < WALL_LIMIT)
+                | (self.turn == 2 && self.p2_walls_placed < WALL_LIMIT)
         }
         fn get_pos(&self, player_number: i16) -> i16 {
             if player_number == 1 {
