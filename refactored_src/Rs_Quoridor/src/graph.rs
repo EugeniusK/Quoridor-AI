@@ -138,8 +138,6 @@ pub mod graph_implementations {
     };
 
     pub trait Graph: QuoridorBoard {
-        // fn new(mode: i16) -> Self;
-        // fn take_action(&mut self, action: i16);
         fn undo_action(&mut self, action: i16);
         fn is_direction_valid(&self, pos: i16, direction: i16) -> bool;
         fn is_wall_valid(&self, wall_number: i16) -> bool;
@@ -377,9 +375,6 @@ pub mod graph_implementations {
         }
     }
     impl QuoridorBoard for RustStaticGraph {
-        fn flip_turn(&mut self) {
-            self.turn = 3 - self.turn
-        }
         fn number_actions(&self) -> i16 {
             140
         }
@@ -721,9 +716,6 @@ pub mod graph_implementations {
         }
     }
     impl QuoridorBoard for RustDynamicGraph {
-        fn flip_turn(&mut self) {
-            self.turn = 3 - self.turn
-        }
         fn number_actions(&self) -> i16 {
             140
         }

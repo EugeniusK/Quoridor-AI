@@ -2,10 +2,7 @@ pub mod tictactoe_implementation {
     use crate::board::board::QuoridorBoard;
     extern crate rand;
     extern crate rand_chacha;
-    use core::num;
 
-    use crate::rand::*;
-    use rand_chacha::ChaCha8Rng;
     #[derive(Clone, Copy, Debug)]
     pub struct TicTacToe {
         pub positions: [i16; 9],
@@ -14,9 +11,6 @@ pub mod tictactoe_implementation {
     }
 
     impl QuoridorBoard for TicTacToe {
-        fn flip_turn(&mut self) {
-            self.turn = 3 - self.turn
-        }
         fn number_actions(&self) -> i16 {
             9
         }
@@ -65,7 +59,6 @@ pub mod tictactoe_implementation {
                     self.over = true;
                 }
             }
-            // self.display();
         }
         fn get_turn(&self) -> i16 {
             self.turn

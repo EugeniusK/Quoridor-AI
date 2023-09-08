@@ -400,9 +400,6 @@ pub mod mini_bitboard_implementations {
     }
 
     impl QuoridorBoard for RustPartialBitboardMini {
-        fn flip_turn(&mut self) {
-            self.turn = 3 - self.turn
-        }
         fn number_actions(&self) -> i16 {
             44
         }

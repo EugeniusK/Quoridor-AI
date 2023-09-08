@@ -220,13 +220,10 @@ pub mod mcts_implementation {
         pub fn rollout(&mut self, n: i32) {
             let mut leaf: usize;
             for _ in 0..n {
-                // println!("{:?}", self.nodes);
                 leaf = self.select();
                 self.expand(leaf);
-                // println!("{:?}", self.nodes);
-
                 let result = self.simulate(self.nodes.len() - 1);
-                self.backpropagate(self.select() as u32, result);
+                self.backpropagate(leaf as u32, result);
             }
         }
         pub fn rollout_choose(&mut self, n: i32) -> i16 {

@@ -5,7 +5,6 @@ pub mod board {
     use crate::rand::*;
     use rand_chacha::ChaCha8Rng;
     pub trait QuoridorBoard {
-        fn flip_turn(&mut self);
         fn number_actions(&self) -> i16;
         fn new(mode: i16) -> Self;
         fn take_action(&mut self, action: i16);

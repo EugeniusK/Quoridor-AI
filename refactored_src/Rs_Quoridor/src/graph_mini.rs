@@ -2,7 +2,7 @@ pub mod mini_graph_implementations {
     use crate::board::board::QuoridorBoard;
     use crate::VecDeque;
 
-    const WALL_LIMIT: i16 = 3;
+    const WALL_LIMIT: i16 = 5;
     #[derive(Clone, Copy, Debug)]
     pub struct RustStaticGraphMini {
         pub p1_pos: i16,
@@ -320,12 +320,72 @@ pub mod mini_graph_implementations {
             }
             return [-1; 25];
         }
+        fn dfs(&self, start_pos: i16, player_number: i16) -> [i16; 25] {
+            let mut frontier: VecDeque<i16> = VecDeque::with_capacity(25);
+            frontier.push_back(start_pos);
+
+            let mut explored: [bool; 25] = [false; 25];
+
+            let mut in_frontier: [bool; 25] = [false; 25];
+
+            let mut parent: [i16; 25] = [-1; 25];
+            let mut pos: i16;
+            let mut new_pos: i16;
+            while frontier.len() != 0 {
+                match frontier.pop_back() {
+                    Some(popped) => {
+                        pos = popped;
+                        in_frontier[pos as usize] = false;
+                    }
+                    None => panic!("EMPTY FRONTIER IN bfs"),
+                }
+                explored[pos as usize] = true;
+
+                for direction in 0..4 {
+                    new_pos = pos + GRAPH_SHIFT_ARR[direction];
+                    if self.is_direction_valid(pos, direction as i16)
+                        && !explored[new_pos as usize]
+                        && !in_frontier[new_pos as usize]
+                    {
+                        parent[new_pos as usize] = pos;
+                        if (player_number == 1 && new_pos <= 4)
+                            | (player_number == 2 && new_pos >= 20)
+                        {
+                            let mut stack: [i16; 25] = [-1; 25];
+                            stack[0] = new_pos;
+                            let mut stack_idx: usize = 1;
+                            loop {
+                                if parent[new_pos as usize] == -1 {
+                                    stack[stack_idx] = -1;
+                                    break;
+                                }
+                                stack[stack_idx] = parent[new_pos as usize];
+                                stack_idx += 1;
+                                new_pos = parent[new_pos as usize];
+                            }
+                            let mut path: [i16; 25] = [-1; 25];
+                            path[0] = new_pos;
+                            stack_idx -= 1;
+                            let mut path_idx: usize = 0;
+                            loop {
+                                path[path_idx] = stack[stack_idx];
+                                if stack_idx == 0 {
+                                    return path;
+                                }
+                                stack_idx -= 1;
+                                path_idx += 1;
+                            }
+                        }
+                        frontier.push_back(new_pos);
+                        in_frontier[new_pos as usize] = true;
+                    }
+                }
+            }
+            return [-1; 25];
+        }
     }
 
     impl QuoridorBoard for RustStaticGraphMini {
-        fn flip_turn(&mut self) {
-            self.turn = 3 - self.turn
-        }
         fn number_actions(&self) -> i16 {
             44
         }
@@ -657,6 +717,12 @@ pub mod mini_graph_implementations {
                 } else {
                     self.bfs(self.p2_pos, 2)
                 }
+            } else if self.mode == 2 {
+                if player_number == 1 {
+                    self.dfs(self.p1_pos, 1)
+                } else {
+                    self.dfs(self.p2_pos, 2)
+                }
             } else {
                 if player_number == 1 {
                     self.bfs(self.p1_pos, 1)
@@ -667,9 +733,6 @@ pub mod mini_graph_implementations {
         }
     }
     impl QuoridorBoard for RustDynamicGraphMini {
-        fn flip_turn(&mut self) {
-            self.turn = 3 - self.turn
-        }
         fn number_actions(&self) -> i16 {
             44
         }

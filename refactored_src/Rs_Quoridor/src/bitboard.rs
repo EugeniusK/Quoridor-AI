@@ -639,10 +639,6 @@ pub mod bitboard_implementations {
     }
 
     impl QuoridorBoard for RustFullBitboard {
-        fn flip_turn(&mut self) {
-            self.change_turn()
-        }
-
         fn number_actions(&self) -> i16 {
             140
         }
@@ -937,9 +933,6 @@ pub mod bitboard_implementations {
         }
     }
     impl QuoridorBoard for RustPartialBitboard {
-        fn flip_turn(&mut self) {
-            self.turn = 3 - self.turn
-        }
         fn number_actions(&self) -> i16 {
             140
         }
