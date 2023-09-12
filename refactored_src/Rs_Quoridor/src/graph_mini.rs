@@ -1,5 +1,6 @@
 pub mod mini_graph_implementations {
     use crate::board::board::QuoridorBoard;
+    
     use crate::VecDeque;
 
     const WALL_LIMIT: i16 = 5;

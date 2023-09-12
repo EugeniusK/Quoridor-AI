@@ -1,5 +1,30 @@
 pub mod graph_implementations {
+    use std::cmp::Ordering;
+
+    #[derive(Copy, Clone, Eq, PartialEq)]
+    struct State {
+        cost: i16,
+        heuristic: i16,
+        path_cost: i16,
+        position: i16,
+    }
+
+    impl Ord for State {
+        fn cmp(&self, other: &Self) -> Ordering {
+            other
+                .cost
+                .cmp(&self.cost)
+                .then_with(|| self.position.cmp(&other.position))
+        }
+    }
+    impl PartialOrd for State {
+        fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+            Some(self.cmp(other))
+        }
+    }
+
     use crate::board::board::QuoridorBoard;
+    use crate::BinaryHeap;
     use crate::VecDeque;
     #[derive(Clone, Copy, Debug)]
     pub struct RustStaticGraph {
@@ -322,12 +347,12 @@ pub mod graph_implementations {
             let mut pos: i16;
             let mut new_pos: i16;
             while frontier.len() != 0 {
-                match frontier.pop_front() {
+                match frontier.pop_back() {
                     Some(popped) => {
                         pos = popped;
                         in_frontier[pos as usize] = false;
                     }
-                    None => panic!("EMPTY FRONTIER IN bfs"),
+                    None => panic!("EMPTY FRONTIER IN BFS"),
                 }
                 explored[pos as usize] = true;
 
@@ -367,6 +392,229 @@ pub mod graph_implementations {
                             }
                         }
                         frontier.push_back(new_pos);
+                        in_frontier[new_pos as usize] = true;
+                    }
+                }
+            }
+            return [-1; 81];
+        }
+        fn dfs(&self, start_pos: i16, player_number: i16) -> [i16; 81] {
+            let mut frontier: VecDeque<i16> = VecDeque::with_capacity(81);
+            frontier.push_back(start_pos);
+
+            let mut explored: [bool; 81] = [false; 81];
+
+            let mut in_frontier: [bool; 81] = [false; 81];
+
+            let mut parent: [i16; 81] = [-1; 81];
+            let mut pos: i16;
+            let mut new_pos: i16;
+            while frontier.len() != 0 {
+                match frontier.pop_front() {
+                    Some(popped) => {
+                        pos = popped;
+                        in_frontier[pos as usize] = false;
+                    }
+                    None => panic!("EMPTY FRONTIER IN DFS"),
+                }
+                explored[pos as usize] = true;
+
+                for direction in 0..4 {
+                    new_pos = pos + GRAPH_SHIFT_ARR[direction];
+                    if self.is_direction_valid(pos, direction as i16)
+                        && !explored[new_pos as usize]
+                        && !in_frontier[new_pos as usize]
+                    {
+                        parent[new_pos as usize] = pos;
+                        if (player_number == 1 && new_pos <= 8)
+                            | (player_number == 2 && new_pos >= 72)
+                        {
+                            let mut stack: [i16; 81] = [-1; 81];
+                            stack[0] = new_pos;
+                            let mut stack_idx: usize = 1;
+                            loop {
+                                if parent[new_pos as usize] == -1 {
+                                    stack[stack_idx] = -1;
+                                    break;
+                                }
+                                stack[stack_idx] = parent[new_pos as usize];
+                                stack_idx += 1;
+                                new_pos = parent[new_pos as usize];
+                            }
+                            let mut path: [i16; 81] = [-1; 81];
+                            path[0] = new_pos;
+                            stack_idx -= 1;
+                            let mut path_idx: usize = 0;
+                            loop {
+                                path[path_idx] = stack[stack_idx];
+                                if stack_idx == 0 {
+                                    return path;
+                                }
+                                stack_idx -= 1;
+                                path_idx += 1;
+                            }
+                        }
+                        frontier.push_back(new_pos);
+                        in_frontier[new_pos as usize] = true;
+                    }
+                }
+            }
+            return [-1; 81];
+        }
+        fn gbfs(&self, start_pos: i16, player_number: i16) -> [i16; 81] {
+            let mut frontier: Vec<i16> = Vec::with_capacity(81);
+            frontier.push(start_pos);
+
+            let mut explored: [bool; 81] = [false; 81];
+
+            let mut in_frontier: [bool; 81] = [false; 81];
+
+            let mut parent: [i16; 81] = [-1; 81];
+            let mut pos: i16;
+            let mut new_pos: i16;
+            while frontier.len() != 0 {
+                match frontier.pop() {
+                    Some(popped) => {
+                        pos = popped;
+                        in_frontier[pos as usize] = false;
+                    }
+                    None => panic!("EMPTY FRONTIER IN DFS"),
+                }
+                explored[pos as usize] = true;
+
+                for direction in 0..4 {
+                    new_pos = pos + GRAPH_SHIFT_ARR[direction];
+                    if self.is_direction_valid(pos, direction as i16)
+                        && !explored[new_pos as usize]
+                        && !in_frontier[new_pos as usize]
+                    {
+                        parent[new_pos as usize] = pos;
+                        if (player_number == 1 && new_pos <= 8)
+                            | (player_number == 2 && new_pos >= 72)
+                        {
+                            let mut stack: [i16; 81] = [-1; 81];
+                            stack[0] = new_pos;
+                            let mut stack_idx: usize = 1;
+                            loop {
+                                if parent[new_pos as usize] == -1 {
+                                    stack[stack_idx] = -1;
+                                    break;
+                                }
+                                stack[stack_idx] = parent[new_pos as usize];
+                                stack_idx += 1;
+                                new_pos = parent[new_pos as usize];
+                            }
+                            let mut path: [i16; 81] = [-1; 81];
+                            path[0] = new_pos;
+                            stack_idx -= 1;
+                            let mut path_idx: usize = 0;
+                            loop {
+                                path[path_idx] = stack[stack_idx];
+                                if stack_idx == 0 {
+                                    return path;
+                                }
+                                stack_idx -= 1;
+                                path_idx += 1;
+                            }
+                        }
+                        frontier.push(new_pos);
+                        in_frontier[new_pos as usize] = true;
+                    }
+                }
+            }
+            return [-1; 81];
+        }
+        fn astar(&self, start_pos: i16, player_number: i16) -> [i16; 81] {
+            let mut frontier: BinaryHeap<State> = BinaryHeap::new();
+            frontier.push(State {
+                cost: {
+                    if player_number == 1 {
+                        start_pos / 9
+                    } else {
+                        8 - start_pos / 9
+                    }
+                },
+                heuristic: {
+                    if player_number == 1 {
+                        start_pos / 9
+                    } else {
+                        8 - start_pos / 9
+                    }
+                },
+                path_cost: 0,
+                position: start_pos,
+            });
+
+            let mut explored: [bool; 81] = [false; 81];
+
+            let mut in_frontier: [bool; 81] = [false; 81];
+
+            let mut parent: [i16; 81] = [-1; 81];
+            let mut pos: i16;
+            let mut new_pos: i16;
+            while frontier.len() != 0 {
+                match frontier.pop() {
+                    Some(popped) => {
+                        pos = popped.position;
+                        in_frontier[pos as usize] = false;
+                    }
+                    None => panic!("EMPTY FRONTIER IN A*"),
+                }
+                explored[pos as usize] = true;
+
+                for direction in 0..4 {
+                    new_pos = pos + GRAPH_SHIFT_ARR[direction];
+                    if self.is_direction_valid(pos, direction as i16)
+                        && !explored[new_pos as usize]
+                        && !in_frontier[new_pos as usize]
+                    {
+                        parent[new_pos as usize] = pos;
+                        if (player_number == 1 && new_pos <= 8)
+                            | (player_number == 2 && new_pos >= 72)
+                        {
+                            let mut stack: [i16; 81] = [-1; 81];
+                            stack[0] = new_pos;
+                            let mut stack_idx: usize = 1;
+                            loop {
+                                if parent[new_pos as usize] == -1 {
+                                    stack[stack_idx] = -1;
+                                    break;
+                                }
+                                stack[stack_idx] = parent[new_pos as usize];
+                                stack_idx += 1;
+                                new_pos = parent[new_pos as usize];
+                            }
+                            let mut path: [i16; 81] = [-1; 81];
+                            path[0] = new_pos;
+                            stack_idx -= 1;
+                            let mut path_idx: usize = 0;
+                            loop {
+                                path[path_idx] = stack[stack_idx];
+                                if stack_idx == 0 {
+                                    return path;
+                                }
+                                stack_idx -= 1;
+                                path_idx += 1;
+                            }
+                        }
+                        frontier.push(State {
+                            cost: {
+                                if player_number == 1 {
+                                    new_pos / 9
+                                } else {
+                                    8 - new_pos / 9
+                                }
+                            },
+                            heuristic: {
+                                if player_number == 1 {
+                                    new_pos / 9
+                                } else {
+                                    8 - new_pos / 9
+                                }
+                            },
+                            path_cost: 0,
+                            position: new_pos,
+                        });
                         in_frontier[new_pos as usize] = true;
                     }
                 }
@@ -705,6 +953,24 @@ pub mod graph_implementations {
                     self.bfs(self.p1_pos, 1)
                 } else {
                     self.bfs(self.p2_pos, 2)
+                }
+            } else if self.mode == 2 {
+                if player_number == 1 {
+                    self.dfs(self.p1_pos, 1)
+                } else {
+                    self.dfs(self.p2_pos, 2)
+                }
+            } else if self.mode == 3 {
+                if player_number == 1 {
+                    self.gbfs(self.p1_pos, 1)
+                } else {
+                    self.gbfs(self.p2_pos, 2)
+                }
+            } else if self.mode == 4 {
+                if player_number == 1 {
+                    self.astar(self.p1_pos, 1)
+                } else {
+                    self.astar(self.p2_pos, 2)
                 }
             } else {
                 if player_number == 1 {
@@ -1104,6 +1370,24 @@ pub mod graph_implementations {
                     self.bfs(self.p1_pos, 1)
                 } else {
                     self.bfs(self.p2_pos, 2)
+                }
+            } else if self.mode == 2 {
+                if player_number == 1 {
+                    self.dfs(self.p1_pos, 1)
+                } else {
+                    self.dfs(self.p2_pos, 2)
+                }
+            } else if self.mode == 3 {
+                if player_number == 1 {
+                    self.gbfs(self.p1_pos, 1)
+                } else {
+                    self.gbfs(self.p2_pos, 2)
+                }
+            } else if self.mode == 4 {
+                if player_number == 1 {
+                    self.astar(self.p1_pos, 1)
+                } else {
+                    self.astar(self.p2_pos, 2)
                 }
             } else {
                 if player_number == 1 {

@@ -33,21 +33,21 @@ pub mod bitboard_implementations {
         pub walls_and_metadata: QuoridorBitboard,
     }
 
-    pub const RUST_PARTIAL_BITBOARD_BLANK: RustPartialBitboard = RustPartialBitboard {
-        p1: BITBOARD_BLANK,
-        p2: BITBOARD_BLANK,
-        walls: BITBOARD_BLANK,
-        p1_walls_placed: 0,
-        p2_walls_placed: 0,
-        turn: 1,
-        over: false,
-        mode: 1,
-    };
-    pub const RUST_FULL_BITBOARD_BLANK: RustFullBitboard = RustFullBitboard {
-        p1: BITBOARD_BLANK,
-        p2: BITBOARD_BLANK,
-        walls_and_metadata: BITBOARD_BLANK,
-    };
+    // pub const RUST_PARTIAL_BITBOARD_BLANK: RustPartialBitboard = RustPartialBitboard {
+    //     p1: BITBOARD_BLANK,
+    //     p2: BITBOARD_BLANK,
+    //     walls: BITBOARD_BLANK,
+    //     p1_walls_placed: 0,
+    //     p2_walls_placed: 0,
+    //     turn: 1,
+    //     over: false,
+    //     mode: 1,
+    // };
+    // pub const RUST_FULL_BITBOARD_BLANK: RustFullBitboard = RustFullBitboard {
+    //     p1: BITBOARD_BLANK,
+    //     p2: BITBOARD_BLANK,
+    //     walls_and_metadata: BITBOARD_BLANK,
+    // };
 
     pub const BITBOARD_FULL: QuoridorBitboard = QuoridorBitboard {
         bitboard_0: 18446744073709551615,

@@ -14,7 +14,7 @@ pub mod tictactoe_implementation {
         fn number_actions(&self) -> i16 {
             9
         }
-        fn new(mode: i16) -> TicTacToe {
+        fn new(_mode: i16) -> TicTacToe {
             TicTacToe {
                 positions: [0; 9],
                 over: false,
@@ -78,7 +78,7 @@ pub mod tictactoe_implementation {
         fn is_action_available(&mut self, action_number: i16) -> bool {
             self.positions[action_number as usize] == 0
         }
-        fn get_valid_actions(&mut self, mode: i16) -> Vec<i16> {
+        fn get_valid_actions(&mut self, _mode: i16) -> Vec<i16> {
             self.get_available_actions_fast()
         }
     }

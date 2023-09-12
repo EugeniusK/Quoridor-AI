@@ -20,6 +20,14 @@ pub mod mini_bitboard_implementations {
         pub mode: i16,
     }
 
+    #[derive(Clone, Copy, Debug)]
+
+    pub struct RustFullBitboardMini {
+        pub p1: QuoridorBitboardMini,
+        pub p2: QuoridorBitboardMini,
+        pub walls_and_metadata: QuoridorBitboardMini,
+    }
+
     pub const BITBOARD_MINI_FULL: QuoridorBitboardMini = QuoridorBitboardMini {
         bitboard: 340282366920938463463374466694279856128,
     };
@@ -305,6 +313,7 @@ pub mod mini_bitboard_implementations {
             return QuoridorBitboardMini { bitboard: 0 };
         }
     }
+
     impl QuoridorBitboardMini {
         pub fn new(mode: i16) -> QuoridorBitboardMini {
             if mode == 0 {
@@ -399,6 +408,372 @@ pub mod mini_bitboard_implementations {
         }
     }
 
+    impl RustFullBitboardMini {
+        fn get_turn(&self) -> i16 {
+            (self.walls_and_metadata.bitboard as i16 & 1) + 1
+        }
+
+        fn change_turn(&mut self) {
+            self.walls_and_metadata.bitboard ^= 1;
+        }
+
+        fn get_walls_left(&self, player_number: i16) -> i16 {
+            if player_number == 1 {
+                ((self.walls_and_metadata.bitboard >> 1) & 0x0000000000000000000000000000000F)
+                    as i16
+            } else {
+                ((self.walls_and_metadata.bitboard >> 5) & 0x0000000000000000000000000000000F)
+                    as i16
+            }
+        }
+
+        fn add_walls(&mut self, player_number: i16) {
+            if player_number == 1 {
+                self.walls_and_metadata.bitboard = (self.walls_and_metadata.bitboard
+                    & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE1)
+                    | (((self.walls_and_metadata.bitboard >> 1)
+                        & 0x0000000000000000000000000000000F)
+                        + 1)
+                        << 1
+            } else {
+                self.walls_and_metadata.bitboard = (self.walls_and_metadata.bitboard
+                    & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE1F)
+                    | (((self.walls_and_metadata.bitboard >> 5)
+                        & 0x0000000000000000000000000000000F)
+                        + 1)
+                        << 5
+            }
+        }
+
+        fn subtract_walls(&mut self, player_number: i16) {
+            if player_number == 1 {
+                self.walls_and_metadata.bitboard = (self.walls_and_metadata.bitboard
+                    & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE1)
+                    | (((self.walls_and_metadata.bitboard >> 1)
+                        & 0x0000000000000000000000000000000F)
+                        - 1)
+                        << 1
+            } else {
+                self.walls_and_metadata.bitboard = (self.walls_and_metadata.bitboard
+                    & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE1F)
+                    | (((self.walls_and_metadata.bitboard >> 5)
+                        & 0x0000000000000000000000000000000F)
+                        - 1)
+                        << 5
+            }
+        }
+        fn get_over(&self) -> bool {
+            (self.walls_and_metadata.bitboard >> 9) & 1 == 1
+        }
+        fn set_over(&mut self) {
+            self.walls_and_metadata.bitboard |= 0x00000000000000000000000000000200;
+        }
+
+        fn get_mode(&self) -> i16 {
+            ((self.walls_and_metadata.bitboard >> 10) & 0x0000000000000000000000000000000F) as i16
+        }
+    }
+    impl QuoridorBoard for RustFullBitboardMini {
+        fn number_actions(&self) -> i16 {
+            44
+        }
+        fn get_available_actions_fast(&mut self) -> Vec<i16> {
+            let mut available_actions: Vec<i16> = vec![];
+            if self.can_place_wall() {
+                let mut path_available: bool = false;
+                let mut previous_paths_1: Vec<QuoridorBitboardMini> = Vec::new();
+                let mut previous_paths_2: Vec<QuoridorBitboardMini> = Vec::new();
+                let mut path_1: QuoridorBitboardMini;
+                let mut path_2: QuoridorBitboardMini;
+                let mut path_traversed_1: bool;
+                let mut path_traversed_2: bool;
+                for action_number in 0..32 {
+                    if self.is_wall_valid(action_number) {
+                        if !path_available {
+                            self.take_action(action_number);
+                            path_1 = self.search(1);
+                            path_2 = self.search(2);
+                            if path_1 != BITBOARD_MINI_BLANK && path_2 != BITBOARD_MINI_BLANK {
+                                previous_paths_1.push(path_1);
+                                previous_paths_2.push(path_2);
+                                available_actions.push(action_number);
+                                path_available = true;
+                            }
+                            self.undo_action(action_number);
+                        } else {
+                            self.take_action(action_number);
+                            path_traversed_1 = false;
+                            for path in &previous_paths_1 {
+                                if *path & self.get_walls() == BITBOARD_MINI_BLANK {
+                                    path_traversed_1 = true;
+                                    break;
+                                }
+                            }
+                            path_traversed_2 = false;
+                            for path in &previous_paths_2 {
+                                if *path & self.get_walls() == BITBOARD_MINI_BLANK {
+                                    path_traversed_2 = true;
+                                    break;
+                                }
+                            }
+                            if !path_traversed_1 | !path_traversed_2 {
+                                if !path_traversed_1 {
+                                    path_1 = self.search(1);
+                                    if path_1 != BITBOARD_MINI_BLANK {
+                                        previous_paths_1.push(path_1);
+                                    }
+                                } else {
+                                    path_1 = previous_paths_1[0];
+                                }
+                                if !path_traversed_2 {
+                                    path_2 = self.search(2);
+                                    if path_2 != BITBOARD_MINI_BLANK {
+                                        previous_paths_2.push(path_2)
+                                    }
+                                } else {
+                                    path_2 = previous_paths_2[0];
+                                }
+                                if path_1 != BITBOARD_MINI_BLANK && path_2 != BITBOARD_MINI_BLANK {
+                                    available_actions.push(action_number);
+                                }
+                            } else {
+                                available_actions.push(action_number);
+                            }
+                            self.undo_action(action_number)
+                        }
+                    }
+                }
+            }
+            for action_number in 32..44 {
+                if self.is_move_valid(action_number) {
+                    available_actions.push(action_number);
+                }
+            }
+
+            available_actions
+        }
+        fn get_valid_actions(&mut self, mode: i16) -> Vec<i16> {
+            if mode == 1 {
+                RustFullBitboardMini::get_available_actions_slow(self)
+            } else if mode == 2 {
+                RustFullBitboardMini::get_available_actions_fast(self)
+            } else {
+                RustFullBitboardMini::get_available_actions_fast(self)
+            }
+        }
+        fn is_action_available(&mut self, action_number: i16) -> bool {
+            BitboardMini::is_action_available(self, action_number)
+        }
+        fn new(mode: i16) -> RustFullBitboardMini {
+            let mut board: RustFullBitboardMini = RustFullBitboardMini {
+                p1: QuoridorBitboardMini::new(1),
+                p2: QuoridorBitboardMini::new(2),
+                walls_and_metadata: QuoridorBitboardMini::new(0),
+            };
+            board.walls_and_metadata.bitboard = (mode as u128) << 10;
+            board
+        }
+
+        fn take_action(&mut self, action: i16) {
+            if action < 32 {
+                if action < 16 {
+                    // println!("{}", 9 + (action % 4) * 2 + 18 * (3 - action / 4));
+                    self.walls_and_metadata
+                        .set_bit((9 + (action % 4) * 2 + 18 * (3 - action / 4)) as usize);
+                    self.walls_and_metadata
+                        .set_bit((9 + (action % 4) * 2 + 18 * (3 - action / 4) + 1) as usize);
+                    self.walls_and_metadata
+                        .set_bit((9 + (action % 4) * 2 + 18 * (3 - action / 4) + 2) as usize);
+                } else {
+                    self.walls_and_metadata
+                        .set_bit(((action % 4) * 2 + 18 * (8 - action / 4) + 1) as usize);
+                    self.walls_and_metadata
+                        .set_bit(((action % 4) * 2 + 18 * (8 - action / 4) + 1 - 9) as usize);
+                    self.walls_and_metadata
+                        .set_bit(((action % 4) * 2 + 18 * (8 - action / 4) + 1 - 18) as usize);
+                }
+                if self.get_turn() == 1 {
+                    self.add_walls(1);
+                    self.change_turn();
+                } else {
+                    self.add_walls(2);
+                    self.change_turn();
+                }
+            } else {
+                if self.get_turn() == 1 {
+                    self.p1 >>= BITBOARD_SHIFT_ARR[(action - 32) as usize];
+                    if self.p1.hash() <= 4 {
+                        self.set_over();
+                    } else {
+                        self.change_turn();
+                    }
+                } else {
+                    self.p2 >>= BITBOARD_SHIFT_ARR[(action - 32) as usize];
+                    if self.p2.hash() >= 20 {
+                        self.set_over();
+                    } else {
+                        self.change_turn();
+                    }
+                }
+            }
+        }
+        fn get_turn(&self) -> i16 {
+            self.get_turn()
+        }
+
+        fn is_over(&self) -> bool {
+            self.get_over()
+        }
+    }
+    impl BitboardMini for RustFullBitboardMini {
+        fn undo_action(&mut self, action: i16) {
+            if action < 32 {
+                if action < 16 {
+                    self.walls_and_metadata
+                        .clear_bit((9 + (action % 4) * 2 + 18 * (3 - action / 4)) as usize);
+                    self.walls_and_metadata
+                        .clear_bit((9 + (action % 4) * 2 + 18 * (3 - action / 4) + 1) as usize);
+                    self.walls_and_metadata
+                        .clear_bit((9 + (action % 4) * 2 + 18 * (3 - action / 4) + 2) as usize);
+                } else {
+                    self.walls_and_metadata
+                        .clear_bit(((action % 4) * 2 + 18 * (8 - action / 4) + 1) as usize);
+                    self.walls_and_metadata
+                        .clear_bit(((action % 4) * 2 + 18 * (8 - action / 4) + 1 - 9) as usize);
+                    self.walls_and_metadata
+                        .clear_bit(((action % 4) * 2 + 18 * (8 - action / 4) + 1 - 18) as usize);
+                }
+
+                if self.get_turn() == 2 {
+                    self.subtract_walls(1);
+                    self.change_turn();
+                } else {
+                    self.subtract_walls(2);
+                    self.change_turn();
+                }
+            }
+        }
+        fn is_direction_valid(&self, board: QuoridorBitboardMini, direction: i16) -> bool {
+            if direction == 0 {
+                (board >> -9 & self.walls_and_metadata == BITBOARD_MINI_BLANK)
+                    && (board >> -9 & BITBOARD_MINI_NORTH_MASK & BITBOARD_MINI_FULL
+                        != BITBOARD_MINI_BLANK)
+            } else if direction == 1 {
+                (board >> 1 & self.walls_and_metadata == BITBOARD_MINI_BLANK)
+                    && (board >> 1 & BITBOARD_MINI_EAST_MASK & BITBOARD_MINI_FULL
+                        != BITBOARD_MINI_BLANK)
+            } else if direction == 2 {
+                (board >> 9 & self.walls_and_metadata == BITBOARD_MINI_BLANK)
+                    && (board >> 9 & BITBOARD_MINI_SOUTH_MASK & BITBOARD_MINI_FULL
+                        != BITBOARD_MINI_BLANK)
+            } else if direction == 3 {
+                (board >> -1 & self.walls_and_metadata == BITBOARD_MINI_BLANK)
+                    && (board >> -1 & BITBOARD_MINI_WEST_MASK & BITBOARD_MINI_FULL
+                        != BITBOARD_MINI_BLANK)
+            } else {
+                panic!("INVALID DIRECTION")
+            }
+        }
+
+        fn is_move_valid(&self, move_number: i16) -> bool {
+            let in_turn_bitboard: QuoridorBitboardMini;
+            let out_turn_bitboard: QuoridorBitboardMini;
+
+            if self.get_turn() == 1 {
+                in_turn_bitboard = self.p1;
+                out_turn_bitboard = self.p2;
+            } else {
+                in_turn_bitboard = self.p2;
+                out_turn_bitboard = self.p1;
+            }
+
+            if move_number < 36 {
+                return self.is_direction_valid(in_turn_bitboard, move_number - 32)
+                    && in_turn_bitboard
+                        >> BITBOARD_SHIFT_ARR[(move_number - 32) as usize] as isize
+                        != out_turn_bitboard;
+            } else {
+                if move_number % 2 == 0 {
+                    return self.is_direction_valid(in_turn_bitboard, (move_number - 36) / 2)
+                        && in_turn_bitboard
+                            >> BITBOARD_SHIFT_ARR[((move_number - 36) / 2) as usize] as isize
+                            == out_turn_bitboard
+                        && self.is_direction_valid(out_turn_bitboard, (move_number - 36) / 2);
+                } else {
+                    return (self
+                        .is_direction_valid(in_turn_bitboard, ((move_number - 35) / 2) % 4)
+                        && in_turn_bitboard
+                            >> BITBOARD_SHIFT_ARR[(((move_number - 35) / 2) % 4) as usize]
+                            == out_turn_bitboard
+                        && !self
+                            .is_direction_valid(out_turn_bitboard, ((move_number - 35) / 2) % 4)
+                        && self
+                            .is_direction_valid(out_turn_bitboard, ((move_number - 37) / 2) % 4))
+                        | (self
+                            .is_direction_valid(in_turn_bitboard, ((move_number - 37) / 2) % 4)
+                            && in_turn_bitboard
+                                >> BITBOARD_SHIFT_ARR[(((move_number - 37) / 2) % 4) as usize]
+                                == out_turn_bitboard
+                            && !self.is_direction_valid(
+                                out_turn_bitboard,
+                                ((move_number - 37) / 2) % 4,
+                            )
+                            && self.is_direction_valid(
+                                out_turn_bitboard,
+                                ((move_number - 35) / 2) % 4,
+                            ));
+                }
+            }
+        }
+
+        fn is_wall_valid(&self, wall_number: i16) -> bool {
+            let idx: usize;
+            if wall_number < 16 {
+                idx = (9 + (wall_number % 4) * 2 + 18 * (3 - wall_number / 4)) as usize;
+                return self.walls_and_metadata.get_bit(idx as usize) == false
+                    && self.walls_and_metadata.get_bit((idx + 1) as usize) == false
+                    && self.walls_and_metadata.get_bit((idx + 2) as usize) == false;
+            } else {
+                idx = ((wall_number % 4) * 2 + 18 * (8 - wall_number / 4) + 1) as usize;
+                return self.walls_and_metadata.get_bit(idx as usize) == false
+                    && self.walls_and_metadata.get_bit((idx - 9) as usize) == false
+                    && self.walls_and_metadata.get_bit((idx - 18) as usize) == false;
+            }
+        }
+
+        fn can_place_wall(&self) -> bool {
+            (self.get_turn() == 1 && self.get_walls_left(1) < 5)
+                | (self.get_turn() == 2 && self.get_walls_left(2) < 5)
+        }
+
+        fn get_pos(&self, player_number: i16) -> i16 {
+            if player_number == 1 {
+                self.p1.hash() as i16
+            } else {
+                self.p2.hash() as i16
+            }
+        }
+
+        fn get_walls(&self) -> QuoridorBitboardMini {
+            self.walls_and_metadata
+        }
+
+        fn search(&self, player_number: i16) -> QuoridorBitboardMini {
+            if self.get_mode() == 1 {
+                if player_number == 1 {
+                    self.bfs(self.p1, 1)
+                } else {
+                    self.bfs(self.p2, 2)
+                }
+            } else {
+                if player_number == 1 {
+                    self.bfs(self.p1, 1)
+                } else {
+                    self.bfs(self.p2, 2)
+                }
+            }
+        }
+    }
     impl QuoridorBoard for RustPartialBitboardMini {
         fn number_actions(&self) -> i16 {
             44
@@ -520,7 +895,6 @@ pub mod mini_bitboard_implementations {
                     self.walls
                         .set_bit(((action % 4) * 2 + 18 * (8 - action / 4) + 1 - 18) as usize);
                 }
-
                 if self.turn == 1 {
                     self.p1_walls_placed += 1;
                     self.turn = 2;
