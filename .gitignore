@@ -3,6 +3,7 @@
 docs/
 src/Logs
 src/Results
+refactored_src/Rs_Quoridor/data
 # Visual Studio Code files
 .vscode
 

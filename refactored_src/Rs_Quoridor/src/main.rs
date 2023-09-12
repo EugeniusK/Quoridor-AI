@@ -42,22 +42,33 @@ pub use test::quoridor_tests::*;
 pub mod tictactoe;
 pub use tictactoe::tictactoe_implementation::TicTacToe;
 
+// pub mod candidate_graph_pathfinding;
+// pub use candidate_graph_pathfinding::candidate_bfs::{
+//     bfs_candidate0, bfs_candidate1, bfs_candidate2, bfs_candidate3, bfs_candidate4, bfs_candidate5,
+// };
 fn main() {
     // let mut board: RustDynamicGraph = RustDynamicGraph::new(1);
     // println!("{:?}", board.get_available_actions_fast());
     // let mut board: RustDynamicGraph = RustDynamicGraph::new(3);
     // println!("{:?}", board.get_available_actions_fast());
 
-    // test.generate_actions_mini(100000);
-    // test.generate_data(100, 1);
-    // test.generate_data_mini(100, 1);
-    // generate_data(100, 1);
-    // generate_data(100, 2);
+    // generate_data(10, 1);
+    // generate_data(10, 5);
+    // generate_data(10, 6);
+    // generate_data(10, 7);
+    // generate_data(10, 8);
+    generate_data(10, 9);
 
-    // generate_data_mini(10, 1);
-
-    let mut test1: Test_Compare<RustStaticGraph, RustDynamicGraph> = Test_Compare::new(1, 3);
-    test1.compare(50000);
+    let mut test1: Test_Compare<RustStaticGraph, RustDynamicGraph> = Test_Compare::new(1, 9);
+    test1.compare(5000);
+    // let mut test1: Test_Compare<RustStaticGraph, RustDynamicGraph> = Test_Compare::new(1, 6);
+    // test1.compare(5000);
+    // let mut test1: Test_Compare<RustStaticGraph, RustDynamicGraph> = Test_Compare::new(1, 7);
+    // test1.compare(5000);
+    // let mut test1: Test_Compare<RustStaticGraph, RustDynamicGraph> = Test_Compare::new(1, 8);
+    // test1.compare(5000);
+    // let mut test1: Test_Compare<RustStaticGraph, RustDynamicGraph> = Test_Compare::new(1, 3);
+    // test1.compare(50000);
     // let mut test1: Test_Compare<RustStaticGraph, RustDynamicGraph> = Test_Compare::new(1, 1);
     // test1.compare(50000);
     // let mut test2: Test_Compare<RustStaticGraph, RustPartialBitboard> = Test_Compare::new(1, 2);
