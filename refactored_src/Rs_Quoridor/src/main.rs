@@ -57,10 +57,17 @@ fn main() {
     // generate_data(10, 6);
     // generate_data(10, 7);
     // generate_data(10, 8);
-    generate_data(10, 9);
+    // generate_data(10, 1);
+    // generate_data(10, 2);
+    generate_actions(100);
 
-    let mut test1: Test_Compare<RustStaticGraph, RustDynamicGraph> = Test_Compare::new(1, 9);
-    test1.compare(5000);
+    // let mut test1: Test_Compare<RustFullBitboard, RustDynamicGraph> = Test_Compare::new(1, 1);
+    // test1.compare(5000);
+
+    // let mut test1: Test_Compare<RustFullBitboard, RustDynamicGraph> = Test_Compare::new(1, 2);
+    // test1.compare(5000);
+    // let mut test1: Test_Compare<RustFullBitboard, RustDynamicGraph> = Test_Compare::new(1, 3);
+    // test1.compare(50000);
     // let mut test1: Test_Compare<RustStaticGraph, RustDynamicGraph> = Test_Compare::new(1, 6);
     // test1.compare(5000);
     // let mut test1: Test_Compare<RustStaticGraph, RustDynamicGraph> = Test_Compare::new(1, 7);
