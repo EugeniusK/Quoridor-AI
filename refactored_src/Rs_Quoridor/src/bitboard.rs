@@ -1,7 +1,10 @@
 pub mod bitboard_implementations {
     use crate::board::board::QuoridorBoard;
+    use crate::util;
     use crate::VecDeque;
     use std::ops::*;
+
+    pub use util::util::{find_idx, find_null, find_nulli16, min_idx};
     pub const BITBOARD_SHIFT_ARR: [isize; 12] = [-34, 2, 34, -2, -68, -32, 4, 36, 68, 32, -4, -36];
 
     #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -277,8 +280,11 @@ pub mod bitboard_implementations {
             println!("{}", output_board);
         }
         fn bfs(&self, start_bitboard: QuoridorBitboard, player_number: i16) -> QuoridorBitboard {
-            let mut frontier: VecDeque<QuoridorBitboard> = VecDeque::with_capacity(81);
-            frontier.push_back(start_bitboard);
+            let mut frontier: [QuoridorBitboard; 81] = [BITBOARD_BLANK; 81];
+
+            frontier[0] = start_bitboard;
+            let mut head_pointer: usize = 0;
+            let mut tail_pointer: usize = 1;
 
             let mut explored: QuoridorBitboard = QuoridorBitboard::new(0);
 
@@ -289,14 +295,10 @@ pub mod bitboard_implementations {
             let mut bitboard: QuoridorBitboard;
             let mut new_bitboard: QuoridorBitboard;
 
-            while frontier.len() != 0 {
-                match frontier.pop_front() {
-                    Some(popped) => {
-                        bitboard = popped;
-                        in_frontier -= bitboard;
-                    }
-                    None => panic!("EMPTY FRONTIER IN bfs"),
-                }
+            while head_pointer != tail_pointer {
+                bitboard = frontier[head_pointer];
+                head_pointer = (head_pointer + 1) % 81;
+                in_frontier -= bitboard;
                 explored += bitboard;
                 for direction in 0..4 {
                     new_bitboard = bitboard >> BITBOARD_SHIFT_ARR[direction];
@@ -360,8 +362,359 @@ pub mod bitboard_implementations {
                                 stack_idx -= 1;
                             }
                         }
-                        frontier.push_back(new_bitboard);
+                        frontier[tail_pointer] = new_bitboard;
+                        tail_pointer = (tail_pointer + 1) % 81;
                         in_frontier += new_bitboard;
+                    }
+                }
+            }
+            return QuoridorBitboard {
+                bitboard_0: 0,
+                bitboard_1: 0,
+                bitboard_2: 0,
+                bitboard_3: 0,
+                bitboard_4: 0,
+            };
+        }
+        fn dfs(&self, start_bitboard: QuoridorBitboard, player_number: i16) -> QuoridorBitboard {
+            let mut frontier: [QuoridorBitboard; 81] = [BITBOARD_BLANK; 81];
+
+            frontier[0] = start_bitboard;
+            let mut tail_pointer: usize = 1;
+
+            let mut explored: QuoridorBitboard = QuoridorBitboard::new(0);
+
+            let mut in_frontier: QuoridorBitboard = QuoridorBitboard::new(0);
+            in_frontier += start_bitboard;
+
+            let mut parent: [QuoridorBitboard; 81] = [BITBOARD_BLANK; 81];
+            let mut bitboard: QuoridorBitboard;
+            let mut new_bitboard: QuoridorBitboard;
+
+            while 0 != tail_pointer {
+                bitboard = frontier[tail_pointer - 1];
+                tail_pointer = (tail_pointer - 1) % 81;
+                in_frontier -= bitboard;
+                explored += bitboard;
+                for direction in 0..4 {
+                    new_bitboard = bitboard >> BITBOARD_SHIFT_ARR[direction];
+
+                    if self.is_direction_valid(bitboard, direction as i16)
+                        && explored & new_bitboard == BITBOARD_BLANK
+                        && in_frontier & new_bitboard == BITBOARD_BLANK
+                    {
+                        parent[new_bitboard.hash()] = bitboard;
+
+                        if (player_number == 1 && new_bitboard.bitboard_0 >= 140737488355328)
+                            | (player_number == 2
+                                && new_bitboard.bitboard_4 >= 2147483648
+                                && new_bitboard.bitboard_4 <= 140737488355328)
+                        {
+                            let mut stack: [QuoridorBitboard; 81] = [QuoridorBitboard {
+                                bitboard_0: 0,
+                                bitboard_1: 0,
+                                bitboard_2: 0,
+                                bitboard_3: 0,
+                                bitboard_4: 0,
+                            };
+                                81];
+                            stack[0] = new_bitboard;
+                            let mut stack_idx: usize = 1;
+
+                            let mut new_bitboard_idx: usize;
+
+                            loop {
+                                if parent[new_bitboard.hash()].hash() == 255 {
+                                    break;
+                                }
+                                new_bitboard_idx = new_bitboard.hash();
+
+                                stack[stack_idx] = parent[new_bitboard_idx];
+                                stack_idx += 1;
+                                new_bitboard = parent[new_bitboard_idx];
+                            }
+
+                            let mut path: QuoridorBitboard = BITBOARD_BLANK;
+                            stack_idx -= 1;
+                            loop {
+                                path += stack[stack_idx];
+
+                                if stack_idx != 0 {
+                                    match stack[stack_idx - 1].hash() as isize
+                                        - stack[stack_idx].hash() as isize
+                                    {
+                                        -9 => path += stack[stack_idx] >> -17,
+                                        1 => path += stack[stack_idx] >> 1,
+                                        9 => path += stack[stack_idx] >> 17,
+                                        -1 => path += stack[stack_idx] >> -1,
+                                        _ => {
+                                            panic!("INVALID PARENT BITBOARD")
+                                        }
+                                    }
+                                }
+                                if stack_idx == 0 {
+                                    return path;
+                                }
+                                stack_idx -= 1;
+                            }
+                        }
+                        frontier[tail_pointer] = new_bitboard;
+                        tail_pointer = (tail_pointer + 1) % 81;
+                        in_frontier += new_bitboard;
+                    }
+                }
+            }
+            return QuoridorBitboard {
+                bitboard_0: 0,
+                bitboard_1: 0,
+                bitboard_2: 0,
+                bitboard_3: 0,
+                bitboard_4: 0,
+            };
+        }
+        fn gbfs(&self, start_bitboard: QuoridorBitboard, player_number: i16) -> QuoridorBitboard {
+            let mut frontier: [QuoridorBitboard; 81] = [BITBOARD_BLANK; 81];
+            let mut heuristic: [usize; 81] = [255; 81];
+            // use heuristic as a key to sort frontier
+            frontier[0] = start_bitboard;
+            heuristic[0] = {
+                if player_number == 1 {
+                    start_bitboard.hash() / 9
+                } else {
+                    8 - start_bitboard.hash() / 9
+                }
+            };
+
+            let mut frontier_count = 1;
+
+            let mut explored: QuoridorBitboard = QuoridorBitboard::new(0);
+
+            let mut in_frontier: QuoridorBitboard = QuoridorBitboard::new(0);
+            in_frontier += start_bitboard;
+
+            let mut parent: [QuoridorBitboard; 81] = [BITBOARD_BLANK; 81];
+            let mut bitboard: QuoridorBitboard;
+            let mut new_bitboard: QuoridorBitboard;
+
+            let mut heuristic_min_idx: usize;
+            let mut heuristic_null_idx: usize;
+
+            while frontier_count != 0 {
+                heuristic_min_idx = min_idx(&heuristic);
+                bitboard = frontier[heuristic_min_idx];
+                heuristic[heuristic_min_idx] = 255;
+
+                in_frontier -= bitboard;
+                explored += bitboard;
+                frontier_count -= 1;
+                for direction in 0..4 {
+                    new_bitboard = bitboard >> BITBOARD_SHIFT_ARR[direction];
+
+                    if self.is_direction_valid(bitboard, direction as i16)
+                        && explored & new_bitboard == BITBOARD_BLANK
+                        && in_frontier & new_bitboard == BITBOARD_BLANK
+                    {
+                        parent[new_bitboard.hash()] = bitboard;
+
+                        if (player_number == 1 && new_bitboard.bitboard_0 >= 140737488355328)
+                            | (player_number == 2
+                                && new_bitboard.bitboard_4 >= 2147483648
+                                && new_bitboard.bitboard_4 <= 140737488355328)
+                        {
+                            let mut stack: [QuoridorBitboard; 81] = [QuoridorBitboard {
+                                bitboard_0: 0,
+                                bitboard_1: 0,
+                                bitboard_2: 0,
+                                bitboard_3: 0,
+                                bitboard_4: 0,
+                            };
+                                81];
+                            stack[0] = new_bitboard;
+                            let mut stack_idx: usize = 1;
+
+                            let mut new_bitboard_idx: usize;
+
+                            loop {
+                                if parent[new_bitboard.hash()].hash() == 255 {
+                                    break;
+                                }
+                                new_bitboard_idx = new_bitboard.hash();
+
+                                stack[stack_idx] = parent[new_bitboard_idx];
+                                stack_idx += 1;
+                                new_bitboard = parent[new_bitboard_idx];
+                            }
+
+                            let mut path: QuoridorBitboard = BITBOARD_BLANK;
+                            stack_idx -= 1;
+                            loop {
+                                path += stack[stack_idx];
+
+                                if stack_idx != 0 {
+                                    match stack[stack_idx - 1].hash() as isize
+                                        - stack[stack_idx].hash() as isize
+                                    {
+                                        -9 => path += stack[stack_idx] >> -17,
+                                        1 => path += stack[stack_idx] >> 1,
+                                        9 => path += stack[stack_idx] >> 17,
+                                        -1 => path += stack[stack_idx] >> -1,
+                                        _ => {
+                                            panic!("INVALID PARENT BITBOARD")
+                                        }
+                                    }
+                                }
+                                if stack_idx == 0 {
+                                    return path;
+                                }
+                                stack_idx -= 1;
+                            }
+                        }
+                        heuristic_null_idx = find_null(&heuristic);
+
+                        frontier[heuristic_null_idx] = new_bitboard;
+                        heuristic[heuristic_null_idx] = {
+                            if player_number == 1 {
+                                start_bitboard.hash() / 9
+                            } else {
+                                8 - start_bitboard.hash() / 9
+                            }
+                        };
+                        in_frontier += new_bitboard;
+                        frontier_count += 1;
+                    }
+                }
+            }
+            return QuoridorBitboard {
+                bitboard_0: 0,
+                bitboard_1: 0,
+                bitboard_2: 0,
+                bitboard_3: 0,
+                bitboard_4: 0,
+            };
+        }
+        fn astar(&self, start_bitboard: QuoridorBitboard, player_number: i16) -> QuoridorBitboard {
+            let mut frontier: [QuoridorBitboard; 81] = [BITBOARD_BLANK; 81];
+            let mut frontier_hashes: [i16; 81] = [255; 81];
+
+            let mut f_sum: [usize; 81] = [255; 81];
+            // index 0 of f_sum is the lowest path_cost of position 0 and so on
+            let mut path_cost: [usize; 81] = [255; 81];
+            // index 0 of path_cost is the lowest path_cost of position 0 and so on
+            frontier[0] = start_bitboard;
+            frontier_hashes[0] = start_bitboard.hash() as i16;
+            f_sum[start_bitboard.hash()] = 0 + {
+                if player_number == 1 {
+                    start_bitboard.hash() / 9
+                } else {
+                    8 - start_bitboard.hash() / 9
+                }
+            };
+            path_cost[start_bitboard.hash()] = 0;
+
+            let mut frontier_count = 1;
+
+            let mut in_frontier: QuoridorBitboard = QuoridorBitboard::new(0);
+            in_frontier += start_bitboard;
+
+            let mut parent: [QuoridorBitboard; 81] = [BITBOARD_BLANK; 81];
+            let mut bitboard: QuoridorBitboard;
+            let mut new_bitboard: QuoridorBitboard;
+            let mut popped_path_cost: usize;
+
+            let mut f_null_idx: usize;
+            let mut popped_idx: usize;
+
+            let mut hashed: usize;
+            while frontier_count != 0 {
+                hashed = min_idx(&f_sum);
+                popped_path_cost = path_cost[hashed];
+                popped_idx = find_idx(&frontier_hashes, hashed as i16);
+                bitboard = frontier[popped_idx];
+                frontier[popped_idx] = BITBOARD_BLANK;
+                frontier_hashes[popped_idx] = 255;
+
+                f_sum[hashed] = 255;
+                in_frontier -= bitboard;
+                frontier_count -= 1;
+
+                for direction in 0..4 {
+                    new_bitboard = bitboard >> BITBOARD_SHIFT_ARR[direction];
+
+                    if self.is_direction_valid(bitboard, direction as i16) {
+                        if (player_number == 1 && new_bitboard.bitboard_0 >= 140737488355328)
+                            | (player_number == 2
+                                && new_bitboard.bitboard_4 >= 2147483648
+                                && new_bitboard.bitboard_4 <= 140737488355328)
+                        {
+                            parent[new_bitboard.hash()] = bitboard;
+                            let mut stack: [QuoridorBitboard; 81] = [QuoridorBitboard {
+                                bitboard_0: 0,
+                                bitboard_1: 0,
+                                bitboard_2: 0,
+                                bitboard_3: 0,
+                                bitboard_4: 0,
+                            };
+                                81];
+                            stack[0] = new_bitboard;
+                            let mut stack_idx: usize = 1;
+
+                            let mut new_bitboard_idx: usize;
+
+                            loop {
+                                if parent[new_bitboard.hash()].hash() == 255 {
+                                    break;
+                                }
+                                new_bitboard_idx = new_bitboard.hash();
+
+                                stack[stack_idx] = parent[new_bitboard_idx];
+                                stack_idx += 1;
+                                new_bitboard = parent[new_bitboard_idx];
+                            }
+
+                            let mut path: QuoridorBitboard = BITBOARD_BLANK;
+                            stack_idx -= 1;
+                            loop {
+                                path += stack[stack_idx];
+
+                                if stack_idx != 0 {
+                                    match stack[stack_idx - 1].hash() as isize
+                                        - stack[stack_idx].hash() as isize
+                                    {
+                                        -9 => path += stack[stack_idx] >> -17,
+                                        1 => path += stack[stack_idx] >> 1,
+                                        9 => path += stack[stack_idx] >> 17,
+                                        -1 => path += stack[stack_idx] >> -1,
+                                        _ => {
+                                            panic!("INVALID PARENT BITBOARD")
+                                        }
+                                    }
+                                }
+                                if stack_idx == 0 {
+                                    return path;
+                                }
+                                stack_idx -= 1;
+                            }
+                        }
+                        hashed = new_bitboard.hash();
+                        f_null_idx = find_nulli16(&frontier_hashes);
+                        if popped_path_cost + 1 < path_cost[hashed] {
+                            parent[hashed] = bitboard;
+                            path_cost[hashed] = popped_path_cost + 1;
+                            f_sum[hashed] = popped_path_cost + 1 + {
+                                if player_number == 1 {
+                                    (hashed / 9) as usize
+                                } else {
+                                    (8 - hashed / 9) as usize
+                                }
+                            };
+
+                            if in_frontier & new_bitboard == BITBOARD_BLANK {
+                                frontier[f_null_idx] = new_bitboard;
+                                frontier_hashes[f_null_idx] = hashed as i16;
+                                in_frontier += new_bitboard;
+                                frontier_count += 1;
+                            }
+                        }
                     }
                 }
             }
@@ -923,6 +1276,24 @@ pub mod bitboard_implementations {
                 } else {
                     self.bfs(self.p2, 2)
                 }
+            } else if self.get_mode() == 2 {
+                if player_number == 1 {
+                    self.dfs(self.p1, 1)
+                } else {
+                    self.dfs(self.p2, 2)
+                }
+            } else if self.get_mode() == 3 {
+                if player_number == 1 {
+                    self.gbfs(self.p1, 1)
+                } else {
+                    self.gbfs(self.p2, 2)
+                }
+            } else if self.get_mode() == 4 {
+                if player_number == 1 {
+                    self.astar(self.p1, 1)
+                } else {
+                    self.astar(self.p2, 2)
+                }
             } else {
                 if player_number == 1 {
                     self.bfs(self.p1, 1)
@@ -1222,6 +1593,24 @@ pub mod bitboard_implementations {
                     self.bfs(self.p1, 1)
                 } else {
                     self.bfs(self.p2, 2)
+                }
+            } else if self.mode == 2 {
+                if player_number == 1 {
+                    self.dfs(self.p1, 1)
+                } else {
+                    self.dfs(self.p2, 2)
+                }
+            } else if self.mode == 3 {
+                if player_number == 1 {
+                    self.gbfs(self.p1, 1)
+                } else {
+                    self.gbfs(self.p2, 2)
+                }
+            } else if self.mode == 4 {
+                if player_number == 1 {
+                    self.astar(self.p1, 1)
+                } else {
+                    self.astar(self.p2, 2)
                 }
             } else {
                 if player_number == 1 {

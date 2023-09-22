@@ -85,7 +85,6 @@ pub mod quoridor_tests {
                     if board1_available != board2_available {
                         println!("{:?}", board1_available);
                         println!("{:?}", board2_available);
-
                         panic!("BOARDS RETURN DIFFERENT VALID ACTIONS");
                     } else {
                         action = rng.gen_range(0..board1.number_actions());

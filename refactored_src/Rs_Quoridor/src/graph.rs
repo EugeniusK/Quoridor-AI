@@ -1,30 +1,8 @@
 pub mod graph_implementations {
-    use std::cmp::Ordering;
-
-    #[derive(Copy, Clone, Eq, PartialEq)]
-    struct State {
-        cost: i16,
-        heuristic: i16,
-        path_cost: i16,
-        position: i16,
-    }
-
-    impl Ord for State {
-        fn cmp(&self, other: &Self) -> Ordering {
-            other
-                .cost
-                .cmp(&self.cost)
-                .then_with(|| self.position.cmp(&other.position))
-        }
-    }
-    impl PartialOrd for State {
-        fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-            Some(self.cmp(other))
-        }
-    }
 
     use crate::board::board::QuoridorBoard;
-    use crate::VecDeque;
+    use crate::util;
+    pub use util::util::{find_idx, find_null, find_nulli16, min_idx};
     #[derive(Clone, Copy, Debug)]
     pub struct RustStaticGraph {
         pub p1_pos: i16,
@@ -160,18 +138,6 @@ pub mod graph_implementations {
         ver_walls_placed: [false; 64],
         mode: 0,
     };
-    static mut global_frontier: [i16; 81] = [-1; 81];
-    static mut global_head_pointer: usize = 0;
-    static mut global_tail_pointer: usize = 1;
-    static mut global_explored: [bool; 81] = [false; 81];
-    static mut global_in_frontier: [bool; 81] = [false; 81];
-    static mut global_parent: [i16; 81] = [-1; 81];
-    static mut global_pos: i16 = -1;
-    static mut global_new_pos: i16 = -1;
-    static mut global_stack: [i16; 81] = [-1; 81];
-    static mut global_stack_idx: usize = 1;
-    static mut global_path: [i16; 81] = [-1; 81];
-    static mut global_path_idx: usize = 0;
 
     pub trait Graph: QuoridorBoard {
         fn undo_action(&mut self, action: i16);
@@ -206,9 +172,6 @@ pub mod graph_implementations {
             }
             available_actions
         }
-
-        // fn get_turn(&self) -> i16;
-        // fn is_over(&self) -> bool;
         fn get_pos(&self, player_number: i16) -> i16;
         fn search(&self, player_number: i16) -> [i16; 81];
         fn display(&self) -> () {
@@ -347,9 +310,6 @@ pub mod graph_implementations {
             println!("{}", output_board);
         }
 
-        fn astar(&self, start_pos: i16, player_number: i16) -> [i16; 81] {
-            return [-1; 81];
-        }
         fn bfs(&self, start_pos: i16, player_number: i16) -> [i16; 81] {
             let mut frontier: [i16; 81] = [-1; 81];
 
@@ -360,6 +320,7 @@ pub mod graph_implementations {
             let mut explored: [bool; 81] = [false; 81];
 
             let mut in_frontier: [bool; 81] = [false; 81];
+            in_frontier[start_pos as usize] = true;
 
             let mut parent: [i16; 81] = [-1; 81];
             let mut pos: i16;
@@ -424,6 +385,7 @@ pub mod graph_implementations {
             let mut explored: [bool; 81] = [false; 81];
 
             let mut in_frontier: [bool; 81] = [false; 81];
+            in_frontier[start_pos as usize] = true;
 
             let mut parent: [i16; 81] = [-1; 81];
             let mut pos: i16;
@@ -432,9 +394,7 @@ pub mod graph_implementations {
                 pos = frontier[tail_pointer - 1];
                 tail_pointer = (tail_pointer - 1) % 81;
                 in_frontier[pos as usize] = false;
-
                 explored[pos as usize] = true;
-
                 for direction in 0..4 {
                     new_pos = pos + GRAPH_SHIFT_ARR[direction];
                     if self.is_direction_valid(pos, direction as i16)
@@ -478,48 +438,43 @@ pub mod graph_implementations {
             }
             return [-1; 81];
         }
+
         fn gbfs(&self, start_pos: i16, player_number: i16) -> [i16; 81] {
-            let mut frontier: [[i16; 9]; 9] = [[-1; 9]; 9];
-            let mut frontier_head_pointers: [usize; 9] = [0; 9];
-            let mut frontier_tail_pointers: [usize; 9] = [0; 9];
-            let mut heuristic: usize;
-            heuristic = {
+            let mut frontier: [i16; 81] = [-1; 81];
+            let mut heuristic: [usize; 81] = [255; 81];
+            // use heuristic as a key to sort frontier
+            frontier[0] = start_pos;
+            heuristic[0] = {
                 if player_number == 1 {
                     (start_pos / 9) as usize
                 } else {
                     (8 - start_pos / 9) as usize
                 }
             };
-            frontier[heuristic][0] = start_pos;
-            frontier_tail_pointers[heuristic] += 1;
-            let mut frontier_total_count: u32 = 1;
-            let mut frontier_count: [u32; 9] = [0; 9];
-            frontier_count[heuristic] = 1;
+
+            let mut frontier_count = 1;
 
             let mut explored: [bool; 81] = [false; 81];
 
             let mut in_frontier: [bool; 81] = [false; 81];
+            in_frontier[start_pos as usize] = true;
 
             let mut parent: [i16; 81] = [-1; 81];
             let mut pos: i16;
             let mut new_pos: i16;
-            pos = 255;
 
-            while frontier_total_count != 0 {
-                for h in 0..9 {
-                    if frontier_count[h] == 0 {
-                        continue;
-                    }
-                    pos = frontier[h][frontier_head_pointers[h]];
-                    frontier_head_pointers[h] = (frontier_head_pointers[h] + 1) % 9;
-                    in_frontier[pos as usize] = false;
-                    frontier_total_count -= 1;
-                    frontier_count[h] -= 1;
-                    break;
-                }
+            let mut heuristic_min_idx: usize;
+            let mut heuristic_null_idx: usize;
+
+            while frontier_count != 0 {
+                heuristic_min_idx = min_idx(&heuristic);
+                pos = frontier[heuristic_min_idx];
+                heuristic[heuristic_min_idx] = 255;
+
+                in_frontier[pos as usize] = false;
 
                 explored[pos as usize] = true;
-
+                frontier_count -= 1;
                 for direction in 0..4 {
                     new_pos = pos + GRAPH_SHIFT_ARR[direction];
                     if self.is_direction_valid(pos, direction as i16)
@@ -555,19 +510,110 @@ pub mod graph_implementations {
                                 path_idx += 1;
                             }
                         }
-                        heuristic = {
+                        heuristic_null_idx = find_null(&heuristic);
+                        frontier[heuristic_null_idx] = new_pos;
+                        heuristic[heuristic_null_idx] = {
                             if player_number == 1 {
                                 (new_pos / 9) as usize
                             } else {
                                 (8 - new_pos / 9) as usize
                             }
                         };
-                        frontier[heuristic][frontier_tail_pointers[heuristic]] = new_pos;
-                        frontier_tail_pointers[heuristic] =
-                            (frontier_tail_pointers[heuristic] + 1) % 81;
                         in_frontier[new_pos as usize] = true;
-                        frontier_total_count += 1;
-                        frontier_count[heuristic] += 1;
+                        frontier_count += 1;
+                    }
+                }
+            }
+            return [-1; 81];
+        }
+        fn astar(&self, start_pos: i16, player_number: i16) -> [i16; 81] {
+            let mut frontier: [i16; 81] = [255; 81];
+
+            let mut f_sum: [usize; 81] = [255; 81];
+            // index 0 of f_sum is the lowest path_cost of position 0 and so on
+            let mut path_cost: [usize; 81] = [255; 81];
+            // index 0 of path_cost is the lowest path_cost of position 0 and so on
+            frontier[0] = start_pos;
+            f_sum[start_pos as usize] = 0 + {
+                if player_number == 1 {
+                    (start_pos / 9) as usize
+                } else {
+                    (8 - start_pos / 9) as usize
+                }
+            };
+            path_cost[start_pos as usize] = 0;
+
+            let mut frontier_count = 1;
+
+            let mut in_frontier: [bool; 81] = [false; 81];
+            in_frontier[start_pos as usize] = true;
+
+            let mut parent: [i16; 81] = [-1; 81];
+            let mut pos: i16;
+            let mut new_pos: i16;
+            let mut popped_path_cost: usize;
+
+            let mut f_null_idx: usize;
+
+            while frontier_count != 0 {
+                pos = min_idx(&f_sum) as i16;
+                popped_path_cost = path_cost[pos as usize];
+                frontier[find_idx(&frontier, pos)] = -1;
+
+                f_sum[pos as usize] = 255;
+                in_frontier[pos as usize] = false;
+
+                frontier_count -= 1;
+                for direction in 0..4 {
+                    new_pos = pos + GRAPH_SHIFT_ARR[direction];
+                    if self.is_direction_valid(pos, direction as i16) {
+                        if (player_number == 1 && new_pos <= 8)
+                            | (player_number == 2 && new_pos >= 72)
+                        {
+                            parent[new_pos as usize] = pos;
+                            let mut stack: [i16; 81] = [-1; 81];
+                            stack[0] = new_pos;
+                            let mut stack_idx: usize = 1;
+                            loop {
+                                if parent[new_pos as usize] == -1 {
+                                    stack[stack_idx] = -1;
+                                    break;
+                                }
+                                stack[stack_idx] = parent[new_pos as usize];
+                                stack_idx += 1;
+                                new_pos = parent[new_pos as usize];
+                            }
+                            let mut path: [i16; 81] = [-1; 81];
+                            path[0] = new_pos;
+                            stack_idx -= 1;
+                            let mut path_idx: usize = 0;
+                            loop {
+                                path[path_idx] = stack[stack_idx];
+                                if stack_idx == 0 {
+                                    return path;
+                                }
+                                stack_idx -= 1;
+                                path_idx += 1;
+                            }
+                        }
+                        f_null_idx = find_nulli16(&frontier);
+                        if popped_path_cost + 1 < path_cost[new_pos as usize] {
+                            parent[new_pos as usize] = pos;
+                            path_cost[new_pos as usize] = popped_path_cost + 1;
+                            f_sum[new_pos as usize] = popped_path_cost + 1 + {
+                                if player_number == 1 {
+                                    (new_pos / 9) as usize
+                                } else {
+                                    (8 - new_pos / 9) as usize
+                                }
+                            };
+
+                            if !in_frontier[new_pos as usize] {
+                                frontier[f_null_idx] = new_pos;
+                                in_frontier[new_pos as usize] = true;
+                                frontier_count += 1;
+                            }
+                        }
                     }
                 }
             }
