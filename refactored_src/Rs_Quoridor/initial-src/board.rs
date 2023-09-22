@@ -1,6 +1,4 @@
 pub mod board {
-    extern crate rand;
-    extern crate rand_chacha;
 
     use crate::rand::*;
     use rand_chacha::ChaCha8Rng;
