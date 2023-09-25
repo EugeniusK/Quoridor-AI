@@ -5,6 +5,7 @@ pub mod final_mcts {
     pub use rand_chacha::ChaCha8Rng;
 
     use crate::final_board::final_board::RustBoard;
+    use std::time::Instant;
 
     #[derive(Clone, Debug, Copy)]
     pub struct ActionIdx {
@@ -80,6 +81,7 @@ pub mod final_mcts {
 
                 is_leaf: true,
             }];
+            self.board = board;
         }
 
         pub fn get_board_state(&self, idx: usize) -> RustBoard {
@@ -218,17 +220,17 @@ pub mod final_mcts {
             }
         }
 
-        pub fn rollout(&mut self, n: i32) {
+        pub fn rollout_choose_timed(&mut self, limit: f64) -> (i16, i32) {
             let mut leaf: usize;
-            for _ in 0..n {
+            let start: Instant = Instant::now();
+            let mut count = 0;
+            while start.elapsed().as_secs_f64() < limit {
                 leaf = self.select();
                 self.expand(leaf);
                 let result = self.simulate(self.nodes.len() - 1);
                 self.backpropagate(leaf as u32, result);
+                count += 1;
             }
-        }
-        pub fn rollout_choose(&mut self, n: i32) -> i16 {
-            self.rollout(n);
             let calculate_winrate = |x: &u32| -> NotNan<f32> {
                 match NotNan::new(
                     self.nodes[*x as usize].simulations_won
@@ -245,10 +247,13 @@ pub mod final_mcts {
                 .max_by_key(calculate_winrate)
             {
                 Some(result) => {
-                    return self.nodes[result as usize].action;
+                    return (self.nodes[result as usize].action, count);
                 }
                 None => panic!("NO RETURN"),
             }
+        }
+        pub fn random_choose(&mut self) -> i16 {
+            self.board.get_random_action()
         }
     }
 }
