@@ -348,11 +348,11 @@ pub mod peformance_tests {
                 _ => panic!("INVALID SEARCH"),
             }
             enumerated_actions_rollouts = String::new();
-            for x in (0..self.actions_taken.len() / 2).step_by(2) {
+            for x in (0..self.actions_taken.len() - 1).step_by(2) {
                 enumerated_actions_rollouts.push_str(
                     format!(
                         "{}. {}({}) {}({}) ",
-                        x + 1,
+                        (x + 2) / 2,
                         self.actions_taken[x],
                         self.rollouts_count[x],
                         self.actions_taken[x + 1],
