@@ -1,10 +1,11 @@
 pub mod peformance_tests {
     use crate::final_board;
     use crate::final_mcts::final_mcts::MctsTree;
-    pub use final_board::final_board::RustBoard;
-
     use crate::rand_chacha;
+    pub use final_board::final_board::RustBoard;
     pub use rand_chacha::ChaCha8Rng;
+    use rayon::prelude::*;
+    use std::io;
 
     use chrono::Utc;
 
@@ -14,7 +15,13 @@ pub mod peformance_tests {
     use chrono::Local;
     use std::error::Error;
     use std::fs;
+    use std::fs::File;
+    use std::io::Write;
     use std::time::Instant;
+
+    use std::io::prelude::*;
+    use std::path::Path;
+
     #[derive(Clone, Copy, Debug, serde::Serialize)]
     pub struct GameDataBasic {
         num_walls: i16,
@@ -193,6 +200,8 @@ pub mod peformance_tests {
                 mode if mode / 10 == 2 => board_white = RustBoard::new(2), // DFS
                 mode if mode / 10 == 3 => board_white = RustBoard::new(3), // GBFS
                 mode if mode / 10 == 4 => board_white = RustBoard::new(4), // A*
+                mode if mode / 10 == 5 => board_white = RustBoard::new(1), // only for Random
+
                 _ => panic!("WHITE IS INVALID MODE"),
             }
             match self.white {
@@ -200,6 +209,7 @@ pub mod peformance_tests {
                 mode if mode / 10 == 2 => board_black = RustBoard::new(2), // DFS
                 mode if mode / 10 == 3 => board_black = RustBoard::new(3), // GBFS
                 mode if mode / 10 == 4 => board_black = RustBoard::new(4), // A*
+                mode if mode / 10 == 5 => board_black = RustBoard::new(1), // only for Random
                 _ => panic!("WHITE IS INVALID MODE"),
             }
 
@@ -279,28 +289,153 @@ pub mod peformance_tests {
                         break;
                     }
                 }
+                // board_white.display();
             }
+        }
+        pub fn playout_write(&mut self, mut file: &File) {
+            println!("Round {} start", self.round);
+
+            let mut action_rollout: String;
+            let mut white_str: String;
+            let mut black_str: String;
+
+            let mut enumerated_actions_rollouts: String;
+
+            // let mut vec_data: Vec<GameData> = vec![];
+            self.playout();
+            action_rollout = String::with_capacity(180);
+            for a in 0..self.actions_taken.len() {
+                action_rollout.push_str(
+                    format!(
+                        "{}. {}({}) ",
+                        a + 1,
+                        self.actions_taken[a],
+                        self.rollouts_count[a]
+                    )
+                    .as_str(),
+                )
+            }
+            match self.white {
+                50 => white_str = String::from("random"),
+                11 => white_str = String::from("BFS 0.1s vanilla MCTS"),
+                12 => white_str = String::from("BFS 0.2s vanilla MCTS"),
+                13 => white_str = String::from("BFS 1.0s vanilla MCTS"),
+                14 => white_str = String::from("BFS 5.0s vanilla MCTS"),
+                21 => white_str = String::from("DFS 0.1s vanilla MCTS"),
+                22 => white_str = String::from("DFS 0.2s vanilla MCTS"),
+                23 => white_str = String::from("DFS 1.0s vanilla MCTS"),
+                24 => white_str = String::from("DFS 5.0s vanilla MCTS"),
+                41 => white_str = String::from("A* 0.1s vanilla MCTS"),
+                42 => white_str = String::from("A* 0.2s vanilla MCTS"),
+                43 => white_str = String::from("A* 1.0s vanilla MCTS"),
+                44 => white_str = String::from("A* 5.0s vanilla MCTS"),
+                _ => panic!("INVALID SEARCH"),
+            }
+            match self.black {
+                50 => black_str = String::from("random"),
+                11 => black_str = String::from("BFS 0.1s vanilla MCTS"),
+                12 => black_str = String::from("BFS 0.2s vanilla MCTS"),
+                13 => black_str = String::from("BFS 1.0s vanilla MCTS"),
+                14 => black_str = String::from("BFS 5.0s vanilla MCTS"),
+                21 => black_str = String::from("DFS 0.1s vanilla MCTS"),
+                22 => black_str = String::from("DFS 0.2s vanilla MCTS"),
+                23 => black_str = String::from("DFS 1.0s vanilla MCTS"),
+                24 => black_str = String::from("DFS 5.0s vanilla MCTS"),
+                41 => black_str = String::from("A* 0.1s vanilla MCTS"),
+                42 => black_str = String::from("A* 0.2s vanilla MCTS"),
+                43 => black_str = String::from("A* 1.0s vanilla MCTS"),
+                44 => black_str = String::from("A* 5.0s vanilla MCTS"),
+                _ => panic!("INVALID SEARCH"),
+            }
+            enumerated_actions_rollouts = String::new();
+            for x in (0..self.actions_taken.len() / 2).step_by(2) {
+                enumerated_actions_rollouts.push_str(
+                    format!(
+                        "{}. {}({}) {}({}) ",
+                        x + 1,
+                        self.actions_taken[x],
+                        self.rollouts_count[x],
+                        self.actions_taken[x + 1],
+                        self.rollouts_count[x + 1]
+                    )
+                    .as_str(),
+                )
+            }
+            if self.actions_taken.len() % 2 == 1 {
+                enumerated_actions_rollouts.push_str(
+                    format!(
+                        "{}. {}({}) {}\n",
+                        self.actions_taken.len() / 2 + 1,
+                        self.actions_taken[self.actions_taken.len() / 2 + 1],
+                        self.rollouts_count[self.actions_taken.len() / 2 + 1],
+                        self.result
+                    )
+                    .as_str(),
+                )
+            } else {
+                enumerated_actions_rollouts.push_str(format!("{}\n", self.result).as_str());
+            }
+            file.write(format!("[Date \"{}\"]\n[Round \"{}\"]\n[White \"{}\"]\n[Black \"{}\"]\n[Result \"{}\"]\n", self.date, self.round, white_str, black_str, self.result).as_bytes());
+            file.write(enumerated_actions_rollouts.as_bytes());
+            println!("Round {} over", self.round);
         }
     }
 
     pub fn generate_pgn_file(n: usize) {
-        let mut data: GameData;
+        let mut game: GameData;
         let mut round: i16 = 1;
-        let mut results: Vec<GameData> = vec![];
-        for mode1 in [
-            10, 11, 12, 13, 14, 20, 21, 22, 23, 24, 30, 31, 32, 33, 34, 40, 41, 42, 43, 44,
-        ] {
-            for mode2 in [
-                10, 11, 12, 13, 14, 20, 21, 22, 23, 24, 30, 31, 32, 33, 34, 40, 41, 42, 43, 44,
-            ] {
+        let mut file = match File::create(format!("elo_pathfinding{}.pgn", n)) {
+            Err(why) => panic!("couldn't create {}", why),
+            Ok(file) => file,
+        };
+
+        let mut vec_games: Vec<GameData> = vec![];
+
+        for mode1 in [50, 11, 21, 41] {
+            // Round robin tournament between
+            // 50 - random
+            // 13,23,43 - BFS, DFS, A* 1s MCTS
+            // GBFS ignored as the performance is mid compared to BFS and A*
+            // BFS and A* both follow same trend and yet speed is significantly different
+            // DFS follows a different trend
+            // Total playtime should be 12 * number of repeated games
+            // -----50, 13, 23, 43------
+            for mode2 in [50, 11, 21, 41] {
+                if mode1 == mode2 {
+                    continue;
+                }
                 for _ in 0..n {
-                    data = GameData::new(round, mode1, mode2);
-                    data.playout();
-                    results.push(data);
+                    game = GameData::new(round, mode1, mode2);
+                    vec_games.push(game);
                     round += 1;
                 }
-                println!("{:?}", results);
             }
         }
+        file = match File::create(format!("elo_mcts_times{}.pgn", n)) {
+            Err(why) => panic!("couldn't create {}", why),
+            Ok(file) => file,
+        };
+        for mode1 in [11, 12, 13, 14] {
+            // Round robin tournament between
+            // MCTS of different times
+            // Intended to compare effect of time against performance
+            // Total playtime should be 12 * number of repeated games
+            // -----11,12,13,14, 21,22,23,24, 41,42,43,44------
+            for mode2 in [11, 12, 13, 14] {
+                if mode1 == mode2 {
+                    continue;
+                }
+                for _ in 0..n {
+                    game = GameData::new(round, mode1, mode2);
+                    vec_games.push(game);
+                    round += 1;
+                }
+            }
+        }
+        println!("{}", vec_games.len());
+        vec_games
+            .par_iter_mut()
+            .for_each(|x| x.playout_write(&file));
     }
+    // Ok(())
 }
