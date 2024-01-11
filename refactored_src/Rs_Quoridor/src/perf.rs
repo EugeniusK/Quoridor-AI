@@ -171,7 +171,7 @@ pub mod peformance_tests {
     #[derive(Clone, Debug)]
     pub struct GameData {
         date: DateTime<Local>,
-        round: i16,
+        round: u32,
         white: i16,
         black: i16,
         result: String,
@@ -180,7 +180,7 @@ pub mod peformance_tests {
     }
 
     impl GameData {
-        pub fn new(round: i16, white: i16, black: i16) -> GameData {
+        pub fn new(round: u32, white: i16, black: i16) -> GameData {
             GameData {
                 date: Local::now(),
                 round,
@@ -301,20 +301,7 @@ pub mod peformance_tests {
 
             let mut enumerated_actions_rollouts: String;
 
-            // let mut vec_data: Vec<GameData> = vec![];
             self.playout();
-            action_rollout = String::with_capacity(180);
-            for a in 0..self.actions_taken.len() {
-                action_rollout.push_str(
-                    format!(
-                        "{}. {}({}) ",
-                        a + 1,
-                        self.actions_taken[a],
-                        self.rollouts_count[a]
-                    )
-                    .as_str(),
-                )
-            }
             match self.white {
                 50 => white_str = String::from("random"),
                 11 => white_str = String::from("BFS 0.1s vanilla MCTS"),
@@ -383,45 +370,75 @@ pub mod peformance_tests {
 
     pub fn generate_pgn_file(n: usize) {
         let mut game: GameData;
-        let mut round: i16 = 1;
-        let mut file = match File::create(format!("elo_pathfinding{}.pgn", n)) {
-            Err(why) => panic!("couldn't create {}", why),
-            Ok(file) => file,
-        };
+        let mut round = 1;
 
         let mut vec_games: Vec<GameData> = vec![];
+        let mut file: File;
 
-        for mode1 in [50, 11, 21, 41] {
-            // Round robin tournament between
-            // 50 - random
-            // 13,23,43 - BFS, DFS, A* 1s MCTS
-            // GBFS ignored as the performance is mid compared to BFS and A*
-            // BFS and A* both follow same trend and yet speed is significantly different
-            // DFS follows a different trend
-            // Total playtime should be 12 * number of repeated games
-            // -----50, 13, 23, 43------
-            for mode2 in [50, 11, 21, 41] {
-                if mode1 == mode2 {
-                    continue;
-                }
-                for _ in 0..n {
-                    game = GameData::new(round, mode1, mode2);
-                    vec_games.push(game);
-                    round += 1;
-                }
-            }
-        }
-        file = match File::create(format!("elo_mcts_times{}.pgn", n)) {
+        // let mut file = match File::create(format!("elo_pathfinding{}.pgn", n)) {
+        //     Err(why) => panic!("couldn't create {}", why),
+        //     Ok(file) => file,
+        // };
+
+        // for mode1 in [50, 13, 23, 43] {
+        //     // Round robin tournament between
+        //     // 50 - random
+        //     // 13,23,43 - BFS, DFS, A* 1s MCTS
+        //     // GBFS ignored as the performance is mid compared to BFS and A*
+        //     // BFS and A* both follow same trend and yet speed is significantly different
+        //     // DFS follows a different trend
+        //     // Total playtime should be 12 * number of repeated games
+        //     // -----50, 13, 23, 43------
+        //     for mode2 in [50, 13, 23, 43] {
+        //         if mode1 == mode2 {
+        //             continue;
+        //         }
+        //         for _ in 0..n {
+        //             game = GameData::new(round, mode1, mode2);
+        //             vec_games.push(game);
+        //             round += 1;
+        //         }
+        //     }
+        // }
+        // vec_games
+        //     .par_iter_mut()
+        //     .for_each(|x| x.playout_write(&file));
+        // vec_games.clear();
+
+        // file = match File::create(format!("elo_mcts_times{}.pgn", n)) {
+        //     Err(why) => panic!("couldn't create {}", why),
+        //     Ok(file) => file,
+        // };
+        // for mode1 in [11, 12, 13, 14] {
+        //     // Round robin tournament between
+        //     // MCTS of different times
+        //     // Intended to compare effect of time against performance
+        //     // Total playtime should be 12 * number of repeated games
+        //     // -----11,12,13,14, 21,22,23,24, 41,42,43,44------
+        //     for mode2 in [11, 12, 13, 14] {
+        //         if mode1 == mode2 {
+        //             continue;
+        //         }
+        //         for _ in 0..n {
+        //             game = GameData::new(round, mode1, mode2);
+        //             vec_games.push(game);
+        //             round += 1;
+        //         }
+        //     }
+        // }
+        // vec_games
+        //     .par_iter_mut()
+        //     .for_each(|x| x.playout_write(&file));
+        // vec_games.clear();
+
+        file = match File::create(format!("elo_large{}.pgn", n)) {
             Err(why) => panic!("couldn't create {}", why),
             Ok(file) => file,
         };
-        for mode1 in [11, 12, 13, 14] {
+        for mode1 in [50, 11, 12, 13, 14, 21, 22, 23, 24, 41, 42, 43, 44] {
             // Round robin tournament between
-            // MCTS of different times
-            // Intended to compare effect of time against performance
-            // Total playtime should be 12 * number of repeated games
-            // -----11,12,13,14, 21,22,23,24, 41,42,43,44------
-            for mode2 in [11, 12, 13, 14] {
+            // ALL possible agents
+            for mode2 in [50, 11, 12, 13, 14, 21, 22, 23, 24, 41, 42, 43, 44] {
                 if mode1 == mode2 {
                     continue;
                 }
@@ -432,10 +449,9 @@ pub mod peformance_tests {
                 }
             }
         }
-        println!("{}", vec_games.len());
         vec_games
             .par_iter_mut()
             .for_each(|x| x.playout_write(&file));
+        vec_games.clear();
     }
-    // Ok(())
 }

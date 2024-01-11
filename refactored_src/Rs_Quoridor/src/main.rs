@@ -15,7 +15,11 @@ pub mod perf;
 pub use perf::peformance_tests::*;
 pub mod test;
 pub mod util;
-
 fn main() {
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(16)
+        .build_global()
+        .unwrap();
+
     generate_pgn_file(100);
 }
