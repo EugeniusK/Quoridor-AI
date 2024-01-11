@@ -3,7 +3,11 @@
 docs/
 src/Logs
 src/Results
-refactored_src/Rs_Quoridor/data
+data-raw/
+src/Rs_Quoridor/data/
+benchmark_actions.txt
+
+.pgn
 # Visual Studio Code files
 .vscode
 
